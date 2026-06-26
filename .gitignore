@@ -1,0 +1,17 @@
+# deps
+node_modules/
+# builds
+.next/
+out/
+dist/
+contracts/target/
+contracts/wasm/
+*.tsbuildinfo
+# env / secrets
+.env
+.env.local
+*.pem
+keys/
+# os
+.DS_Store
+Thumbs.db

@@ -1,0 +1,111 @@
+import Nav from "@/components/Nav";
+import { getDashboard } from "@/lib/data";
+
+export default async function Dashboard() {
+  const { treasuryId, totalTreasury, banner, holdings, trail } = await getDashboard();
+
+  return (
+    <main className="page">
+      <div className="card">
+        <Nav active="dashboard" />
+
+        <div style={{ marginTop: 44, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <span className="pulse-dot" />
+              <span className="mono" style={{ fontSize: 12, letterSpacing: "2px", color: "var(--faint)" }}>{treasuryId}</span>
+            </div>
+            <h1 className="serif" style={{ margin: "10px 0 0", fontSize: 42, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.8px" }}>
+              Audit dashboard
+            </h1>
+          </div>
+          <a href="https://cspr.live" style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--border)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 600, color: "var(--ink2)" }}>
+            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--blue)" }} />
+            Open on cspr.live ↗
+          </a>
+        </div>
+
+        {/* TOP BANNER STAT */}
+        <div style={{ marginTop: 28, borderRadius: 20, background: "var(--gradient-pill)", border: "1px solid #efe7d6", padding: "26px 32px", display: "flex", alignItems: "center", flexWrap: "wrap", gap: 32 }}>
+          <div style={{ flex: "1 1 280px" }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--gold-banner)", letterSpacing: "0.3px" }}>TOTAL TREASURY VALUE</div>
+            <div className="serif" style={{ marginTop: 8, fontSize: 56, fontWeight: 400, color: "var(--ink)", letterSpacing: "-1.5px" }}>{totalTreasury}</div>
+          </div>
+          <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
+            {banner.map((b) => (
+              <div key={b.label}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--gold-banner)", letterSpacing: "0.3px" }}>{b.label}</div>
+                <div className="serif" style={{ marginTop: 8, fontSize: 32, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.5px" }}>{b.value}</div>
+                <div style={{ marginTop: 3, fontSize: 12, fontWeight: 600, color: b.color }}>{b.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="two-col" style={{ marginTop: 40, alignItems: "start" }}>
+          {/* LEFT: HOLDINGS */}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px", marginBottom: 16 }}>HOLDINGS</div>
+            {holdings.map((h) => (
+              <div key={h.name} style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 20px", border: "1px solid var(--border2)", borderRadius: 16, marginBottom: 10, background: "var(--surface-subtle)" }}>
+                <span style={{ width: 38, height: 38, borderRadius: 11, background: h.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <span style={{ width: 13, height: 13, borderRadius: 4, background: h.color }} />
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>{h.name}</div>
+                  <div className="mono" style={{ fontSize: 12, color: "var(--faint)", marginTop: 2 }}>{h.sub}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>{h.value}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: h.chgColor, marginTop: 2 }}>{h.chg}</div>
+                </div>
+              </div>
+            ))}
+
+            <div style={{ marginTop: 24, marginBottom: 14, fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>COMPLIANCE STATUS</div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Vault status</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>Valid ✓</div>
+              </div>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Allowlisted targets</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>3 of 3</div>
+              </div>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface-subtle)" }}>
+                <div style={{ fontSize: 13, color: "var(--faint)", fontWeight: 600 }}>Daily limit used</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>$420K / $2M</div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT: AUDIT TRAIL */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>ON-CHAIN AUDIT TRAIL</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>last 24h</div>
+            </div>
+            <div style={{ border: "1px solid var(--border2)", borderRadius: 18, overflow: "hidden", background: "var(--surface-subtle)" }}>
+              {trail.map((t, i) => (
+                <a key={i} href="https://cspr.live" className="trail-row">
+                  <span style={{ width: 34, height: 34, borderRadius: 10, background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 13 }}>{t.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>{t.kind}</div>
+                    <div className="mono" style={{ fontSize: 12, color: "var(--blue)", marginTop: 2 }}>{t.hash}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: t.statusColor }}>{t.status}</div>
+                    <div className="mono" style={{ fontSize: 11, color: "var(--faint2)", marginTop: 2 }}>{t.time}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+            <div style={{ marginTop: 14, textAlign: "center" }}>
+              <a href="https://cspr.live" style={{ fontSize: 14, fontWeight: 600, color: "#15120e", textDecoration: "none" }}>View all 4,218 deploys on cspr.live ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

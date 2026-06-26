@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#ecebe3; }
+</style>
+</helmet>
+
+<div style="position:relative; width:1600px; height:1160px; background:#ecebe3; font-family:'Manrope',sans-serif;">
+
+  <!-- CARD -->
+  <div style="position:absolute; left:60px; top:72px; width:1480px; height:1012px; background:#ffffff; border-radius:30px; overflow:hidden; box-shadow:0 34px 90px -24px rgba(70,58,30,0.20), 0 2px 10px rgba(0,0,0,0.04);">
+
+    <!-- WAVE (animated, behind hero text) -->
+    <canvas ref="{{ canvasRef }}" width="1480" height="560" style="position:absolute; left:0px; top:398px; width:1480px; height:560px; filter:{{ waveFilter }}; pointer-events:none;"></canvas>
+
+    <!-- LOGO / WORDMARK -->
+    <div style="position:absolute; left:52px; top:40px; display:flex; align-items:center; gap:11px;">
+      <svg width="26" height="22" viewBox="0 0 26 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="1" width="11" height="3.4" rx="1.7" fill="#16130f"></rect>
+        <rect x="14" y="1" width="7" height="3.4" rx="1.7" fill="#16130f"></rect>
+        <rect x="4" y="9.3" width="18" height="3.4" rx="1.7" fill="#16130f"></rect>
+        <rect x="0" y="17.6" width="8" height="3.4" rx="1.7" fill="#16130f"></rect>
+        <rect x="11" y="17.6" width="13" height="3.4" rx="1.7" fill="#16130f"></rect>
+      </svg>
+      <span style="font-size:23px; font-weight:600; letter-spacing:-0.4px; color:#16130f;">amanah</span>
+    </div>
+
+    <!-- NAV -->
+    <div style="position:absolute; right:52px; top:46px; display:flex; align-items:center; gap:42px; font-size:16px; font-weight:500; color:#1c1814;">
+      <a href="Agent.dc.html" style="text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:6px;">Protocol
+        <svg width="11" height="7" viewBox="0 0 11 7" fill="none"><path d="M1 1l4.5 4.5L10 1" stroke="#1c1814" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      </a>
+      <a href="Writing.dc.html" style="text-decoration:none; color:inherit;">Read the spec</a>
+      <a href="Connect.dc.html" style="text-decoration:none; color:inherit;">Connect wallet</a>
+      <a href="Dashboard.dc.html" style="text-decoration:none; color:inherit;">Dashboard</a>
+    </div>
+
+    <!-- HEADLINE -->
+    <div style="position:absolute; left:0px; top:150px; width:1480px; text-align:center; font-family:'Newsreader',serif; font-weight:400; font-size:92px; line-height:1.03; letter-spacing:-1.6px; color:#14110d; text-wrap:balance;">A verifiable guardian<br>for every asset</div>
+
+    <!-- SUBTITLE -->
+    <div style="position:absolute; left:0px; top:374px; width:1480px; text-align:center; font-size:19px; font-weight:500; color:#5b564e; letter-spacing:0.1px;">Autonomous, compliant RWA treasury — every decision proven on-chain, 24/7</div>
+
+    <!-- CTA -->
+    <div style="position:absolute; left:0px; top:440px; width:1480px; text-align:center; display:flex; gap:14px; align-items:center; justify-content:center;">
+      <a href="Agent.dc.html" style="text-decoration:none; display:inline-flex; align-items:center; gap:11px; background:{{ ctaBg }}; color:{{ ctaText }}; font-size:16px; font-weight:600; padding:15px 26px 15px 22px; border-radius:999px; cursor:pointer; box-shadow:0 6px 18px rgba(20,17,13,0.18);">
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><circle cx="3" cy="3" r="1.7" fill="currentColor"></circle><circle cx="8.5" cy="3" r="1.7" fill="currentColor" opacity="0.5"></circle><circle cx="3" cy="8.5" r="1.7" fill="currentColor" opacity="0.5"></circle><circle cx="8.5" cy="8.5" r="1.7" fill="currentColor"></circle><circle cx="14" cy="8.5" r="1.7" fill="currentColor" opacity="0.5"></circle><circle cx="8.5" cy="14" r="1.7" fill="currentColor" opacity="0.5"></circle></svg>
+        See it reason
+      </a>
+      <a href="Dashboard.dc.html" style="text-decoration:none; display:inline-flex; align-items:center; gap:9px; background:transparent; color:#15120e; font-size:16px; font-weight:600; padding:15px 24px; border-radius:999px; border:1px solid #d8d2c4; cursor:pointer;">
+        Open dashboard
+        <svg width="8" height="13" viewBox="0 0 8 13" fill="none"><path d="M1 1l5.5 5.5L1 12" stroke="#15120e" stroke-width="1.7" stroke-linecap="round"></path></svg>
+      </a>
+    </div>
+
+    <!-- BUILT ON eyebrow -->
+    <div style="position:absolute; left:0px; top:884px; width:1480px; text-align:center; font-size:11px; font-weight:600; letter-spacing:2.4px; color:#a59f93;">BUILT ON THE CASPER TRUST LAYER</div>
+
+    <!-- STACK STRIP -->
+    <div style="position:absolute; left:0px; top:920px; width:1480px; display:{{ stackDisplay }}; align-items:center; justify-content:center; gap:62px; color:#1d1a15;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" stroke="#1d1a15" stroke-width="2" fill="none"></circle><circle cx="10" cy="10" r="2.6" fill="#1d1a15"></circle></svg>
+        <span style="font-size:21px; font-weight:700; letter-spacing:-0.3px;">Casper</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="5" fill="#1d1a15"></rect></svg>
+        <span style="font-size:21px; font-weight:700; letter-spacing:-0.3px;">CSPR.cloud</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 20 20"><rect x="10" y="2.5" width="10.6" height="10.6" transform="rotate(45 10 2.5)" fill="#1d1a15"></rect></svg>
+        <span style="font-size:21px; font-weight:700; letter-spacing:-0.3px;">Claude</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="14" rx="2" stroke="#1d1a15" stroke-width="2.2" fill="none"></rect></svg>
+        <span style="font-size:21px; font-weight:700; letter-spacing:-0.3px;">x402</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <svg width="20" height="20" viewBox="0 0 20 20"><path d="M10 2l8 14H2z" fill="#1d1a15"></path></svg>
+        <span style="font-size:21px; font-weight:700; letter-spacing:-0.3px;">IPFS</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1600,&quot;height&quot;:1160},&quot;waveHue&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:-50,&quot;max&quot;:50,&quot;tsType&quot;:&quot;number&quot;},&quot;showStack&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;ctaColor&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Black&quot;,&quot;options&quot;:[&quot;Black&quot;,&quot;Gold&quot;,&quot;Blue&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  componentDidMount(){
+    this._t0 = performance.now();
+    this.draw(0);
+    const loop = (t)=>{ this.draw(t - this._t0); this._raf = requestAnimationFrame(loop); };
+    this._raf = requestAnimationFrame(loop);
+    // fallback tick (covers backgrounded rAF throttling)
+    this._iv = setInterval(()=>{ this.draw(performance.now() - this._t0); }, 90);
+  }
+  componentWillUnmount(){ if(this._raf) cancelAnimationFrame(this._raf); if(this._iv) clearInterval(this._iv); }
+  draw(elapsed){
+    const cv = this._cv; if(!cv) return;
+    const ctx = cv.getContext('2d'); const W = cv.width, H = cv.height;
+    ctx.clearRect(0,0,W,H);
+    const TAU = Math.PI*2; const ph = elapsed*0.00020;
+    const N = 150; const X=[],TOP=[],BOT=[],CY=[],TH=[];
+    const ss=(a,b,x)=>{x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x);};
+    for(let i=0;i<=N;i++){
+      const u=i/N, x=u*W, ang=u*TAU*2.15+ph;
+      const cy=H*0.50 + H*0.205*Math.sin(ang+0.4) + H*0.065*Math.sin(ang*2.0+1.1+ph*1.25);
+      let th=H*(0.155 + 0.105*(0.5+0.5*Math.cos(ang+0.9)));
+      th*=ss(0,0.04,u)*ss(0,0.04,1-u);
+      X[i]=x; CY[i]=cy; TH[i]=th; TOP[i]=cy-th/2; BOT[i]=cy+th/2;
+    }
+    const band=(tf,bf)=>{ ctx.beginPath(); ctx.moveTo(X[0],tf(0));
+      for(let i=1;i<=N;i++) ctx.lineTo(X[i],tf(i));
+      for(let i=N;i>=0;i--) ctx.lineTo(X[i],bf(i)); ctx.closePath(); };
+    const gz=(u,c,w)=>{const d=Math.min(Math.abs(u-c),Math.abs(u-c-1),Math.abs(u-c+1));return Math.exp(-(d*d)/(w*w));};
+    const gold=[247,200,96], blue=[86,158,244];
+    const g=ctx.createLinearGradient(0,0,W,0);
+    const c1=((0.30+ph*0.05)%1+1)%1, c2=((0.62+ph*0.05)%1+1)%1;
+    for(let s=0;s<=30;s++){ const u=s/30;
+      const b=Math.min(1, 0.95*gz(u,c1,0.06)+0.9*gz(u,c2,0.055));
+      const c=[gold[0]+(blue[0]-gold[0])*b, gold[1]+(blue[1]-gold[1])*b, gold[2]+(blue[2]-gold[2])*b];
+      g.addColorStop(u, `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`);
+    }
+    ctx.save(); ctx.filter='blur(2.5px)'; band(i=>TOP[i], i=>BOT[i]); ctx.fillStyle=g; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.filter='blur(7px)'; ctx.globalAlpha=0.55; band(i=>CY[i]-TH[i]*0.30, i=>CY[i]+TH[i]*0.04); ctx.fillStyle='rgb(255,253,247)'; ctx.fill(); ctx.restore();
+    ctx.save(); ctx.filter='blur(9px)'; ctx.globalAlpha=0.20; band(i=>CY[i]+TH[i]*0.18, i=>BOT[i]+2); ctx.fillStyle='rgb(206,150,40)'; ctx.fill(); ctx.restore();
+  }
+  renderVals(){
+    const h = this.props.waveHue ?? 0;
+    const cta = this.props.ctaColor ?? 'Black';
+    const ctaMap = {
+      Black: ['#15120e', '#ffffff'],
+      Gold:  ['#e7a83c', '#1c1206'],
+      Blue:  ['#2f7fe0', '#ffffff'],
+    };
+    const [ctaBg, ctaText] = ctaMap[cta] || ctaMap.Black;
+    return {
+      noop: () => {},
+      canvasRef: (el)=>{ this._cv = el; },
+      waveFilter: h ? `hue-rotate(${h}deg) saturate(1.05)` : 'none',
+      stackDisplay: (this.props.showStack ?? true) ? 'flex' : 'none',
+      ctaBg, ctaText,
+    };
+  }
+}
+</script>
+</body>
+</html>

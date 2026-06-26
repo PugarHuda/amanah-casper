@@ -1,0 +1,24 @@
+{
+  "name": "amanah-signal-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "x402-gated premium RWA signal API — the agent's paid counterparty",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@make-software/casper-x402": "^1.0.0",
+    "@x402/core": "2.15.0",
+    "casper-js-sdk": "^5.0.12",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

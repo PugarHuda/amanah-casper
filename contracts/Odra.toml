@@ -1,0 +1,21 @@
+[[contracts]]
+fqn = "amanah_contracts::rwa_vault::RwaVault"
+
+[[contracts]]
+fqn = "amanah_contracts::attestation_log::AttestationLog"
+
+[[contracts]]
+fqn = "amanah_contracts::spend_gate::SpendGate"
+
+# ComplianceRegistry is the one contract we expect to upgrade in place (rule
+# changes). On Casper 2.0 / Odra 2.8 contracts are deployed as managed packages
+# and are upgradable by default; the legacy `odra_cfg_is_upgradable` per-contract
+# key from older Odra is kept here as an explicit marker of intent.
+# ponytail: verify against odra 2.8 — the 2.8 Odra.toml in the odra repo only
+# documents `fqn`; this key may be ignored by cargo-odra 2.8 (harmless if so).
+[[contracts]]
+fqn = "amanah_contracts::compliance_registry::ComplianceRegistry"
+odra_cfg_is_upgradable = true
+
+[[contracts]]
+fqn = "amanah_contracts::reputation_registry::ReputationRegistry"

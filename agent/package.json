@@ -1,0 +1,23 @@
+{
+  "name": "amanah-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Amanah autonomous compliant RWA treasury agent — off-chain loop",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@make-software/casper-x402": "^1.0.0",
+    "@x402/core": "2.15.0",
+    "blakejs": "^1.2.1",
+    "casper-js-sdk": "^5.0.12",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

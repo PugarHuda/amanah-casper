@@ -1,0 +1,5 @@
+# Pinned to the toolchain Odra 2.8 ships in its release/2.8.0 rust-toolchain file.
+[toolchain]
+channel = "nightly-2026-01-01"
+targets = ["wasm32-unknown-unknown"]
+components = ["rust-src"]

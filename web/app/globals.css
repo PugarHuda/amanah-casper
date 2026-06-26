@@ -1,0 +1,224 @@
+:root {
+  /* surfaces */
+  --bg: #ecebe3;
+  --card: #ffffff;
+  --surface-subtle: #fcfbf7;
+  --surface-warm: #faf8f3;
+  /* ink / text */
+  --ink: #14110d;
+  --ink2: #1c1814;
+  --ink3: #16130f;
+  --body: #5b564e;
+  --muted: #6b665c;
+  --faint: #8a857a;
+  --faint2: #a59f93;
+  /* borders */
+  --border: #e7e3d9;
+  --border2: #ece8de;
+  --border3: #f1ede4;
+  /* accents */
+  --gold: #e7a83c;
+  --gold-deep: #c8902f;
+  --gold-banner: #9a8a63;
+  --blue: #3f86e6;
+  --blue2: #2f7fe0;
+  --green: #3fae6a;
+  --green-deep: #2c7a4d;
+  --red: #c0392b;
+  /* effects */
+  --card-shadow: 0 34px 90px -24px rgba(70, 58, 30, 0.20), 0 2px 10px rgba(0, 0, 0, 0.04);
+  --cta-shadow: 0 6px 18px rgba(20, 17, 13, 0.18);
+  --gradient-pill: linear-gradient(100deg, #fbf4e6, #eef4fc);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  font-family: var(--font-manrope), sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.serif {
+  font-family: var(--font-newsreader), serif;
+}
+
+.mono {
+  font-family: var(--font-mono), monospace;
+}
+
+input::placeholder {
+  color: #aaa499;
+}
+
+@keyframes amn-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.pulse-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: amn-pulse 1.8s ease-in-out infinite;
+}
+
+/* page + card shell (responsive replacement for fixed 1480px absolute layout) */
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 72px 60px;
+}
+
+.card {
+  position: relative;
+  max-width: 1480px;
+  margin: 0 auto;
+  background: var(--card);
+  border-radius: 30px;
+  box-shadow: var(--card-shadow);
+  padding: 40px 52px 52px;
+  overflow: hidden;
+}
+
+/* nav */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 42px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink2);
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 150ms ease;
+}
+
+.nav-links a:hover {
+  color: var(--ink3);
+}
+
+.nav-links a.active {
+  color: var(--ink3);
+  font-weight: 700;
+}
+
+/* responsive two-column for app screens */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+}
+
+.metric-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.metric-card {
+  flex: 1 1 220px;
+  min-height: 122px;
+  border: 1px solid var(--border2);
+  border-radius: 18px;
+  padding: 20px 22px;
+  background: var(--surface-subtle);
+}
+
+.btn-primary {
+  background: #15120e;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-manrope), sans-serif;
+  transition: opacity 150ms ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.wallet-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 18px;
+  height: 62px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  background: #fff;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.wallet-row:hover {
+  background: var(--surface-warm);
+  border-color: #d8d2c4;
+}
+
+.trail-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--border3);
+  text-decoration: none;
+  transition: background 150ms ease;
+}
+
+.trail-row:hover {
+  background: var(--surface-warm);
+}
+
+.trail-row:last-child {
+  border-bottom: none;
+}
+
+.post-row {
+  display: flex;
+  gap: 22px;
+  padding: 24px 4px;
+  border-bottom: 1px solid var(--border3);
+  text-decoration: none;
+  transition: opacity 150ms ease;
+}
+
+.post-row:hover {
+  opacity: 0.7;
+}
+
+@media (max-width: 900px) {
+  .page { padding: 32px 16px; }
+  .card { padding: 28px 24px 32px; }
+  .two-col { grid-template-columns: 1fr; gap: 28px; }
+  .nav-links { gap: 22px; font-size: 15px; }
+  .hero-h1 { font-size: 56px !important; }
+  .nl-block { padding: 36px 28px !important; }
+}

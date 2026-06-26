@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "amanah": {
+      "command": "npx",
+      "args": ["tsx", "src/server.ts"],
+      "cwd": "/absolute/path/to/amanah/mcp",
+      "env": {
+        "CSPR_CLOUD_URL": "https://node.testnet.cspr.cloud"
+      }
+    }
+  }
+}

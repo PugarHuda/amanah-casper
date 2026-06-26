@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#ecebe3; }
+  @keyframes amn-pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.25 } }
+</style>
+</helmet>
+
+<div style="position:relative; width:1600px; height:1500px; background:#ecebe3; font-family:'Manrope',sans-serif;">
+  <div style="position:absolute; left:60px; top:72px; width:1480px; height:1356px; background:#ffffff; border-radius:30px; overflow:hidden; box-shadow:0 34px 90px -24px rgba(70,58,30,0.20), 0 2px 10px rgba(0,0,0,0.04);">
+
+    <a href="Amanah.dc.html" style="position:absolute; left:52px; top:40px; display:flex; align-items:center; gap:11px; text-decoration:none;">
+      <svg width="26" height="22" viewBox="0 0 26 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="1" width="11" height="3.4" rx="1.7" fill="#16130f"></rect><rect x="14" y="1" width="7" height="3.4" rx="1.7" fill="#16130f"></rect><rect x="4" y="9.3" width="18" height="3.4" rx="1.7" fill="#16130f"></rect><rect x="0" y="17.6" width="8" height="3.4" rx="1.7" fill="#16130f"></rect><rect x="11" y="17.6" width="13" height="3.4" rx="1.7" fill="#16130f"></rect>
+      </svg>
+      <span style="font-size:23px; font-weight:600; letter-spacing:-0.4px; color:#16130f;">amanah</span>
+    </a>
+    <div style="position:absolute; right:52px; top:46px; display:flex; align-items:center; gap:42px; font-size:16px; font-weight:500; color:#1c1814;">
+      <a href="Agent.dc.html" style="text-decoration:none; color:inherit;">Protocol</a>
+      <a href="Writing.dc.html" style="text-decoration:none; color:inherit;">Read the spec</a>
+      <a href="Connect.dc.html" style="text-decoration:none; color:inherit;">Connect wallet</a>
+      <a href="Dashboard.dc.html" style="text-decoration:none; color:#16130f; font-weight:700;">Dashboard</a>
+    </div>
+
+    <!-- HEADER -->
+    <div style="position:absolute; left:52px; top:118px; display:flex; align-items:center; gap:14px;">
+      <span style="width:9px; height:9px; border-radius:50%; background:#3fae6a; animation:amn-pulse 1.8s ease-in-out infinite;"></span>
+      <span style="font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:2px; color:#8a857a;">TREASURY 0x4f9a…c2e1 · CASPER-TEST</span>
+    </div>
+    <div style="position:absolute; left:52px; top:144px; font-family:'Newsreader',serif; font-size:42px; font-weight:400; color:#14110d; letter-spacing:-0.8px;">Audit dashboard</div>
+    <a href="https://cspr.live" style="position:absolute; right:52px; top:150px; display:inline-flex; align-items:center; gap:9px; padding:13px 20px; border:1px solid #e7e3d9; border-radius:12px; text-decoration:none; font-size:14px; font-weight:600; color:#1c1814;">
+      <span style="width:7px; height:7px; border-radius:50%; background:#3f86e6;"></span>Open on cspr.live ↗
+    </a>
+
+    <!-- TOP BANNER STAT -->
+    <div style="position:absolute; left:52px; top:222px; width:1376px; height:160px; border-radius:20px; background:linear-gradient(100deg,#fbf4e6,#eef4fc); border:1px solid #efe7d6; padding:26px 32px; display:flex; align-items:center;">
+      <div style="flex:1;">
+        <div style="font-size:13px; font-weight:600; color:#9a8a63; letter-spacing:0.3px;">TOTAL TREASURY VALUE</div>
+        <div style="margin-top:8px; font-family:'Newsreader',serif; font-size:56px; font-weight:400; color:#14110d; letter-spacing:-1.5px;">$12,840,219</div>
+      </div>
+      <div style="display:flex; gap:48px;">
+        <sc-for list="{{ banner }}" as="b" hint-placeholder-count="3">
+          <div>
+            <div style="font-size:13px; font-weight:600; color:#9a8a63; letter-spacing:0.3px;">{{ b.label }}</div>
+            <div style="margin-top:8px; font-family:'Newsreader',serif; font-size:32px; font-weight:400; color:#14110d; letter-spacing:-0.5px;">{{ b.value }}</div>
+            <div style="margin-top:3px; font-size:12px; font-weight:600; color:{{ b.color }};">{{ b.note }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- LEFT: HOLDINGS -->
+    <div style="position:absolute; left:52px; top:418px; width:660px;">
+      <div style="font-size:14px; font-weight:700; color:#1c1814; letter-spacing:0.3px; margin-bottom:16px;">HOLDINGS</div>
+      <sc-for list="{{ holdings }}" as="h" hint-placeholder-count="4">
+        <div style="display:flex; align-items:center; gap:16px; padding:18px 20px; border:1px solid #ece8de; border-radius:16px; margin-bottom:10px; background:#fcfbf7;">
+          <span style="width:38px; height:38px; border-radius:11px; background:{{ h.bg }}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <span style="width:13px; height:13px; border-radius:4px; background:{{ h.color }};"></span>
+          </span>
+          <div style="flex:1;">
+            <div style="font-size:16px; font-weight:700; color:#14110d;">{{ h.name }}</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8a857a; margin-top:2px;">{{ h.sub }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px; font-weight:700; color:#14110d;">{{ h.value }}</div>
+            <div style="font-size:12px; font-weight:600; color:{{ h.chgColor }}; margin-top:2px;">{{ h.chg }}</div>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="margin-top:24px; font-size:14px; font-weight:700; color:#1c1814; letter-spacing:0.3px; margin-bottom:14px;">COMPLIANCE STATUS</div>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1; padding:18px 20px; border:1px solid #dcefe2; border-radius:16px; background:#f4fbf6;">
+          <div style="font-size:13px; color:#5b8a6a; font-weight:600;">Vault status</div>
+          <div style="margin-top:6px; font-size:20px; font-weight:700; color:#2c7a4d;">Valid ✓</div>
+        </div>
+        <div style="flex:1; padding:18px 20px; border:1px solid #dcefe2; border-radius:16px; background:#f4fbf6;">
+          <div style="font-size:13px; color:#5b8a6a; font-weight:600;">Allowlisted targets</div>
+          <div style="margin-top:6px; font-size:20px; font-weight:700; color:#2c7a4d;">3 of 3</div>
+        </div>
+        <div style="flex:1; padding:18px 20px; border:1px solid #e7e3d9; border-radius:16px; background:#fcfbf7;">
+          <div style="font-size:13px; color:#8a857a; font-weight:600;">Daily limit used</div>
+          <div style="margin-top:6px; font-size:20px; font-weight:700; color:#14110d;">$420K / $2M</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: AUDIT TRAIL -->
+    <div style="position:absolute; right:52px; top:418px; width:684px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div style="font-size:14px; font-weight:700; color:#1c1814; letter-spacing:0.3px;">ON-CHAIN AUDIT TRAIL</div>
+        <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#8a857a;">last 24h</div>
+      </div>
+      <div style="border:1px solid #ece8de; border-radius:18px; overflow:hidden; background:#fcfbf7;">
+        <sc-for list="{{ trail }}" as="t" hint-placeholder-count="6">
+          <a href="https://cspr.live" style="display:flex; align-items:center; gap:16px; padding:17px 20px; border-bottom:1px solid #f1ede4; text-decoration:none;">
+            <span style="width:34px; height:34px; border-radius:10px; background:{{ t.bg }}; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px;">{{ t.icon }}</span>
+            <div style="flex:1;">
+              <div style="font-size:15px; font-weight:600; color:#14110d;">{{ t.kind }}</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:12px; color:#3f86e6; margin-top:2px;">{{ t.hash }}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:13px; font-weight:600; color:{{ t.statusColor }};">{{ t.status }}</div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; color:#a59f93; margin-top:2px;">{{ t.time }}</div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+      <div style="margin-top:14px; text-align:center;">
+        <a href="https://cspr.live" style="font-size:14px; font-weight:600; color:#15120e; text-decoration:none;">View all 4,218 deploys on cspr.live ↗</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    return {
+      banner: [
+        { label:'YIELD (30D)', value:'+$184K', note:'+1.45%', color:'#3fae6a' },
+        { label:'PRINCIPAL LOCKED', value:'$11.9M', note:'untouched', color:'#8a857a' },
+        { label:'REPUTATION', value:'948', note:'+12 this week', color:'#3fae6a' },
+      ],
+      holdings: [
+        { name:'Gold (tokenized)', sub:'5,392 oz · $2,381/oz', value:'$5.39M', chg:'+0.8%', chgColor:'#3fae6a', color:'#e7a83c', bg:'#fbf1dc' },
+        { name:'US T-bond', sub:'4.21% yield · 10Y', value:'$4.24M', chg:'+1.9%', chgColor:'#3fae6a', color:'#3f86e6', bg:'#e6eefc' },
+        { name:'WTI crude', sub:'29,500 bbl · $78.40', value:'$2.31M', chg:'-0.6%', chgColor:'#c0392b', color:'#2c2620', bg:'#eceae6' },
+        { name:'CSPR reserve', sub:'46.9M CSPR · $0.0192', value:'$0.90M', chg:'+2.4%', chgColor:'#3fae6a', color:'#cdbfa6', bg:'#f3efe6' },
+      ],
+      trail: [
+        { icon:'⇄', kind:'Reallocate · yield → T-bond', hash:'0x2db8·77a1·…·e4c0', status:'Confirmed', statusColor:'#3fae6a', time:'2m ago', bg:'#e6eefc' },
+        { icon:'✓', kind:'Attestation · reasoning signed', hash:'0x7af3·9c21·…·ee14', status:'Verified', statusColor:'#3fae6a', time:'2m ago', bg:'#e6f6ec' },
+        { icon:'$', kind:'x402 settlement · premium signal', hash:'0x91c4·05fb·…·2a8d', status:'Settled', statusColor:'#3f86e6', time:'3m ago', bg:'#fbf1dc' },
+        { icon:'⇄', kind:'Reallocate · oil → gold', hash:'0x18ec·b430·…·9f71', status:'Confirmed', statusColor:'#3fae6a', time:'1h ago', bg:'#e6eefc' },
+        { icon:'✓', kind:'Attestation · reasoning signed', hash:'0x44a0·d2e8·…·b6c3', status:'Verified', statusColor:'#3fae6a', time:'1h ago', bg:'#e6f6ec' },
+        { icon:'!', kind:'Escalated · confidence 0.62', hash:'human review · resolved', status:'Approved', statusColor:'#c8902f', time:'4h ago', bg:'#faf0d8' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
