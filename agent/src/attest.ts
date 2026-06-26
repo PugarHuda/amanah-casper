@@ -2,7 +2,8 @@
 // agent key, and call AttestationLog.attest on Casper. Optionally pin the full
 // blob to IPFS.
 import { blake2b } from "blakejs";
-import { CLValue, Args, type PrivateKey, type RpcClient } from "casper-js-sdk";
+import { CLValue, Args } from "./sdk.js";
+import type { PrivateKey, RpcClient } from "casper-js-sdk";
 import { config } from "./config.js";
 import { callEntryPoint } from "./casper.js";
 import type { Decision, ReasoningBlob } from "./types.js";

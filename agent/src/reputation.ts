@@ -1,7 +1,8 @@
 // Record the x402 settlement on-chain: ReputationRegistry.record_payment(payer,
 // deploy_hash). Each deploy hash is single-use (anti-replay), so this both
 // scores the agent and proves the payment happened.
-import { CLValue, Key, Args, type PrivateKey, type RpcClient } from "casper-js-sdk";
+import { CLValue, Key, Args } from "./sdk.js";
+import type { PrivateKey, RpcClient } from "casper-js-sdk";
 import { config } from "./config.js";
 import { callEntryPoint } from "./casper.js";
 

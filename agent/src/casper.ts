@@ -8,14 +8,22 @@ import {
   KeyAlgorithm,
   ContractCallBuilder,
   Args,
+} from "./sdk.js";
+import type {
+  PrivateKey as PrivateKeyT,
+  RpcClient as RpcClientT,
+  Args as ArgsT,
 } from "casper-js-sdk";
+import { config } from "./config.js";
 
-export function loadPrivateKey(pemPath: string): PrivateKey {
+let drySeq = 0;
+
+export function loadPrivateKey(pemPath: string): PrivateKeyT {
   // ponytail: assumes Ed25519. Use KeyAlgorithm.SECP256K1 if your key is secp256k1.
   return PrivateKey.fromPem(readFileSync(pemPath, "utf8"), KeyAlgorithm.ED25519);
 }
 
-export function makeRpcClient(rpcUrl: string): RpcClient {
+export function makeRpcClient(rpcUrl: string): RpcClientT {
   return new RpcClient(new HttpHandler(rpcUrl, "fetch"));
 }
 
@@ -26,14 +34,27 @@ export interface CallResult {
 /** Build, sign and submit a stored-contract call; resolve once the network has
  *  the transaction. Returns the deploy/transaction hash (verifiable on cspr.live). */
 export async function callEntryPoint(opts: {
-  rpc: RpcClient;
-  key: PrivateKey;
+  rpc: RpcClientT;
+  key: PrivateKeyT;
   contractHash: string; // 64-char hex, no prefix
   entryPoint: string;
-  args: Args;
+  args: ArgsT;
   chainName: string;
   paymentMotes: number;
 }): Promise<CallResult> {
+  // Dry-run: skip submission, return a synthetic hash. The caller has already
+  // built the real args (and, for attest, produced a real Ed25519 signature) —
+  // we just don't send it. Lets the full loop run pre-deploy / unfunded.
+  if (config.dryRun) {
+    const deployHash = `DRY_RUN-${opts.entryPoint}-${++drySeq}`;
+    console.log(
+      `  ◌ [dry-run] would call ${opts.entryPoint} on ${
+        opts.contractHash || "(no hash set)"
+      } — not submitted`,
+    );
+    return { deployHash };
+  }
+
   // buildFor1_5() emits the legacy deploy format that current testnet nodes
   // accept via putTransaction. ponytail: switch to .build() once nodes take V1.
   const tx = new ContractCallBuilder()
@@ -56,7 +77,7 @@ export async function callEntryPoint(opts: {
  *  is on-chain; inspect the execution_result for revert errors if you need to
  *  distinguish success from a contract revert (SpendGate/Compliance rejection). */
 async function waitForExecution(
-  rpc: RpcClient,
+  rpc: RpcClientT,
   hash: string,
   timeoutMs = 120_000,
 ): Promise<void> {

@@ -1,7 +1,7 @@
 // x402 client: GET a premium-signal endpoint, handle 402, sign the payment with
 // the agent's Casper key, resubmit, and capture the on-chain settlement deploy
 // hash. Built on @make-software/casper-x402 (exact scheme) + @x402/core.
-import { PrivateKey } from "casper-js-sdk";
+import type { PrivateKey } from "casper-js-sdk";
 import { x402Client, x402HTTPClient } from "@x402/core/client";
 import { ExactCasperScheme } from "@make-software/casper-x402/exact/client";
 import {

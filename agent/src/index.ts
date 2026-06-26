@@ -94,8 +94,12 @@ async function runCycle(cycle: number): Promise<void> {
 
 async function main(): Promise<void> {
   console.log(
-    `Amanah agent starting — cycle every ${config.cycleMs}ms on ${config.chainName}`,
+    `Amanah agent starting — cycle every ${config.cycleMs}ms on ${config.chainName}` +
+      (config.dryRun
+        ? "\n  ◌ DRY_RUN: real ingest + Venice reasoning + Ed25519 signing; on-chain submissions are logged, not sent."
+        : ""),
   );
+  const maxCycles = Number(process.env.MAX_CYCLES ?? 0); // 0 = run forever
   let cycle = 1;
   // First run immediately, then on the interval.
   for (;;) {
@@ -104,6 +108,7 @@ async function main(): Promise<void> {
     } catch (e) {
       log(cycle, "cycle.error", { message: (e as Error).message });
     }
+    if (maxCycles && cycle >= maxCycles) break;
     cycle++;
     await new Promise((r) => setTimeout(r, config.cycleMs));
   }

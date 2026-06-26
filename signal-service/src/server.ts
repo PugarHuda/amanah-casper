@@ -20,8 +20,10 @@ import { NETWORK_CASPER_TESTNET } from "@make-software/casper-x402";
 import { buildSignal } from "./signal.js";
 
 const PORT = Number(process.env.PORT ?? 8402);
+// CSPR.cloud x402 facilitator (serves mainnet + testnet; needs a CSPR.cloud
+// access token). Verified host: https://x402-facilitator.cspr.cloud
 const FACILITATOR_URL =
-  process.env.FACILITATOR_URL ?? "https://x402-facilitator.testnet.cspr.cloud";
+  process.env.FACILITATOR_URL ?? "https://x402-facilitator.cspr.cloud";
 // CEP-18 token contract package hash (64 hex) used as the payment asset.
 const ASSET = process.env.X402_ASSET_PACKAGE_HASH ?? "";
 // Recipient account-hash address, "00"-prefixed (66 hex), per the exact scheme.
@@ -81,12 +83,32 @@ async function main(): Promise<void> {
   registerExactCasperScheme(resourceServer, casperConfig);
 
   const httpServer = new x402HTTPResourceServer(resourceServer, routes);
-  await httpServer.initialize(); // validates routes against facilitator support
+
+  // initialize() pulls supported payment kinds from the facilitator. If the
+  // facilitator is unreachable or unauthorized (no CSPR.cloud token yet), don't
+  // crash the whole service — boot anyway and return a clear 503 on /alpha.
+  let facilitatorReady = false;
+  try {
+    await httpServer.initialize();
+    facilitatorReady = true;
+  } catch (e) {
+    console.warn(
+      `[signal-service] facilitator init failed (${(e as Error).message}). ` +
+        `Set FACILITATOR_URL + a CSPR.cloud token + X402_ASSET_PACKAGE_HASH/X402_PAY_TO. ` +
+        `Serving /alpha as 503 until then.`,
+    );
+  }
 
   const app = express();
   app.use(express.json());
 
   app.get("/alpha", async (req: Request, res: Response) => {
+    if (!facilitatorReady) {
+      return res.status(503).json({
+        error: "x402 facilitator not initialized",
+        need: ["CSPR.cloud access token", "X402_ASSET_PACKAGE_HASH", "X402_PAY_TO"],
+      });
+    }
     try {
       const ctx = contextFor(req);
       const result = await httpServer.processHTTPRequest(ctx);

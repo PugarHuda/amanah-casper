@@ -20,11 +20,12 @@ export const config = {
   // Keyless public testnet RPC (verified). CSPR.cloud node needs a token.
   rpcUrl: opt("CASPER_RPC_URL", "https://node.testnet.casper.network/rpc"),
   chainName: opt("CASPER_CHAIN_NAME", "casper-test"),
-  agentKeyPath: req("AGENT_KEY_PEM"), // PEM-encoded Ed25519 private key
+  agentKeyPath: opt("AGENT_KEY_PEM", "./secret/agent_key.pem"), // Ed25519 PEM
   // ponytail: verify each hash is the 64-char contract hash (no "hash-" prefix).
-  attestationLogHash: req("ATTESTATION_LOG_HASH"),
-  rwaVaultHash: req("RWA_VAULT_HASH"),
-  reputationRegistryHash: req("REPUTATION_REGISTRY_HASH"),
+  // Empty until contracts are deployed -> agent auto-runs in DRY_RUN (see below).
+  attestationLogHash: opt("ATTESTATION_LOG_HASH", ""),
+  rwaVaultHash: opt("RWA_VAULT_HASH", ""),
+  reputationRegistryHash: opt("REPUTATION_REGISTRY_HASH", ""),
   paymentMotes: num("CASPER_PAYMENT_MOTES", 5_000_000_000),
 
   // x402 premium signal
@@ -45,6 +46,16 @@ export const config = {
   // Loop / thresholds
   cycleMs: num("CYCLE_MS", 60_000),
   confidenceThreshold: num("CONFIDENCE_THRESHOLD", 0.7),
+
+  // Dry-run: still ingest + pay + reason + SIGN (real Ed25519), but log the
+  // on-chain submissions instead of sending them. Explicit DRY_RUN=true/false
+  // wins; otherwise auto-on whenever a contract hash is missing (pre-deploy demo).
+  dryRun:
+    (process.env.DRY_RUN ?? "").toLowerCase() === "true" ||
+    ((process.env.DRY_RUN ?? "") === "" &&
+      (!process.env.ATTESTATION_LOG_HASH ||
+        !process.env.RWA_VAULT_HASH ||
+        !process.env.REPUTATION_REGISTRY_HASH)),
 
   // Optional IPFS pin (web3.storage). Empty => skipped.
   web3StorageToken: process.env.WEB3_STORAGE_TOKEN ?? "",

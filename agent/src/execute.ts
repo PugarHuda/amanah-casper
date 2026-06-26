@@ -1,12 +1,13 @@
 // Execute the reallocation via RwaVault.reallocate (gated on-chain by SpendGate
 // + ComplianceRegistry + the principal invariant), and escalate to a human when
 // confidence is below threshold.
-import { CLValue, Args, type PrivateKey, type RpcClient } from "casper-js-sdk";
+import { CLValue, Args } from "./sdk.js";
+import type { PrivateKey, RpcClient, CLValue as CLValueT } from "casper-js-sdk";
 import { config } from "./config.js";
 import { callEntryPoint } from "./casper.js";
 import { ASSET_INDEX, type Decision } from "./types.js";
 
-function assetIdCl(asset: keyof typeof ASSET_INDEX): CLValue {
+function assetIdCl(asset: keyof typeof ASSET_INDEX): CLValueT {
   // ponytail: odra enum AssetId serializes as a single u8 variant index. If the
   // contract expects a different encoding, adjust here.
   return CLValue.newCLUint8(ASSET_INDEX[asset]);
