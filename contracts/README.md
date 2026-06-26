@@ -23,16 +23,20 @@ Casper. Built with [Odra](https://odra.dev) 2.8 (`casper-test` target).
 ## Build
 
 ```bash
-# Native (host) build + the OdraVM unit/integration tests:
-cargo test
+# Compile all five contracts to one wasm each (writes wasm/ via cargo-odra).
+# Needs a Linux/WSL toolchain (nightly-2026-01-01 + wasm32-unknown-unknown).
+cargo odra build
 
-# Compile all five contracts to wasm (writes wasm/ via cargo-odra):
-cargo odra build -b casper
-
-# Run the test suite against the real Casper execution engine:
-cargo odra test            # OdraVM
-cargo odra test -b casper  # Casper backend VM
+# OdraVM unit + integration tests (5 tests, all pass):
+cargo odra test
 ```
+
+Notes (cargo-odra 0.1.7):
+- No `-b casper` flag — that is old cargo-odra syntax and errors. `cargo odra build`
+  / `cargo odra test` are the whole surface here.
+- `cargo odra build` exits non-zero only because the optional `wasm-opt` shrink
+  step isn't installed; the (unoptimized) `wasm/*.wasm` are still produced and
+  deployable. Install `binaryen`/`wasm-opt` to silence it and shrink the wasm.
 
 ## Deploy to testnet (`casper-test`)
 
@@ -42,7 +46,7 @@ One-command deploy automation lives in `../scripts/` — see
 and write the package hashes to `amanah/.env.deployed`. The manual form is below.
 
 Use `casper-client` **5.0.0** (CLI surface changed vs 2.x). Wasm files land in
-`wasm/` after `cargo odra build -b casper`.
+`wasm/` after `cargo odra build`.
 
 ```bash
 casper-client put-deploy \

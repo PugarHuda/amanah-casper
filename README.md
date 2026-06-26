@@ -40,8 +40,8 @@ Design handoff this front-end was built from lives in
 ## Quickstart
 
 ```bash
-# contracts  (needs MSVC Build Tools on Windows + `cargo install cargo-odra`)
-cd contracts && cargo odra test && cargo odra build -b casper
+# contracts  (Linux/WSL + `cargo install cargo-odra`; cargo-odra 0.1.7 has no -b flag)
+cd contracts && cargo odra build && cargo odra test
 
 # web        (builds today)
 cd web && npm install && npm run build && npm run dev   # http://localhost:3000

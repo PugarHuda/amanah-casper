@@ -5,11 +5,11 @@ One funded key -> all 5 contracts on `casper-test` in one command.
 ## End-to-end
 
 ```bash
-# 1. Toolchain (one time): MSVC Build Tools + cargo-odra
+# 1. Toolchain (one time): Linux/WSL rustup + cargo-odra (0.1.7)
 cargo install cargo-odra
 
-# 2. Build wasm -> contracts/wasm/
-cd contracts && cargo odra build -b casper && cd ..
+# 2. Build wasm -> contracts/wasm/  (cargo-odra 0.1.7: no -b flag)
+cd contracts && cargo odra build && cd ..
 
 # 3. Generate a key (writes amanah/keys/)
 scripts/keygen.sh                 # Windows: powershell -File scripts\keygen.ps1

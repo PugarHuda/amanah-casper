@@ -5,6 +5,7 @@ use crate::compliance_registry::ComplianceRegistryContractRef;
 use crate::spend_gate::SpendGateContractRef;
 use odra::casper_types::{U256, U512};
 use odra::prelude::*;
+use odra::ContractRef;
 
 #[odra::event]
 pub struct Reallocated {

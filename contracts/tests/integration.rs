@@ -3,7 +3,7 @@ use amanah_contracts::attestation_log::{AttestationLog, AttestationLogInitArgs};
 use amanah_contracts::common::{AssetId, Error, Status};
 use amanah_contracts::compliance_registry::ComplianceRegistry;
 use amanah_contracts::reputation_registry::ReputationRegistry;
-use amanah_contracts::rwa_vault::{RwaVault, RwaVaultInitArgs};
+use amanah_contracts::rwa_vault::{RwaVault, RwaVaultHostRef, RwaVaultInitArgs};
 use amanah_contracts::spend_gate::{SpendGate, SpendGateInitArgs};
 use odra::casper_types::{bytesrepr::Bytes, U256, U512};
 use odra::host::{Deployer, HostRef, NoArgs};
@@ -14,7 +14,7 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
     let env = odra_test::env();
     let agent = env.get_account(1);
 
-    let spend_gate = SpendGate::deploy(
+    let mut spend_gate = SpendGate::deploy(
         &env,
         SpendGateInitArgs {
             max_per_tx: U512::from(cap),
@@ -24,17 +24,17 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
     );
     spend_gate.add_allowlist(agent);
 
-    let compliance = ComplianceRegistry::deploy(&env, NoArgs);
+    let mut compliance = ComplianceRegistry::deploy(&env, NoArgs);
     if compliant {
         compliance.set_status(agent, Status::Valid, [0u8; 32]);
     }
 
-    let vault = RwaVault::deploy(
+    let mut vault = RwaVault::deploy(
         &env,
         RwaVaultInitArgs {
             agent,
-            spend_gate: *spend_gate.address(),
-            compliance: *compliance.address(),
+            spend_gate: spend_gate.contract_address(),
+            compliance: compliance.contract_address(),
             principal: U512::zero(),
         },
     );
@@ -46,7 +46,7 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
 #[test]
 fn reallocate_rejected_when_spend_cap_exceeded() {
     // cap = 100, but we move 500 -> OverTxCap.
-    let (vault, env) = setup(100, true);
+    let (mut vault, env) = setup(100, true);
     env.set_caller(env.get_account(1));
     let err = vault
         .try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(500), [0u8; 32])
@@ -57,7 +57,7 @@ fn reallocate_rejected_when_spend_cap_exceeded() {
 #[test]
 fn reallocate_rejected_when_not_compliant() {
     // cap high so SpendGate passes; agent left Pending -> NotCompliant.
-    let (vault, env) = setup(1_000_000, false);
+    let (mut vault, env) = setup(1_000_000, false);
     env.set_caller(env.get_account(1));
     let err = vault
         .try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(500), [0u8; 32])
@@ -67,7 +67,7 @@ fn reallocate_rejected_when_not_compliant() {
 
 #[test]
 fn reallocate_succeeds_when_authorized_and_compliant() {
-    let (vault, env) = setup(1_000_000, true);
+    let (mut vault, env) = setup(1_000_000, true);
     env.set_caller(env.get_account(1));
     vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(500), [9u8; 32]);
     assert_eq!(vault.get_allocation(AssetId::Gold), U256::from(500));
@@ -84,7 +84,7 @@ fn attest_stores_on_valid_signature_and_reverts_on_tamper() {
     let message = Bytes::from(reasoning_hash.as_slice());
     let signature = env.sign_message(&message, &account);
 
-    let log = AttestationLog::deploy(
+    let mut log = AttestationLog::deploy(
         &env,
         AttestationLogInitArgs {
             agent_pubkey: pubkey.clone(),
@@ -113,7 +113,7 @@ fn attest_stores_on_valid_signature_and_reverts_on_tamper() {
 fn record_payment_rejects_replay() {
     let env = odra_test::env();
     let payer = env.get_account(1);
-    let rep = ReputationRegistry::deploy(&env, NoArgs);
+    let mut rep = ReputationRegistry::deploy(&env, NoArgs);
 
     let deploy_hash = [1u8; 32];
     rep.record_payment(payer, deploy_hash);
