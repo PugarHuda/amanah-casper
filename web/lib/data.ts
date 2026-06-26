@@ -5,27 +5,36 @@
 // Flip to live by setting CSPR_CLOUD_API_KEY + NEXT_PUBLIC_VAULT_HASH (see .env.example).
 import * as mock from "./mock";
 import type { TrailRow } from "./mock";
-import { cloudConfigured, getRecentDeploys, shortHash, relTime } from "./cspr";
+import {
+  cloudConfigured,
+  getContractDeploys,
+  shortHash,
+  relTime,
+  type RawDeploy,
+} from "./cspr";
 
-const live = () => cloudConfigured() && !!process.env.NEXT_PUBLIC_VAULT_HASH;
+const VAULT = () => process.env.NEXT_PUBLIC_VAULT_HASH || "";
+const ATTESTATION = () => process.env.NEXT_PUBLIC_ATTESTATION_HASH || "";
+const REPUTATION = () => process.env.NEXT_PUBLIC_REPUTATION_HASH || "";
 
-// Map a raw CSPR.cloud deploy to an audit-trail row.
-// ponytail: verify CSPR.cloud endpoint — exact deploy field names + entry_point
-// taxonomy. Heuristic kind/icon/status below; refine once the real shape is seen.
-function deployToTrail(d: {
-  deploy_hash?: string;
-  timestamp?: string;
-  entry_point?: string;
-  error_message?: string | null;
-}): TrailRow {
-  const ep = (d.entry_point || "").toLowerCase();
-  const ok = !d.error_message;
+const live = () => cloudConfigured() && !!VAULT();
+
+// Map a raw CSPR.cloud deploy to an audit-trail row. The deploys API exposes no
+// string entry-point name (only entry_point_id), so we label by WHICH of our
+// contracts (contract_package_hash) the deploy targeted — reliable and meaningful.
+function deployToTrail(d: RawDeploy): TrailRow {
+  const pkg = (d.contract_package_hash || "").toLowerCase();
+  const ok = !d.error_message && d.status !== "error";
   let icon = "⇄";
-  let kind = d.entry_point || "Deploy";
+  let kind = "Deploy";
   let bg = "#e6eefc";
-  if (ep.includes("attest")) { icon = "✓"; kind = "Attestation · reasoning signed"; bg = "#e6f6ec"; }
-  else if (ep.includes("settle") || ep.includes("pay")) { icon = "$"; kind = "x402 settlement"; bg = "#fbf1dc"; }
-  else if (ep.includes("realloc") || ep.includes("rebalance")) { icon = "⇄"; kind = "Reallocate"; bg = "#e6eefc"; }
+  if (pkg && pkg === ATTESTATION().toLowerCase()) {
+    icon = "✓"; kind = "Attestation · reasoning signed"; bg = "#e6f6ec";
+  } else if (pkg && pkg === REPUTATION().toLowerCase()) {
+    icon = "$"; kind = "Reputation · x402 proof"; bg = "#fbf1dc";
+  } else if (pkg && pkg === VAULT().toLowerCase()) {
+    icon = "⇄"; kind = "Reallocate · yield move"; bg = "#e6eefc";
+  }
   return {
     icon,
     kind,
@@ -59,7 +68,10 @@ export async function getAgentConsole() {
 export async function getDashboard() {
   let trail = mock.trail;
   if (live()) {
-    const deploys = await getRecentDeploys(6);
+    const deploys = await getContractDeploys(
+      [VAULT(), ATTESTATION(), REPUTATION()],
+      6,
+    );
     if (deploys.length) trail = deploys.map(deployToTrail);
   }
   return {

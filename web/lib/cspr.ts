@@ -54,21 +54,49 @@ export async function getContract(contractHash: string): Promise<Record<string, 
 }
 
 // --- Recent deploys (audit trail) ------------------------------------------
-// ponytail: verify CSPR.cloud endpoint — filtering deploys by contract. Using
-// GET /deploys with a page limit; field names below (deploy_hash, timestamp,
-// entry_point, error_message) are the common CSPR.cloud shape but unconfirmed.
-type RawDeploy = {
+// Verified live against api.testnet.cspr.cloud: GET /deploys returns
+// { item_count, page_count, data: [ { deploy_hash, timestamp, status,
+// error_message, contract_package_hash, entry_point_id, ... } ] }. Note there is
+// NO string `entry_point` field — only numeric `entry_point_id` — so we label
+// rows by which contract (contract_package_hash) was called, not the EP name.
+// Filtering by `?contract_package_hash=<hash>` is supported (verified).
+export type RawDeploy = {
   deploy_hash?: string;
   timestamp?: string;
-  entry_point?: string;
-  error_message?: string | null;
   status?: string;
+  error_message?: string | null;
+  contract_package_hash?: string;
+  entry_point_id?: number;
 };
 
 export async function getRecentDeploys(limit = 6): Promise<RawDeploy[]> {
   try {
     const d = await cloudGet<{ data?: RawDeploy[] }>(`/deploys?page=1&page_size=${limit}`);
     return d.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+// Deploys for our own contracts only — fetch per package hash, merge, newest first.
+export async function getContractDeploys(
+  packageHashes: string[],
+  limit = 6,
+): Promise<RawDeploy[]> {
+  const hashes = packageHashes.filter(Boolean);
+  if (!hashes.length) return getRecentDeploys(limit);
+  try {
+    const lists = await Promise.all(
+      hashes.map((h) =>
+        cloudGet<{ data?: RawDeploy[] }>(
+          `/deploys?contract_package_hash=${h}&page=1&page_size=${limit}`,
+        ).then((d) => d.data ?? []),
+      ),
+    );
+    return lists
+      .flat()
+      .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""))
+      .slice(0, limit);
   } catch {
     return [];
   }

@@ -29,6 +29,9 @@ const ASSET = process.env.X402_ASSET_PACKAGE_HASH ?? "";
 // Recipient account-hash address, "00"-prefixed (66 hex), per the exact scheme.
 const PAY_TO = process.env.X402_PAY_TO ?? "";
 const PRICE_ATOMIC = process.env.X402_PRICE_ATOMIC ?? "1000000";
+// CSPR.cloud facilitator requires an access token — register at
+// https://console.cspr.build/sign-up to get one.
+const CSPR_CLOUD_TOKEN = process.env.CSPR_CLOUD_TOKEN ?? "";
 
 const routes: RoutesConfig = {
   "GET /alpha": {
@@ -75,7 +78,16 @@ function writeInstructions(res: Response, instr: HTTPResponseInstructions): void
 }
 
 async function main(): Promise<void> {
-  const facilitator = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
+  const facilitator = new HTTPFacilitatorClient({
+    url: FACILITATOR_URL,
+    // CSPR.cloud authorizes every facilitator call via the access token.
+    ...(CSPR_CLOUD_TOKEN && {
+      createAuthHeaders: async () => {
+        const h = { authorization: CSPR_CLOUD_TOKEN };
+        return { verify: h, settle: h, supported: h };
+      },
+    }),
+  });
   const resourceServer = new x402ResourceServer(facilitator);
   const casperConfig: CasperResourceServerConfig = {
     networks: [NETWORK_CASPER_TESTNET],
