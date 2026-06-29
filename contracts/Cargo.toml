@@ -6,6 +6,9 @@ version = "0.1.0"
 
 [dependencies]
 odra = { version = "2.8.1", default-features = false }
+# CEP-18 test token (x402 payment asset) — Odra's stock implementation.
+# default-features = false drops the optional eip712 deps we don't need.
+odra-modules = { version = "2.8.1", default-features = false }
 
 [dev-dependencies]
 odra-test = "2.8.1"

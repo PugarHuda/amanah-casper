@@ -87,6 +87,14 @@ Deploy-One "ATTESTATION_HASH" "AttestationLog.wasm" "amanah_attestation_package_
     "--session-arg","agent_pubkey:public_key='$PubHex'") | Out-Null
 Deploy-One "REPUTATION_HASH" "ReputationRegistry.wasm" "amanah_reputation_package_hash" | Out-Null
 
+# x402 payment asset: stock CEP-18. Package hash becomes X402_ASSET_PACKAGE_HASH.
+# init mints initial_supply (1,000,000 @ 6dp) to the deployer.
+Deploy-One "X402_ASSET_PACKAGE_HASH" "Cep18.wasm" "amanah_payment_token_package_hash" @(
+    "--session-arg","symbol:string='AMANAH'",
+    "--session-arg","name:string='Amanah Test USD'",
+    "--session-arg","decimals:u8='6'",
+    "--session-arg","initial_supply:u256='1000000000000'") | Out-Null
+
 # 5: RwaVault needs spend-gate + compliance hashes.
 # ponytail: verify casper-client 5.0 - Odra Address args serialize as CLType Key (account-hash-.../hash-.../package-...).
 Deploy-One "VAULT_HASH" "RwaVault.wasm" "amanah_vault_package_hash" @(
