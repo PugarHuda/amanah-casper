@@ -1,12 +1,22 @@
-// Typed read functions for Amanah on-chain state. Today they return the same
-// shapes the web mock uses so a judge/LLM can query the agent immediately.
-// Each body is the seam where the real CSPR.cloud / contract-state read goes.
-//
-// ponytail: wire these to CSPR.cloud REST (https://docs.cspr.cloud) or
-// RpcClient.queryGlobalStateByStateHash against the deployed contract hashes.
-// Keep the return shapes identical so callers don't change.
+// Typed read functions for Amanah on-chain state, for a judge/LLM to query the
+// agent. getVaultState + getAuditTrail are LIVE (decoded from the deployed
+// RwaVault state dictionary / CSPR.cloud deploys, same proven derivation as
+// agent/src/read-vault.ts and web/lib/cspr.ts). getAttestation/getReputation
+// stay stubbed — see their ponytail notes.
 
-const CSPR_CLOUD = process.env.CSPR_CLOUD_URL ?? "https://node.testnet.cspr.cloud";
+import { blake2b } from "blakejs";
+
+const RPC = process.env.CASPER_RPC_URL || "https://node.testnet.casper.network/rpc";
+const STATE_SEED = process.env.VAULT_STATE_SEED || ""; // RwaVault "state" dict seed uref addr (hex)
+const CLOUD_BASE = process.env.CSPR_CLOUD_BASE || "https://api.testnet.cspr.cloud";
+const CLOUD_KEY = process.env.CSPR_CLOUD_API_KEY || "";
+
+// package hashes the audit trail labels rows by (env-overridable, defaults = deployed)
+const PKG = {
+  vault: process.env.RWA_VAULT_HASH || "438118a13b5cdcaed1f3cd72bbdcbb3347cd38d2a0d98d2beaa2993a16233347",
+  attestation: process.env.ATTESTATION_HASH || "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
+  payment: process.env.PAYMENT_TOKEN_HASH || "d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79",
+} as const;
 
 export interface VaultState {
   treasuryId: string;
@@ -36,57 +46,169 @@ export interface AuditRow {
   time: string;
 }
 
+// --- RwaVault on-chain state (Odra "state" dictionary, no entrypoint call) ---
+// dict addr = blake2b256( state_seed ++ ascii( blake2b256( field_index_be32 ++ key ) ) )
+// fields 1-indexed: allocations=1 (key = 1-byte AssetId), principal=2.
+// value stored as List<U8> = bytesrepr of U256/U512 = [len, ...little-endian].
+const ASSET_ORDER = ["Gold", "TBond", "WTI", "CSPR"] as const;
+const ASSET_VIEW: Record<(typeof ASSET_ORDER)[number], { name: string; sub: string }> = {
+  Gold: { name: "Gold (tokenized)", sub: "XAU reserve" },
+  TBond: { name: "US T-bond", sub: "10Y treasury" },
+  WTI: { name: "WTI crude", sub: "oil benchmark" },
+  CSPR: { name: "CSPR reserve", sub: "native token" },
+};
+
+const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
+const be32 = (n: number) =>
+  new Uint8Array([(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]);
+
+function dictAddr(index: number, mappingKey: number[] = []): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
+  const seed = Buffer.from(STATE_SEED, "hex");
+  return hex(blake2b(Buffer.concat([seed, Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+
+async function rpc(method: string, params: unknown): Promise<{ result?: any; error?: any }> {
+  const res = await fetch(RPC, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  });
+  return (await res.json()) as { result?: any; error?: any };
+}
+
+async function readBig(index: number, mappingKey: number[] = []): Promise<bigint> {
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return 0n;
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${dictAddr(index, mappingKey)}` },
+  });
+  if (r.error) return 0n; // missing item => never written => 0 (get_or_default)
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  const len = arr[0] ?? 0;
+  let v = 0n;
+  for (let i = 0; i < len; i++) v += BigInt(arr[1 + i] ?? 0) << BigInt(8 * i);
+  return v;
+}
+
+// 6-dp atomic units -> "$X,XXX" USD (the vault tracks notional USD value, 6 decimals)
+const usd = (units: bigint) =>
+  "$" + (Number(units) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 0 });
+
 export async function getVaultState(): Promise<VaultState> {
-  // ponytail: read RwaVault.get_allocation per asset + SpendGate/Compliance state
-  // from CSPR_CLOUD. Returning the design-handoff shape for now.
-  void CSPR_CLOUD;
+  const guards = [
+    "Cap $500K / tx",
+    "Daily limit $2M",
+    "Allowlist · 3 targets",
+    "Principal locked",
+    "Compliance: Valid",
+  ]; // ponytail: configured guard params; read SpendGate/Compliance state to make live
+  if (!STATE_SEED) {
+    return {
+      treasuryId: "TREASURY · CASPER-TEST (set VAULT_STATE_SEED for live reads)",
+      totalTreasury: "—",
+      principalLocked: "—",
+      holdings: [],
+      guards,
+    };
+  }
+  let total = 0n;
+  const holdings = [];
+  for (let i = 0; i < ASSET_ORDER.length; i++) {
+    const v = await readBig(1, [i]); // allocations[AssetId(i)]
+    total += v;
+    const view = ASSET_VIEW[ASSET_ORDER[i]];
+    holdings.push({ name: view.name, sub: view.sub, value: usd(v), change: "" });
+  }
+  const principal = await readBig(2);
   return {
-    treasuryId: "TREASURY 0x4f9a…c2e1 · CASPER-TEST",
-    totalTreasury: "$12,840,219",
-    principalLocked: "$11.9M",
-    holdings: [
-      { name: "Gold (tokenized)", sub: "5,392 oz · $2,381/oz", value: "$5.39M", change: "+0.8%" },
-      { name: "US T-bond", sub: "4.21% yield · 10Y", value: "$4.24M", change: "+1.9%" },
-      { name: "WTI crude", sub: "29,500 bbl · $78.40", value: "$2.31M", change: "-0.6%" },
-      { name: "CSPR reserve", sub: "46.9M CSPR · $0.0192", value: "$0.90M", change: "+2.4%" },
-    ],
-    guards: [
-      "Cap $500K / tx",
-      "Daily limit $2M",
-      "Allowlist · 3 targets",
-      "Principal locked",
-      "Compliance: Valid",
-    ],
+    treasuryId: `TREASURY ${PKG.vault.slice(0, 4)}…${PKG.vault.slice(-4)} · CASPER-TEST`,
+    totalTreasury: usd(total),
+    principalLocked: usd(principal),
+    holdings,
+    guards,
   };
 }
 
 export async function getAttestation(hash: string): Promise<Attestation> {
-  // ponytail: AttestationLog.get(reasoning_hash) via queryGlobalState, then
-  // decode the Attestation odra_type (decision, signer, block_time).
-  void CSPR_CLOUD;
+  // ponytail: AttestationLog.get(reasoning_hash) — the Attestation is an odra_type
+  // struct in the "state" dict (decision String, signer PublicKey, block_time u64).
+  // Decoding it needs the struct field layout; left stubbed until that's mapped.
   return {
     reasoningHash: hash,
     decision: "Reallocate 4.2% yield Gold->TBond (conf 0.91)",
     signer: "01a4…ee14",
-    blockTime: Date.now(),
+    blockTime: 0,
     verified: true,
   };
 }
 
 export async function getReputation(address: string): Promise<Reputation> {
-  // ponytail: ReputationRegistry.score_of(addr) via queryGlobalState.
-  void CSPR_CLOUD;
+  // ponytail: ReputationRegistry score is a Mapping<Address,i64>; the dict key is
+  // the bytesrepr of the Address Key (tag + 32 bytes), not a flat int — wire with
+  // the same readBig() once the Address key encoding is added.
   return { address, score: 948 };
 }
 
+// --- audit trail: live CSPR.cloud deploys for our contracts ----------------
+type RawDeploy = {
+  deploy_hash?: string;
+  timestamp?: string;
+  status?: string;
+  error_message?: string | null;
+  contract_package_hash?: string;
+};
+
+function label(d: RawDeploy): string {
+  const h = (d.contract_package_hash || "").toLowerCase();
+  if (h === PKG.vault) return "Reallocate · vault";
+  if (h === PKG.attestation) return "Attestation · reasoning signed";
+  if (h === PKG.payment) return "x402 settlement · premium signal";
+  return "Contract call";
+}
+
+function relTime(ts?: string): string {
+  if (!ts) return "";
+  const diff = Date.now() - new Date(ts).getTime();
+  if (Number.isNaN(diff)) return "";
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const hh = Math.round(m / 60);
+  if (hh < 24) return `${hh}h ago`;
+  return `${Math.round(hh / 24)}d ago`;
+}
+
+async function cloudDeploys(pkg: string, limit: number): Promise<RawDeploy[]> {
+  const res = await fetch(`${CLOUD_BASE}/deploys?contract_package_hash=${pkg}&page=1&page_size=${limit}`, {
+    headers: { accept: "application/json", authorization: CLOUD_KEY },
+  });
+  if (!res.ok) return [];
+  const d = (await res.json()) as { data?: RawDeploy[] };
+  return d.data ?? [];
+}
+
 export async function getAuditTrail(): Promise<AuditRow[]> {
-  // ponytail: list recent deploys for the agent account from CSPR.cloud and tag
-  // each by the contract/entry-point it hit (reallocate / attest / x402 settle).
-  void CSPR_CLOUD;
-  return [
-    { kind: "Reallocate · yield -> T-bond", hash: "0x2db8·77a1·…·e4c0", status: "Confirmed", time: "2m ago" },
-    { kind: "Attestation · reasoning signed", hash: "0x7af3·9c21·…·ee14", status: "Verified", time: "2m ago" },
-    { kind: "x402 settlement · premium signal", hash: "0x91c4·05fb·…·2a8d", status: "Settled", time: "3m ago" },
-    { kind: "Escalated · confidence 0.62", hash: "human review · resolved", status: "Approved", time: "4h ago" },
-  ];
+  if (!CLOUD_KEY) {
+    return [
+      { kind: "Set CSPR_CLOUD_API_KEY for live audit trail", hash: "—", status: "—", time: "" },
+    ];
+  }
+  try {
+    const lists = await Promise.all(Object.values(PKG).map((h) => cloudDeploys(h, 4)));
+    const rows = lists
+      .flat()
+      .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""))
+      .slice(0, 6)
+      .map((d) => ({
+        kind: label(d),
+        hash: d.deploy_hash ?? "—",
+        status: d.error_message ? "Failed" : d.status === "processed" || !d.status ? "Confirmed" : d.status,
+        time: relTime(d.timestamp),
+      }));
+    return rows.length ? rows : [{ kind: "No deploys yet", hash: "—", status: "—", time: "" }];
+  } catch {
+    return [{ kind: "audit read failed", hash: "—", status: "—", time: "" }];
+  }
 }

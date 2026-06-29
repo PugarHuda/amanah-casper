@@ -59,7 +59,7 @@ Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fd
 | [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry, PaymentToken. On-chain Ed25519 verification is the heart. 6/6 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice (OpenAI-compat) | The autonomous loop: ingest → x402 → reason → attest → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | The x402-gated premium-signal API the agent pays — agent-pays-agent commerce, settled on-chain via CEP-3009. |
-| [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server exposing vault/attestation/reputation/audit so a judge or LLM can ask "why did it rebalance?". |
+| [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **Live**: `get_vault_state` decodes RwaVault on-chain, `get_audit_trail` lists our contracts' real deploys via CSPR.cloud. |
 | [`bot/`](bot) | TypeScript · grammy | Optional Telegram notifier + `/audit`. |
 | [`web/`](web) | Next.js 15 · React 19 | Landing + dashboard. **Live**: treasury totals/holdings decoded from RwaVault state, audit trail from CSPR.cloud. |
 
