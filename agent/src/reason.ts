@@ -36,8 +36,10 @@ export async function reason(
           { role: "system", content: `${SYSTEM_PROMPT}\n\n${SCHEMA_HINT}` },
           { role: "user", content: user },
         ],
-        // ponytail: no response_format — many Venice models (e.g. qwen-3-7-max)
-        // reject it. We constrain via SCHEMA_HINT + tolerant extractJson instead.
+        // ponytail: no response_format — Venice rejects it on many models incl.
+        // deepseek-v4-flash ("response_format is not supported by this model"),
+        // despite the catalog's supportsResponseSchema flag. We constrain via
+        // SCHEMA_HINT + tolerant extractJson, which handles <think> preambles too.
         // Keep our system prompt authoritative — don't prepend Venice's persona.
         venice_parameters: { include_venice_system_prompt: false },
       }),

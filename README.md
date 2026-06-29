@@ -12,10 +12,13 @@ signed and **verified on-chain by the contract itself** before it's recorded —
 publicly checkable on [cspr.live](https://testnet.cspr.live), not logged to a
 private database.
 
-**Status: live on casper-test.** All six contracts are deployed, the off-chain
-loop runs end-to-end against the live node, and a full cycle — including a real
-x402 payment settled on-chain — has been verified. No mocks remain in the core
-flows. See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
+**Status: live on casper-test.** All six contracts are deployed and the off-chain
+loop runs end-to-end against the live node. All three on-chain steps are verified
+with public proof hashes: **attestation**, **x402 settlement**, and **reallocate**
+(allowlist + compliance gated). The web dashboard's treasury totals/holdings and
+audit trail read live chain state; the agent-console step-stream is a
+*representative* view (the reasoning runs in the agent, only its hash is on-chain).
+See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
 
 ## Cycle (every `CYCLE_MS`, default 60s — all steps real, no mock)
 
@@ -51,6 +54,11 @@ Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fd
 |---|---|
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
 | x402 settlement — `transfer_with_authorization` | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |
+| Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` |
+
+The reallocate moved Gold $250K→$200K and T-bond $400K→$450K on-chain (verify via
+`agent/src/read-vault.ts`); the agent was allowlisted in SpendGate and marked Valid
+in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 
 ## Monorepo
 
@@ -110,6 +118,14 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## No-mock contract
 
-Banned: hardcoded prices, fake tx, static reasoning templates, simulated
-settlement. Every number on the dashboard and every step in the loop touches
-testnet or a real public API a judge can check.
+Banned in the core loop: hardcoded prices, fake tx, static reasoning templates,
+simulated settlement. Every loop step (ingest → x402 → reason → attest →
+guardrail → reallocate) touches testnet or a real public API a judge can check,
+and the dashboard's treasury + audit trail read live chain state.
+
+Honest caveats (not in the core loop): the web agent-console step-stream is a
+representative illustration (the live reasoning isn't streamed to the UI yet);
+the principal-lock invariant is enforced in-contract and unit-tested
+(`reallocate_rejected_when_it_would_touch_principal`) but the live vault is
+seeded with principal = 0; reasoning blobs are not yet pinned to IPFS (only their
+hash is attested). All such seams are marked `// ponytail:` in the source.

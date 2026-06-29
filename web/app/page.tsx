@@ -5,7 +5,7 @@ import HeroWave from "@/components/HeroWave";
 const stack = [
   { label: "Casper", icon: (<><circle cx="10" cy="10" r="8" stroke="#1d1a15" strokeWidth="2" fill="none" /><circle cx="10" cy="10" r="2.6" fill="#1d1a15" /></>) },
   { label: "CSPR.cloud", icon: <rect x="2" y="2" width="16" height="16" rx="5" fill="#1d1a15" /> },
-  { label: "Claude", icon: <rect x="10" y="2.5" width="10.6" height="10.6" transform="rotate(45 10 2.5)" fill="#1d1a15" /> },
+  { label: "Venice", icon: <rect x="10" y="2.5" width="10.6" height="10.6" transform="rotate(45 10 2.5)" fill="#1d1a15" /> },
   { label: "x402", icon: <rect x="3" y="3" width="14" height="14" rx="2" stroke="#1d1a15" strokeWidth="2.2" fill="none" /> },
   { label: "IPFS", icon: <path d="M10 2l8 14H2z" fill="#1d1a15" /> },
 ];

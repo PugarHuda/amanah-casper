@@ -77,7 +77,7 @@ export default function Connect() {
                 Proof, not promises.
               </div>
               <div style={{ marginTop: 10, fontSize: 15, lineHeight: 1.5, color: "#3b362c" }}>
-                Every allocation is reasoned by Claude, signed, and attested on Casper before a single token moves.
+                Every allocation is reasoned by an LLM (via Venice), signed, and attested on Casper before a single token moves.
               </div>
             </div>
           </div>

@@ -39,7 +39,7 @@ export const guards: string[] = [
 export const steps: Step[] = [
   { n: "01", text: "Pulled live RWA prices — Treasury yield curve steepened 6bps.", tag: "INGEST · fiscaldata.treasury.gov", tagColor: "var(--faint)" },
   { n: "02", text: "Paid for premium oil-volatility signal via x402.", tag: "SETTLE · deploy 0x91c4… · CEP-18", tagColor: "var(--blue)" },
-  { n: "03", text: "Gold momentum cooling; T-bond real yield now attractive.", tag: "REASON · Claude Opus", tagColor: "var(--faint)" },
+  { n: "03", text: "Gold momentum cooling; T-bond real yield now attractive.", tag: "REASON · Venice · deepseek-v4-flash", tagColor: "var(--faint)" },
   { n: "04", text: "Decision: shift 4.2% of yield from gold into T-bond.", tag: "DECISION · confidence 0.91", tagColor: "var(--gold-deep)" },
   { n: "05", text: "Signed reasoning (Ed25519), attested & verified on-chain.", tag: "ATTEST · deploy 0x7af3… ✓", tagColor: "var(--green)" },
   { n: "06", text: "Passed SpendGate + ComplianceRegistry checks.", tag: "GUARDRAIL · all green", tagColor: "var(--green)" },

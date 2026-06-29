@@ -49,10 +49,12 @@ function deployToTrail(d: RawDeploy): TrailRow {
   };
 }
 
-// ponytail: live -> CSPR.cloud account/contract reads, poll or SSE per cycle.
-// Metrics/allocation/guardrails + the step stream stay mock: they decode from
-// RwaVault / Attestation / Reputation contract state whose ABI isn't wired yet.
-// ponytail: step-stream should become an SSE/poll feed off the live reasoning cycle.
+// The agent-console step-stream is a REPRESENTATIVE view, not live: the real
+// reasoning runs in the agent process and only its blake2b hash is published
+// on-chain (the full step stream isn't), so the UI can't replay it yet.
+// ponytail: make live by pinning each reasoning blob (IPFS, attest.ts) and
+// streaming the cycle over SSE; then decode the latest from chain here. Until
+// then it's labelled "representative" rather than claimed "live".
 export async function getAgentConsole() {
   return {
     metrics: mock.metrics,
@@ -61,7 +63,7 @@ export async function getAgentConsole() {
     steps: mock.steps,
     reasoningHash: mock.reasoningHash,
     decision: mock.decision,
-    cycleId: "CYCLE #4,218 · LIVE · CASPER-TEST",
+    cycleId: "REPRESENTATIVE CYCLE · CASPER-TEST",
   };
 }
 

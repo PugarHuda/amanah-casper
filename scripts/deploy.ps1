@@ -1,3 +1,9 @@
+# DEPRECATED — use the canonical deployer: `cd agent; npm run deploy`
+# (agent/src/deploy.ts). That is what produced the live deployment and stays in
+# sync. This casper-client script DIVERGES (omits PaymentToken's chain_name init
+# arg, uses 300 CSPR / an older key name) and would MIS-DEPLOY the x402 token —
+# kept only as a casper-client reference.
+#
 # Deploy the 5 Amanah contracts to casper-test in dependency order and write
 # their package hashes to amanah\.env.deployed.
 # Idempotent-ish: a contract whose *_HASH is already in .env.deployed is skipped.

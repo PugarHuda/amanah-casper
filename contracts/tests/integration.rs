@@ -76,6 +76,45 @@ fn reallocate_succeeds_when_authorized_and_compliant() {
 }
 
 #[test]
+fn reallocate_rejected_when_it_would_touch_principal() {
+    // Lock principal (2000) above total backing (1000 deposited): any move leaves
+    // total < principal -> TouchesPrincipal. Pins the principal invariant as a live
+    // guard, not just a declared one. (A normal reallocation conserves total and
+    // passes; this deliberately under-funds the vault to fire the check.)
+    let env = odra_test::env();
+    let agent = env.get_account(1);
+
+    let mut spend_gate = SpendGate::deploy(
+        &env,
+        SpendGateInitArgs {
+            max_per_tx: U512::from(1_000_000u64),
+            daily_limit: U512::from(1_000_000u64),
+            expiry: 0,
+        },
+    );
+    spend_gate.add_allowlist(agent);
+    let mut compliance = ComplianceRegistry::deploy(&env, NoArgs);
+    compliance.set_status(agent, Status::Valid, [0u8; 32]);
+
+    let mut vault = RwaVault::deploy(
+        &env,
+        RwaVaultInitArgs {
+            agent,
+            spend_gate: spend_gate.contract_address(),
+            compliance: compliance.contract_address(),
+            principal: U512::from(2000u64),
+        },
+    );
+    vault.deposit(AssetId::Gold, U256::from(1000));
+
+    env.set_caller(agent);
+    let err = vault
+        .try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32])
+        .unwrap_err();
+    assert_eq!(err, Error::TouchesPrincipal.into());
+}
+
+#[test]
 fn attest_stores_on_valid_signature_and_reverts_on_tamper() {
     let env = odra_test::env();
     let account = env.get_account(0);
