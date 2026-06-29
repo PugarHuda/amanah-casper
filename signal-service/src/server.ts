@@ -43,6 +43,13 @@ const routes: RoutesConfig = {
       // AssetAmount price => no decimals lookup needed (amount is atomic).
       price: { asset: ASSET, amount: PRICE_ATOMIC },
       maxTimeoutSeconds: 120,
+      // The exact-Casper scheme builds an EIP-712-style signing domain from the
+      // token name + version; both must match the asset's on-chain metadata.
+      // ponytail: SETTLEMENT needs the token to implement EIP-3009
+      // transferWithAuthorization — PaymentToken is plain CEP-18 (eip712 disabled),
+      // so the 402 is well-formed but settle won't verify until the token gains
+      // the permit/authorization extension. name matches the minted token.
+      extra: { name: "Amanah Test USD", version: "1.0.0" },
     },
   },
 };
