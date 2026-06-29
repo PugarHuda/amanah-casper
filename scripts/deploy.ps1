@@ -64,7 +64,8 @@ function Deploy-One([string]$Var, [string]$Wasm, [string]$KeyName, [string[]]$Ar
         "--payment-amount",$Payment,"--session-path",(Join-Path $WasmDir $Wasm),
         "--session-arg","odra_cfg_package_hash_key_name:string='$KeyName'",
         "--session-arg","odra_cfg_allow_key_override:bool='false'",
-        "--session-arg","odra_cfg_is_upgradable:bool='false'"
+        "--session-arg","odra_cfg_is_upgradable:bool='false'",
+        "--session-arg","odra_cfg_is_upgrade:bool='false'"
     )
     $out = casper-client @($base + $Args) | ConvertFrom-Json
     # ponytail: verify casper-client 5.0 - .result.deploy_hash.

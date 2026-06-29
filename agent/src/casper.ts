@@ -57,8 +57,11 @@ export async function callEntryPoint(opts: {
 
   // buildFor1_5() emits the legacy deploy format that current testnet nodes
   // accept via putTransaction. ponytail: switch to .build() once nodes take V1.
+  // byPackageHash (not byHash): the hashes we store are Odra *package* hashes
+  // (what install writes to named keys); byHash targets a contract/entity hash and
+  // the node rejects it as an invalid transaction (-32016). undefined version = latest.
   const tx = new ContractCallBuilder()
-    .byHash(opts.contractHash)
+    .byPackageHash(opts.contractHash)
     .entryPoint(opts.entryPoint)
     .runtimeArgs(opts.args)
     .from(opts.key.publicKey)
@@ -73,23 +76,29 @@ export async function callEntryPoint(opts: {
   return { deployHash };
 }
 
-/** Poll until the node returns the transaction. ponytail: this confirms the tx
- *  is on-chain; inspect the execution_result for revert errors if you need to
- *  distinguish success from a contract revert (SpendGate/Compliance rejection). */
-async function waitForExecution(
-  rpc: RpcClientT,
+/** Poll info_get_deploy until the deploy executes; throw with the revert reason
+ *  on failure (e.g. a SpendGate/Compliance rejection). The SDK's transaction
+ *  lookup can't resolve a legacy (buildFor1_5) deploy by bare hash, so we hit the
+ *  JSON-RPC directly — same approach as the deploy installer. */
+export async function waitForExecution(
+  _rpc: RpcClientT,
   hash: string,
   timeoutMs = 120_000,
 ): Promise<void> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      await rpc.getTransactionByTransactionHash(hash);
-      return;
-    } catch {
-      // not yet finalized
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const r = (await fetch(config.rpcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "info_get_deploy", params: { deploy_hash: hash } }),
+    }).then((x) => x.json())) as any;
+    const info = r?.result?.execution_info;
+    if (info?.execution_result) {
+      const v2 = info.execution_result.Version2 ?? info.execution_result;
+      if (v2?.error_message) throw new Error(`deploy ${hash} reverted: ${v2.error_message}`);
+      return; // executed, no error
     }
-    await new Promise((r) => setTimeout(r, 3_000));
+    await new Promise((res) => setTimeout(res, 4_000));
   }
   throw new Error(`Timed out waiting for ${hash} (${timeoutMs}ms)`);
 }

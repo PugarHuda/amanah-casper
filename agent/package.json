@@ -6,6 +6,7 @@
   "description": "Amanah autonomous compliant RWA treasury agent — off-chain loop",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "deploy": "tsx src/deploy.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

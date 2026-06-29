@@ -78,6 +78,7 @@ deploy_one() {
     --session-arg "odra_cfg_package_hash_key_name:string='$key_name'" \
     --session-arg "odra_cfg_allow_key_override:bool='false'" \
     --session-arg "odra_cfg_is_upgradable:bool='false'" \
+    --session-arg "odra_cfg_is_upgrade:bool='false'" \
     "$@")"
   # ponytail: verify casper-client 5.0 — put-deploy returns the hash at .result.deploy_hash.
   dh="$(echo "$out" | jq -r '.result.deploy_hash')"

@@ -13,7 +13,10 @@ export const {
   PrivateKey,
   KeyAlgorithm,
   ContractCallBuilder,
+  SessionBuilder,
+  AccountIdentifier,
   Args,
   CLValue,
+  CLTypeUInt8,
   Key,
 } = csp;

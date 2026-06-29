@@ -2,7 +2,7 @@
 // agent key, and call AttestationLog.attest on Casper. Optionally pin the full
 // blob to IPFS.
 import { blake2b } from "blakejs";
-import { CLValue, Args } from "./sdk.js";
+import { CLValue, CLTypeUInt8, Args } from "./sdk.js";
 import type { PrivateKey, RpcClient } from "casper-js-sdk";
 import { config } from "./config.js";
 import { callEntryPoint } from "./casper.js";
@@ -30,12 +30,16 @@ export async function attest(
   const decisionStr = decisionLabel(blob.decision);
 
   const args = Args.fromMap({
-    // ponytail: verify odra encodings — [u8;32] -> ByteArray(32),
-    // odra Bytes -> CL ByteArray. Adjust to newCLList(U8) if the contract's
-    // Bytes arg deserializes as List<U8>.
+    // [u8;32] -> fixed ByteArray(32), no length prefix.
     reasoning_hash: CLValue.newCLByteArray(hash),
     decision: CLValue.newCLString(decisionStr),
-    signature: CLValue.newCLByteArray(signature),
+    // odra `Bytes` == Vec<u8>: CLType List(U8), length-prefixed. Sending a fixed
+    // ByteArray here makes the contract read the first 4 bytes as a length and
+    // overrun -> EarlyEndOfStream (verified live, user error 64647).
+    signature: CLValue.newCLList(
+      CLTypeUInt8,
+      Array.from(signature, (b) => CLValue.newCLUint8(b)),
+    ),
     pubkey: CLValue.newCLPublicKey(key.publicKey),
   });
 
