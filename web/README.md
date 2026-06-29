@@ -30,10 +30,10 @@ Copy `.env.example` → `.env.local` and fill in the values to go live.
 
 | Data | Source when live |
 |---|---|
-| Audit-trail rows (dashboard) | **Live** — `GET /deploys`, mapped to rows |
+| Audit-trail rows (dashboard) | **Live** — `GET /deploys` filtered by our package hashes, mapped to rows |
+| Treasury total + per-asset holdings | **Live** — decoded from RwaVault's Odra `state` dictionary (`getVaultState` in `lib/cspr.ts`), gated on `VAULT_STATE_SEED` |
 | CSPR price/rate | **Live** — `GET /rates/{currency_id}/latest` (helper in `lib/cspr.ts`) |
-| Treasury total / holdings / banner / reputation | Mock — needs RwaVault/Reputation contract **state decode** (ABI not wired). Marked `// ponytail:` in `lib/data.ts`. |
-| Agent console metrics + proof-of-reasoning step stream | Mock — should become an SSE/poll feed off the live cycle. Marked `// ponytail:`. |
+| Banner copy + agent-console metrics/step stream | Mock — cosmetic; the proof-of-reasoning stream should become an SSE/poll feed off the live cycle. Marked `// ponytail:`. |
 
 Endpoints verified against `docs.cspr.cloud`: base `https://api.testnet.cspr.cloud`,
 `authorization: <key>` header, `/accounts/{pk}/deploys`, `/deploys`, `/rates/{id}/latest`.
