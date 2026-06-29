@@ -6,9 +6,10 @@ version = "0.1.0"
 
 [dependencies]
 odra = { version = "2.8.1", default-features = false }
-# CEP-18 test token (x402 payment asset) — Odra's stock implementation.
-# default-features = false drops the optional eip712 deps we don't need.
-odra-modules = { version = "2.8.1", default-features = false }
+# CEP-18 + CEP-3009 (transfer_with_authorization) for the x402 PaymentToken.
+# eip712 feature is required by CEP-3009 (casper-eip-712); it's in odra-modules'
+# default set, enabled explicitly here since we set default-features = false.
+odra-modules = { version = "2.8.1", default-features = false, features = ["eip712"] }
 
 [dev-dependencies]
 odra-test = "2.8.1"

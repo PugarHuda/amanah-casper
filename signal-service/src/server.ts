@@ -45,11 +45,11 @@ const routes: RoutesConfig = {
       maxTimeoutSeconds: 120,
       // The exact-Casper scheme builds an EIP-712-style signing domain from the
       // token name + version; both must match the asset's on-chain metadata.
-      // ponytail: SETTLEMENT needs the token to implement EIP-3009
-      // transferWithAuthorization — PaymentToken is plain CEP-18 (eip712 disabled),
-      // so the 402 is well-formed but settle won't verify until the token gains
-      // the permit/authorization extension. name matches the minted token.
-      extra: { name: "Amanah Test USD", version: "1.0.0" },
+      // The exact-Casper scheme signs an EIP-712 domain from name + version; both
+      // MUST match the on-chain token. name = CEP-18 token name; version = CEP-3009
+      // DOMAIN_VERSION ("1", a fixed constant in odra-modules). PaymentToken now
+      // implements transfer_with_authorization, so settlement actually verifies.
+      extra: { name: "Amanah Test USD", version: "1" },
     },
   },
 };

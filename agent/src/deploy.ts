@@ -19,9 +19,10 @@ import { config } from "./config.js";
 
 const WASM_DIR = resolve(import.meta.dirname, "../../contracts/wasm");
 const ENV_FILE = resolve(import.meta.dirname, "../../.env.deployed");
-// Contract installs are heavy; 300 CSPR each is the deploy.sh default. We hold
-// ~15000 CSPR, 6 installs ~= 1800 CSPR worst case.
-const INSTALL_MOTES = Number(process.env.INSTALL_MOTES ?? 300_000_000_000);
+// Contract installs are heavy and Casper fixed-pricing charges the full limit.
+// 750 CSPR covers the largest (PaymentToken = CEP-18 + CEP-3009, ~350KB wasm +
+// mint/eip712 init); the smaller ones don't use it all. Override via INSTALL_MOTES.
+const INSTALL_MOTES = Number(process.env.INSTALL_MOTES ?? 750_000_000_000);
 
 const key = loadPrivateKey(config.agentKeyPath);
 const rpc = makeRpcClient(config.rpcUrl);
@@ -138,9 +139,14 @@ async function main() {
   });
   await install("REPUTATION_REGISTRY_HASH", "ReputationRegistry.wasm", "amanah_reputation_package_hash");
 
-  // x402 payment asset: PaymentToken (local CEP-18 wrapper). init mints
-  // initial_supply (1,000,000 @ 6dp) to the deployer.
-  await install("X402_ASSET_PACKAGE_HASH", "PaymentToken.wasm", "amanah_payment_token_package_hash", {
+  // x402 payment asset: PaymentToken (CEP-18 + CEP-3009 transfer_with_authorization).
+  // init mints 1,000,000 @ 6dp to the deployer. chain_name MUST equal the x402
+  // network string the client/facilitator sign with (the EIP-712 domain chainId).
+  // v2 key name: the original (plain-CEP-18) token is installed under
+  // amanah_payment_token_package_hash with allow_key_override=false, so re-install
+  // there would revert — use a fresh named key for the CEP-3009 token.
+  await install("X402_ASSET_PACKAGE_HASH", "PaymentToken.wasm", "amanah_payment_token_v2_package_hash", {
+    chain_name: CLValue.newCLString("casper:casper-test"),
     symbol: CLValue.newCLString("AMANAH"),
     name: CLValue.newCLString("Amanah Test USD"),
     decimals: CLValue.newCLUint8(6),
