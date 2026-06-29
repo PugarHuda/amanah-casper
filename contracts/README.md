@@ -12,13 +12,15 @@ Casper. Built with [Odra](https://odra.dev) 2.8 (`casper-test` target).
 | `SpendGate` | Per-tx cap, rolling daily limit, allowlist, expiry, and an instant `revoke()` kill switch. |
 | `ComplianceRegistry` | KYC/AML status per address (`Pending`/`Valid`/`Revoked`). Upgradable. |
 | `ReputationRegistry` | Signed reputation score with anti-replay on payment proof (deploy hash). |
-| `Cep18` | Stock Odra CEP-18 fungible token (`odra_modules::cep18_token::Cep18`), deployed as the x402 payment asset. |
+| `PaymentToken` | CEP-18 fungible token (thin `SubModule<odra_modules Cep18>` wrapper), deployed as the x402 payment asset. |
 
-## CEP-18 payment token (x402)
+## PaymentToken (x402 CEP-18)
 
-`Cep18.wasm` is Odra's standard CEP-18 (transfer / transfer_from / approve /
-balance_of / mint+burn). Deploy it as our test payment asset; its **package hash
-becomes `X402_ASSET_PACKAGE_HASH`** in the signal-service.
+`PaymentToken` wraps odra-modules' stock CEP-18 (transfer / transfer_from /
+approve / balance_of) as a local module — an external `odra_modules::*` fqn in
+`Odra.toml` only builds the intermediate builder wasm (no `call` export), so the
+asset must be a contract defined in this crate. Its **package hash becomes
+`X402_ASSET_PACKAGE_HASH`** in the signal-service.
 
 `init(symbol: String, name: String, decimals: u8, initial_supply: U256)` — mints
 `initial_supply` to the deployer. Example session args:

@@ -138,15 +138,14 @@ async function main() {
   });
   await install("REPUTATION_REGISTRY_HASH", "ReputationRegistry.wasm", "amanah_reputation_package_hash");
 
-  // ponytail: Cep18 (x402 payment asset) is DEFERRED. The wasm/Cep18.wasm on disk
-  // is cargo-odra's intermediate builder wasm (no `call` export), not a real
-  // contract — it reverts "Module doesn't have export call". Regenerating a proper
-  // Cep18.wasm needs a rust/cargo-odra rebuild (toolchain currently absent). The core
-  // attestation loop doesn't need it; x402 payment stays in DRY/warn mode until then.
-  // To enable: rebuild contracts, then add this install back:
-  //   await install("X402_ASSET_PACKAGE_HASH", "Cep18.wasm", "amanah_payment_token_package_hash", {
-  //     symbol: CLValue.newCLString("AMANAH"), name: CLValue.newCLString("Amanah Test USD"),
-  //     decimals: CLValue.newCLUint8(6), initial_supply: CLValue.newCLUInt256(1_000_000_000_000) });
+  // x402 payment asset: PaymentToken (local CEP-18 wrapper). init mints
+  // initial_supply (1,000,000 @ 6dp) to the deployer.
+  await install("X402_ASSET_PACKAGE_HASH", "PaymentToken.wasm", "amanah_payment_token_package_hash", {
+    symbol: CLValue.newCLString("AMANAH"),
+    name: CLValue.newCLString("Amanah Test USD"),
+    decimals: CLValue.newCLUint8(6),
+    initial_supply: CLValue.newCLUInt256(1_000_000_000_000),
+  });
 
   // 5: RwaVault depends on the spend-gate + compliance package hashes (Odra Address = Key).
   await install("RWA_VAULT_HASH", "RwaVault.wasm", "amanah_vault_package_hash", {

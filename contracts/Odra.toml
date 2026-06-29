@@ -20,7 +20,8 @@ odra_cfg_is_upgradable = true
 [[contracts]]
 fqn = "amanah_contracts::reputation_registry::ReputationRegistry"
 
-# Stock CEP-18 fungible token, deployed as our x402 payment asset.
-# init(symbol, name, decimals, initial_supply) mints initial_supply to the deployer.
+# x402 payment asset: local CEP-18 wrapper (SubModule<odra_modules Cep18>). Must be
+# a contract defined in THIS crate — an external odra_modules fqn only builds the
+# intermediate builder wasm (no `call` export). init(symbol,name,decimals,initial_supply).
 [[contracts]]
-fqn = "odra_modules::cep18_token::Cep18"
+fqn = "amanah_contracts::payment_token::PaymentToken"
