@@ -131,24 +131,30 @@ export async function getVaultState(): Promise<VaultState> {
   };
 }
 
-export async function getAttestation(hash: string): Promise<Attestation> {
-  // ponytail: AttestationLog.get(reasoning_hash) — the Attestation is an odra_type
-  // struct in the "state" dict (decision String, signer PublicKey, block_time u64).
-  // Decoding it needs the struct field layout; left stubbed until that's mapped.
+export async function getAttestation(hash: string): Promise<Attestation & { note?: string }> {
+  // ponytail: NOT yet decoded on-chain. The Attestation is an odra_type struct in the
+  // AttestationLog "state" dict (decision String, signer PublicKey, block_time u64);
+  // decoding needs its field layout. Until then return verified:false + a note so a
+  // judge is never handed a fabricated "verified:true". Verify the hash via cspr.live.
   return {
     reasoningHash: hash,
-    decision: "Reallocate 4.2% yield Gold->TBond (conf 0.91)",
-    signer: "01a4…ee14",
+    decision: "(on-chain decode not yet wired — see note)",
+    signer: "(unknown)",
     blockTime: 0,
-    verified: true,
+    verified: false,
+    note: "get_attestation is not live yet. The attestation IS on-chain in AttestationLog (package 365913a7…); look up the reasoning hash on testnet.cspr.live. Live decode of the struct is pending.",
   };
 }
 
-export async function getReputation(address: string): Promise<Reputation> {
-  // ponytail: ReputationRegistry score is a Mapping<Address,i64>; the dict key is
-  // the bytesrepr of the Address Key (tag + 32 bytes), not a flat int — wire with
-  // the same readBig() once the Address key encoding is added.
-  return { address, score: 948 };
+export async function getReputation(address: string): Promise<Reputation & { note?: string }> {
+  // ponytail: ReputationRegistry score is a Mapping<Address,i64>; the dict key is the
+  // bytesrepr of the Address Key (tag + 32 bytes), not a flat int — wire with the same
+  // readBig() once the Address-key encoding is added. score:-1 signals "not live yet".
+  return {
+    address,
+    score: -1,
+    note: "get_reputation is not live yet (Address-key dict decode pending). -1 = unknown, not a real score.",
+  };
 }
 
 // --- audit trail: live CSPR.cloud deploys for our contracts ----------------
