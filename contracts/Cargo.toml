@@ -13,6 +13,14 @@ odra-modules = { version = "2.8.1", default-features = false, features = ["eip71
 
 [dev-dependencies]
 odra-test = "2.8.1"
+# `cargo odra test` fix: schemars 0.8.22 (pulled by odra's test stack via the
+# `indexmap1` feature) does `Map<K,V> = IndexMap<K,V>`, which only type-checks
+# when indexmap 1.9.3 exposes its default `S = RandomState` — gated behind
+# `#[cfg(has_std)]`, emitted only when indexmap's `std` feature is on. The casper
+# no_std deps pull indexmap with default-features=false, so `S` has no default and
+# the build fails. Forcing the `std` feature here (dev-only — not in the wasm
+# build) makes has_std true and restores the default. ponytail: transitive-dep pin.
+indexmap = { version = "=1.9.3", features = ["std"] }
 
 [build-dependencies]
 odra-build = "2.8.1"

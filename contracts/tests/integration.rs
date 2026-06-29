@@ -2,6 +2,7 @@
 use amanah_contracts::attestation_log::{AttestationLog, AttestationLogInitArgs};
 use amanah_contracts::common::{AssetId, Error, Status};
 use amanah_contracts::compliance_registry::ComplianceRegistry;
+use amanah_contracts::payment_token::{PaymentToken, PaymentTokenInitArgs};
 use amanah_contracts::reputation_registry::ReputationRegistry;
 use amanah_contracts::rwa_vault::{RwaVault, RwaVaultHostRef, RwaVaultInitArgs};
 use amanah_contracts::spend_gate::{SpendGate, SpendGateInitArgs};
@@ -107,6 +108,36 @@ fn attest_stores_on_valid_signature_and_reverts_on_tamper() {
         .try_attest(tampered, "BUY 10 TBOND".to_string(), signature, pubkey)
         .unwrap_err();
     assert_eq!(err, Error::InvalidAttestation.into());
+}
+
+#[test]
+fn payment_token_mints_to_deployer_and_transfers() {
+    // The x402 asset: CEP-18 balances + CEP-3009 transfer_with_authorization.
+    // EIP-712 authorized transfers are covered by odra-modules' own CEP3009 tests;
+    // here we verify our wrapper wires init/balances/transfer correctly.
+    let env = odra_test::env();
+    let deployer = env.get_account(0);
+    let bob = env.get_account(1);
+
+    let mut token = PaymentToken::deploy(
+        &env,
+        PaymentTokenInitArgs {
+            chain_name: "casper:casper-test".to_string(),
+            symbol: "AMANAH".to_string(),
+            name: "Amanah Test USD".to_string(),
+            decimals: 6,
+            initial_supply: U256::from(1_000_000u64),
+        },
+    );
+
+    assert_eq!(token.balance_of(&deployer), U256::from(1_000_000u64));
+    assert_eq!(token.symbol(), "AMANAH".to_string());
+    assert_eq!(token.name(), "Amanah Test USD".to_string());
+    assert_eq!(token.decimals(), 6u8);
+
+    token.transfer(&bob, &U256::from(250u64));
+    assert_eq!(token.balance_of(&bob), U256::from(250u64));
+    assert_eq!(token.balance_of(&deployer), U256::from(999_750u64));
 }
 
 #[test]
