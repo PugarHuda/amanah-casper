@@ -10,6 +10,8 @@
 //   GET /rates/{currency_id}/latest         (currency rate)
 // Account/contract GETs below are idiomatic but unconfirmed — see ponytail notes.
 
+import { blake2b } from "blakejs";
+
 const BASE = process.env.CSPR_CLOUD_BASE || "https://api.testnet.cspr.cloud";
 const KEY = process.env.CSPR_CLOUD_API_KEY || "";
 
@@ -99,6 +101,79 @@ export async function getContractDeploys(
       .slice(0, limit);
   } catch {
     return [];
+  }
+}
+
+// --- RwaVault on-chain state (Odra "state" dictionary, no entrypoint call) ---
+// Verified derivation (see agent/src/read-vault.ts): each Var/Mapping value lives
+// in the contract's named dictionary "state" under item key
+//   hex( blake2b256( field_index_be32 ++ mapping_key_bytes ) )
+// RwaVault fields are 1-indexed (Odra reserves 0): allocations=1, principal=2;
+// AssetId mapping key = 1-byte variant. The Casper dict address is then
+//   blake2b256( state_seed_uref_addr ++ ascii(item_key) ), queried as
+//   { Dictionary: "dictionary-<addr>" }. Values are stored as a List<U8> blob =
+//   the bytesrepr of U256/U512: [significant_byte_count, ...little-endian bytes].
+const RPC = process.env.CASPER_RPC_URL || "https://node.testnet.casper.network/rpc";
+const STATE_SEED = process.env.VAULT_STATE_SEED || ""; // vault "state" dict seed uref addr (hex)
+export const ASSET_ORDER = ["Gold", "TBond", "WTI", "CSPR"] as const;
+export type VaultAsset = (typeof ASSET_ORDER)[number];
+
+export const vaultReadable = () => !!STATE_SEED;
+
+const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
+const be32 = (n: number) =>
+  new Uint8Array([(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]);
+
+function dictAddr(index: number, mappingKey: number[] = []): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
+  const seed = Buffer.from(STATE_SEED, "hex");
+  return hex(blake2b(Buffer.concat([seed, Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+
+async function rpc(method: string, params: unknown): Promise<{ result?: any; error?: any }> {
+  const res = await fetch(RPC, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    next: { revalidate: 60 },
+  });
+  return res.json();
+}
+
+async function readBig(index: number, mappingKey: number[] = []): Promise<bigint> {
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return 0n;
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${dictAddr(index, mappingKey)}` },
+  });
+  if (r.error) return 0n; // missing item => never written => 0 (get_or_default)
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  const len = arr[0] ?? 0;
+  let v = 0n;
+  for (let i = 0; i < len; i++) v += BigInt(arr[1 + i] ?? 0) << BigInt(8 * i);
+  return v;
+}
+
+/** Live per-asset allocations + principal from RwaVault. Atomic 6-dp units. */
+export async function getVaultState(): Promise<{
+  holdings: Record<VaultAsset, bigint>;
+  principal: bigint;
+  total: bigint;
+} | null> {
+  if (!STATE_SEED) return null;
+  try {
+    const holdings = {} as Record<VaultAsset, bigint>;
+    let total = 0n;
+    for (let i = 0; i < ASSET_ORDER.length; i++) {
+      const v = await readBig(1, [i]); // allocations[AssetId(i)]
+      holdings[ASSET_ORDER[i]] = v;
+      total += v;
+    }
+    const principal = await readBig(2);
+    return { holdings, principal, total };
+  } catch {
+    return null;
   }
 }
 

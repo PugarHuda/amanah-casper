@@ -8,10 +8,13 @@ import type { TrailRow } from "./mock";
 import {
   cloudConfigured,
   getContractDeploys,
+  getVaultState,
+  vaultReadable,
   shortHash,
   relTime,
   type RawDeploy,
 } from "./cspr";
+import type { Holding } from "./mock";
 
 const VAULT = () => process.env.NEXT_PUBLIC_VAULT_HASH || "";
 const ATTESTATION = () => process.env.NEXT_PUBLIC_ATTESTATION_HASH || "";
@@ -62,23 +65,59 @@ export async function getAgentConsole() {
   };
 }
 
-// Dashboard: audit trail goes live from real deploys when configured; treasury
-// totals/holdings/banner stay mock until RwaVault state decode is wired.
-// ponytail: live -> derive totalTreasury/holdings/banner from vault contract state.
+// Format an atomic 6-dp vault amount as a USD string ("$250,000" / "$1.20M").
+function fmtUsd(atomic6dp: bigint): string {
+  const dollars = Number(atomic6dp / 1_000_000n);
+  return dollars >= 1_000_000
+    ? `$${(dollars / 1_000_000).toFixed(2)}M`
+    : `$${dollars.toLocaleString("en-US")}`;
+}
+
+// Presentation per asset (colors match the mock); value comes from on-chain state.
+const ASSET_VIEW: Record<string, { name: string; unit: string; color: string; bg: string }> = {
+  Gold: { name: "Gold (tokenized)", unit: "XAU", color: "#e7a83c", bg: "#fbf1dc" },
+  TBond: { name: "US T-bond", unit: "10Y", color: "#3f86e6", bg: "#e6eefc" },
+  WTI: { name: "WTI crude", unit: "bbl", color: "#2c2620", bg: "#eceae6" },
+  CSPR: { name: "CSPR reserve", unit: "CSPR", color: "#cdbfa6", bg: "#f3efe6" },
+};
+
+// Dashboard: audit trail + treasury totals/holdings go live from on-chain state
+// when configured (CSPR.cloud key + vault hash + VAULT_STATE_SEED); else mock.
 export async function getDashboard() {
   let trail = mock.trail;
+  let totalTreasury = mock.totalTreasury;
+  let holdings = mock.holdings;
+
   if (live()) {
-    const deploys = await getContractDeploys(
-      [VAULT(), ATTESTATION(), REPUTATION()],
-      6,
-    );
+    const deploys = await getContractDeploys([VAULT(), ATTESTATION(), REPUTATION()], 6);
     if (deploys.length) trail = deploys.map(deployToTrail);
+
+    if (vaultReadable()) {
+      const vault = await getVaultState();
+      if (vault && vault.total > 0n) {
+        totalTreasury = fmtUsd(vault.total);
+        holdings = (Object.keys(ASSET_VIEW) as (keyof typeof ASSET_VIEW)[]).map((a): Holding => {
+          const v = ASSET_VIEW[a];
+          const amt = vault.holdings[a as keyof typeof vault.holdings] ?? 0n;
+          const pct = vault.total > 0n ? Number((amt * 10000n) / vault.total) / 100 : 0;
+          return {
+            name: v.name,
+            sub: `${(Number(amt / 1_000_000n)).toLocaleString("en-US")} ${v.unit} · ${pct}% of treasury`,
+            value: fmtUsd(amt),
+            chg: "on-chain",
+            chgColor: "var(--muted, #888)",
+            color: v.color,
+            bg: v.bg,
+          };
+        });
+      }
+    }
   }
   return {
     treasuryId: mock.treasuryId,
-    totalTreasury: mock.totalTreasury,
+    totalTreasury,
     banner: mock.banner,
-    holdings: mock.holdings,
+    holdings,
     trail,
   };
 }
