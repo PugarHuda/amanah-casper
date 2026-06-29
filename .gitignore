@@ -12,6 +12,8 @@ contracts/wasm/
 .env.local
 *.pem
 keys/
+# runtime-published reasoning blobs (regenerated each cycle by attest.ts)
+audit/
 # os
 .DS_Store
 Thumbs.db

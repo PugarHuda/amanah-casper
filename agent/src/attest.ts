@@ -1,6 +1,8 @@
 // Build the reasoning blob, blake2b-256 hash it, Ed25519-sign the hash with the
 // agent key, and call AttestationLog.attest on Casper. Optionally pin the full
 // blob to IPFS.
+import { mkdirSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { blake2b } from "blakejs";
 import { CLValue, CLTypeUInt8, Args } from "./sdk.js";
 import type { PrivateKey, RpcClient } from "casper-js-sdk";
@@ -22,6 +24,12 @@ export async function attest(
   const json = JSON.stringify(blob);
   const bytes = new TextEncoder().encode(json);
   const hash = blake2b(bytes, undefined, 32); // Uint8Array(32)
+  const hashHex = bytesToHex(hash);
+
+  // Publish the reasoning so the on-chain hash is verifiable end-to-end (not a
+  // diary): write the exact blob to amanah/audit/<hash>.json. The MCP server reads
+  // it back, recomputes blake2b, and confirms it matches what was attested.
+  persistBlob(hashHex, json);
 
   // Sign the raw 32-byte hash WITH the algorithm tag byte — the on-chain
   // verify_signature expects [algo | 64-byte sig] and the registered agent key.
@@ -55,7 +63,17 @@ export async function attest(
 
   const ipfsCid = await pinToIpfs(json);
 
-  return { reasoningHash: bytesToHex(hash), deployHash, ipfsCid };
+  return { reasoningHash: hashHex, deployHash, ipfsCid };
+}
+
+function persistBlob(hashHex: string, json: string): void {
+  try {
+    const dir = resolve(import.meta.dirname, "../../audit");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(resolve(dir, `${hashHex}.json`), json);
+  } catch (e) {
+    console.warn("[attest] could not persist reasoning blob:", (e as Error).message);
+  }
 }
 
 function decisionLabel(d: Decision): string {
@@ -64,13 +82,28 @@ function decisionLabel(d: Decision): string {
     : `${d.action} (conf ${d.confidence})`;
 }
 
-async function pinToIpfs(_json: string): Promise<string | null> {
-  if (!config.web3StorageToken) return null;
-  // ponytail: wire web3.storage upload here (POST to https://api.web3.storage/upload
-  // with Authorization: Bearer <token>) and return the CID. Stubbed: returns null
-  // unless a token is set, then logs that the upload path is not yet implemented.
-  console.warn("[attest] WEB3_STORAGE_TOKEN set but IPFS pin not implemented");
-  return null;
+// Pin the reasoning blob to public IPFS via Pinata (pinJSONToIPFS, bearer JWT) so
+// anyone — not just someone with the repo — can fetch the exact blob whose hash
+// was attested. Skipped (returns null) unless PINATA_JWT is set; the local
+// audit/<hash>.json copy is always written regardless.
+async function pinToIpfs(json: string): Promise<string | null> {
+  if (!config.pinataJwt) return null;
+  try {
+    const res = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${config.pinataJwt}` },
+      body: JSON.stringify({ pinataContent: JSON.parse(json) }),
+    });
+    if (!res.ok) {
+      console.warn(`[attest] IPFS pin failed: ${res.status} ${(await res.text().catch(() => "")).slice(0, 120)}`);
+      return null;
+    }
+    const d = (await res.json()) as { IpfsHash?: string };
+    return d.IpfsHash ?? null;
+  } catch (e) {
+    console.warn("[attest] IPFS pin error:", (e as Error).message);
+    return null;
+  }
 }
 
 function bytesToHex(b: Uint8Array): string {

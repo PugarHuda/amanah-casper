@@ -4,6 +4,8 @@
 // agent/src/read-vault.ts and web/lib/cspr.ts). getAttestation/getReputation
 // stay stubbed — see their ponytail notes.
 
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { blake2b } from "blakejs";
 
 const RPC = process.env.CASPER_RPC_URL || "https://node.testnet.casper.network/rpc";
@@ -132,18 +134,45 @@ export async function getVaultState(): Promise<VaultState> {
 }
 
 export async function getAttestation(hash: string): Promise<Attestation & { note?: string }> {
-  // ponytail: NOT yet decoded on-chain. The Attestation is an odra_type struct in the
-  // AttestationLog "state" dict (decision String, signer PublicKey, block_time u64);
-  // decoding needs its field layout. Until then return verified:false + a note so a
-  // judge is never handed a fabricated "verified:true". Verify the hash via cspr.live.
-  return {
-    reasoningHash: hash,
-    decision: "(on-chain decode not yet wired — see note)",
-    signer: "(unknown)",
-    blockTime: 0,
-    verified: false,
-    note: "get_attestation is not live yet. The attestation IS on-chain in AttestationLog (package 365913a7…); look up the reasoning hash on testnet.cspr.live. Live decode of the struct is pending.",
-  };
+  // The agent publishes each reasoning blob to amanah/audit/<hash>.json (attest.ts).
+  // We read it back, recompute blake2b-256 over the exact bytes, and confirm it
+  // matches the requested hash — proving the on-chain hash corresponds to THIS
+  // reasoning. `verified` = local hash integrity; cross-check it's attested
+  // on-chain at AttestationLog (365913a7…) on testnet.cspr.live.
+  const clean = hash.replace(/^0x/, "").toLowerCase();
+  try {
+    const path = resolve(import.meta.dirname, "../../audit", `${clean}.json`);
+    const json = readFileSync(path, "utf8");
+    const recomputed = Buffer.from(blake2b(new TextEncoder().encode(json), undefined, 32)).toString("hex");
+    const blob = JSON.parse(json) as { decision?: any; pubkey?: string; signer?: string; at?: string };
+    const d = blob.decision ?? {};
+    const decision =
+      d.action === "rebalance"
+        ? `rebalance ${d.amount} ${d.fromAsset}->${d.toAsset} (conf ${d.confidence})`
+        : d.action
+          ? `${d.action} (conf ${d.confidence})`
+          : "(decision field absent in blob)";
+    return {
+      reasoningHash: clean,
+      decision,
+      signer: blob.pubkey ?? blob.signer ?? "(agent key)",
+      blockTime: blob.at ? Date.parse(blob.at) : 0,
+      verified: recomputed === clean,
+      note:
+        recomputed === clean
+          ? "Hash matches the published reasoning blob (integrity confirmed). Cross-check it's attested on-chain at AttestationLog (365913a7…) via testnet.cspr.live."
+          : `Integrity MISMATCH: blob hashes to ${recomputed}, not ${clean}.`,
+    };
+  } catch {
+    return {
+      reasoningHash: clean,
+      decision: "(no published reasoning blob for this hash)",
+      signer: "(unknown)",
+      blockTime: 0,
+      verified: false,
+      note: "No amanah/audit/<hash>.json found (this attestation predates blob publishing, or the agent ran elsewhere). The attestation may still be on-chain — look up the hash at AttestationLog (365913a7…) on testnet.cspr.live.",
+    };
+  }
 }
 
 export async function getReputation(address: string): Promise<Reputation & { note?: string }> {

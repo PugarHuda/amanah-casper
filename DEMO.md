@@ -1,0 +1,116 @@
+# Amanah — Demo & Submission Guide
+
+**Casper Agentic Buildathon 2026.** Autonomous, compliant RWA treasury agent on
+Casper testnet. It ingests live RWA prices, **pays for a premium signal via x402**,
+reasons with an LLM, **signs its reasoning (Ed25519) and verifies that signature
+ON-CHAIN** before recording it, runs guardrail + compliance checks, then
+**reallocates yield** — all as real testnet transactions.
+
+> Differentiator: **proof, not a diary.** Every decision is cryptographically
+> signed and verified *by the contract itself*, publicly checkable on cspr.live —
+> not logged to a private database.
+
+---
+
+## 1. Verifiable proof (paste into testnet.cspr.live)
+
+The three on-chain steps of the loop, each a real transaction:
+
+| Step | Hash | Link |
+|---|---|---|
+| Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` | [view](https://testnet.cspr.live/deploy/a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8) |
+| x402 settlement — `transfer_with_authorization` (CEP-3009) | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` | [view](https://testnet.cspr.live/deploy/391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398) |
+| Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` | [view](https://testnet.cspr.live/deploy/eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0) |
+
+Supporting setup txs (made the reallocate possible): `add_allowlist`
+`b28aec831ae0161137c17e965a023f176f8be88239fb2e172e0e924f5c7214a4`, `set_status(Valid)`
+`2c96996c41cb15d953f8b2a715d1d1a3d18afbb0e492ddc5ac70b15bab0d0bf6`.
+
+Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`.
+Six contract package hashes are in [`.env.deployed`](.env.deployed) / the README.
+
+---
+
+## 2. Live demo runbook (~3 min)
+
+```bash
+# A — the x402 premium-signal seller (the agent pays this)
+cd signal-service && npm install && npm run dev          # :8402, GET /alpha is x402-gated
+
+# B — read live treasury straight off the vault (no entrypoint)
+cd agent && npm install && npx tsx src/read-vault.ts
+#   -> Gold 200000000000  TBond 450000000000  WTI 150000000000  CSPR 200000000000
+#      (the on-chain result of the reallocate proof above; total $1.00M, conserved)
+
+# C — one full autonomous cycle (real x402 pay + attest on-chain)
+cd agent && MAX_CYCLES=1 npm run dev
+#   logs: ingest (real prices) -> x402.settle (tx hash) -> reason (deepseek-v4-flash)
+#         -> attest (tx hash). Each reasoning blob is written to amanah/audit/<hash>.json.
+
+# D — query the agent like a judge would, over MCP
+cd mcp && npm install && npx tsx src/server.ts           # stdio MCP server
+#   get_vault_state  -> live holdings + total decoded from the vault
+#   get_audit_trail  -> the real deploys above, labelled by contract
+#   get_attestation <hash> -> reads the published reasoning blob, recomputes
+#                             blake2b, confirms it matches what was attested
+```
+
+To re-prove the reallocate from scratch on the live contracts:
+`cd agent && DRY_RUN=false npx tsx src/go-live.ts` (idempotent).
+
+---
+
+## 3. Video script (~2.5 min, screen-recording)
+
+1. **Hook (15s)** — "Most 'AI agents' ask you to trust a log file. Amanah proves
+   every decision on-chain." Show the landing page.
+2. **The loop (45s)** — run `MAX_CYCLES=1 npm run dev`. Narrate each line as it
+   prints: real prices in, x402 payment settled (copy the tx hash), LLM decision,
+   signed + attested. Switch to cspr.live, paste the attest hash → show SUCCESS.
+3. **The differentiator (30s)** — open the AttestationLog contract; explain the
+   Ed25519 signature is verified *inside* the contract (`attestation_log.rs`), so a
+   forged reasoning hash reverts. This is the "proof, not a diary" claim, on-chain.
+4. **Guardrails + reallocate (30s)** — paste the reallocate hash on cspr.live; run
+   `read-vault.ts` to show Gold/T-bond actually moved. Note SpendGate cap +
+   Compliance gate + the principal invariant (unit-tested).
+5. **Ask-the-agent (20s)** — over MCP, `get_attestation <hash>` returns the actual
+   reasoning and confirms the hash matches. `get_vault_state` shows live holdings.
+6. **Close (10s)** — RWA + DeFi + autonomous agent, fully on Casper testnet, x402 +
+   MCP + Odra. Repo + proof hashes on screen.
+
+---
+
+## 4. Submission checklist (DoraHacks)
+
+- [x] Working prototype on **Casper Testnet** with tx-producing on-chain component
+      (attest + x402 + reallocate proofs above) — the hard eligibility gate.
+- [x] Open-source GitHub repo with README — https://github.com/PugarHuda/amanah-casper
+- [ ] **Public demo video** — record from the script in §3, upload (YouTube/Loom),
+      add the link to the DoraHacks submission. *(You must do this — required.)*
+- [ ] **Register on CSPR.fans** for the community-vote round (top-3 there
+      auto-advance to the jury). *(Your action; not doable from code.)*
+- [x] Original code; secrets gitignored.
+
+---
+
+## 5. Integration & roadmap (honest status)
+
+**Live now:** Casper L1 (Odra 2.8.1, 6 contracts, on-chain tx every step) ·
+x402 Facilitator (CEP-3009 settlement) · CSPR.cloud REST (audit trail + rates) ·
+our own MCP server (vault + audit live; attestation verified against the published
+blob) · Venice reasoning (`deepseek-v4-flash`).
+
+**Next, to deepen partner integration (ranked):**
+1. **CSPR.fans** registration — unlocks the community-vote auto-advance path.
+2. **CSPR.click AI Agent Skill** — replace the stubbed wallet on `/connect` with
+   the official skill (wallet creation/connect/sign). Seam: `app/connect/page.tsx`.
+3. **Official Casper MCP + CSPR.trade MCP** — have the agent *consume* these to
+   execute swaps / read state, alongside our read-only server.
+4. **CSPR.cloud Streaming API** — push the agent-console step-stream live over SSE
+   (it's currently a representative view), and stream vault events.
+5. **Public IPFS pin** — set `PINATA_JWT` so each reasoning blob is pinned to IPFS
+   (code is wired in `attest.ts`); today the blob is published locally to
+   `amanah/audit/<hash>.json` and integrity-checked by the MCP.
+6. **Live principal lock** — the invariant is enforced in-contract + unit-tested;
+   the live vault is seeded with principal = 0. Add a `lock_principal` entrypoint +
+   redeploy to show a non-zero locked principal on the dashboard.

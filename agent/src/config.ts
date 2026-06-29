@@ -60,8 +60,10 @@ export const config = {
         !process.env.RWA_VAULT_HASH ||
         !process.env.REPUTATION_REGISTRY_HASH)),
 
-  // Optional IPFS pin (web3.storage). Empty => skipped.
-  web3StorageToken: process.env.WEB3_STORAGE_TOKEN ?? "",
+  // Optional public IPFS pin of the reasoning blob (Pinata JWT). Empty => skipped
+  // (the local audit/<hash>.json copy is always written). Makes the attested hash
+  // verifiable by anyone, not just someone holding the repo.
+  pinataJwt: process.env.PINATA_JWT ?? "",
 
   // Optional Telegram escalation
   telegramToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
