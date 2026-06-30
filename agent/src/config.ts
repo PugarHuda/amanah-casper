@@ -35,10 +35,9 @@ export const config = {
   veniceKey: process.env.VENICE_API_KEY ?? "",
   veniceBaseUrl: opt("VENICE_BASE_URL", "https://api.venice.ai/api/v1"),
   // Any chat model id from the live Venice model list (GET /models). Default =
-  // deepseek-v4-flash: strong reasoning + JSON-schema support + 1M ctx at
-  // ~$0.14/$0.28 per Mtok — the best strength/price for the decision step.
-  // (The old "qwen-3-7-max" default was NOT a real Venice id → every call 4xx'd.)
-  // Override with VENICE_MODEL.
+  // deepseek-v4-flash: strong reasoning + 1M ctx at ~$0.14/$0.28 per Mtok — the
+  // best strength/price for the decision step. (qwen-3-7-max also works but is the
+  // premium tier at $2.7/$8.05 per Mtok — ~30x dearer.) Override with VENICE_MODEL.
   model: opt("VENICE_MODEL", "deepseek-v4-flash"),
 
   // Data source keys (optional — missing keys degrade gracefully)

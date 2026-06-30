@@ -1,6 +1,9 @@
 import Nav from "@/components/Nav";
 import { getAgentConsole } from "@/lib/data";
 
+// Read the newest reasoning blob + on-chain hashes at request time (not baked at build).
+export const revalidate = 15;
+
 const Check = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
     <path d="M3 7.5l2.6 2.6L11 4" stroke="#3fae6a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
