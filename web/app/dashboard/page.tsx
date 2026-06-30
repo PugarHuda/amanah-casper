@@ -1,4 +1,5 @@
 import Nav from "@/components/Nav";
+import LiveFeed from "@/components/LiveFeed";
 import { getDashboard } from "@/lib/data";
 
 // Revalidate dashboard every 30 seconds so live vault + trail stay fresh.
@@ -127,6 +128,9 @@ export default async function Dashboard() {
                 View all deploys on testnet.cspr.live ↗
               </a>
             </div>
+
+            {/* Live contract-event stream via CSPR.cloud Streaming API (SSE relay). */}
+            <LiveFeed />
           </div>
         </div>
       </div>

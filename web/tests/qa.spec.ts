@@ -9,7 +9,10 @@ const BASE = process.env.QA_BASE || "http://localhost:3100";
 const STALE_FAKES = ["12.84M", "12,840,219", "4,218", "$11.9M", "$184K"];
 
 async function gotoAndSettle(page: Page, path: string) {
-  await page.goto(`${BASE}${path}`, { waitUntil: "networkidle" });
+  // domcontentloaded, not networkidle: /dashboard holds an open SSE connection
+  // (the live feed), so "networkidle" would never fire. Explicit toBeVisible
+  // assertions below do the real waiting.
+  await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
 }
 
 test.describe("Amanah manual-click QA", () => {
@@ -101,6 +104,16 @@ test.describe("Amanah manual-click QA", () => {
     const vh = await viewAll.getAttribute("href");
     console.log("View all href:", vh);
     expect(vh).toContain("/account/");
+  });
+
+  test("dashboard live feed connects to CSPR.cloud streaming (SSE)", async ({ page }) => {
+    await gotoAndSettle(page, "/dashboard");
+    // The streaming panel renders.
+    await expect(page.getByText(/CSPR\.CLOUD STREAMING · CONTRACT EVENTS/i)).toBeVisible();
+    // The SSE relay connects → status flips to "LIVE · streaming" (it starts "connecting…").
+    await expect(page.getByText(/LIVE · streaming/i)).toBeVisible({ timeout: 10000 });
+    const body = await page.getByTestId("live-feed-body").innerText();
+    console.log("Live feed body:", body.slice(0, 80));
   });
 
   test("connect page wallet rows + CSPR.click integration render", async ({ page }) => {

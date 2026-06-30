@@ -100,25 +100,27 @@ To re-prove the reallocate from scratch on the live contracts:
 
 ## 5. Integration & roadmap (honest status)
 
-**Live now:** Casper L1 (Odra 2.8.1, 6 contracts, on-chain tx every step) ·
-x402 Facilitator (CEP-3009 settlement) · CSPR.cloud REST (audit trail + rates) ·
-our own MCP server (vault + audit live; attestation verified against the published
-blob) · Venice reasoning (`deepseek-v4-flash`).
-
-**Also live:** CSPR.click wallet on `/connect` — official hosted SDK (Casper
-Wallet / Ledger / MetaMask Snap / Google+Apple social login), `signIn()` opens the
-real modal. Works on localhost with the `csprclick-template` app-id; set
-`NEXT_PUBLIC_CSPR_CLICK_APP_ID` for a deployed domain.
+**Live now (partner tools, all real):**
+- **Casper L1** — Odra 2.8.1, 6 contracts, an on-chain tx every loop step.
+- **x402 Facilitator** — CEP-3009 `transfer_with_authorization`, settled on-chain.
+- **CSPR.cloud REST** — audit trail + treasury decode + reputation + rates.
+- **CSPR.cloud Streaming API** — real-time contract-event feed on `/dashboard`
+  (WebSocket → SSE relay at `/api/stream`; key stays server-side). Verified
+  end-to-end: an `Attested` event hit the feed within seconds of a cycle. CLI:
+  `cd agent && npx tsx src/stream.ts`.
+- **CSPR.click** — official hosted wallet SDK on `/connect` (Casper Wallet / Ledger
+  / MetaMask Snap / Google+Apple social login). `csprclick-template` on localhost;
+  set `NEXT_PUBLIC_CSPR_CLICK_APP_ID` for a deployed domain.
+- **MCP** — our read-only server, all 4 tools decode live chain state.
+- **Venice** — reasoning (`deepseek-v4-flash`).
 
 **Next, to deepen partner integration (ranked):**
 1. **CSPR.fans** registration — unlocks the community-vote auto-advance path.
 2. **Official Casper MCP + CSPR.trade MCP** — have the agent *consume* these to
    execute swaps / read state, alongside our read-only server.
-4. **CSPR.cloud Streaming API** — push the agent-console step-stream live over SSE
-   (it's currently a representative view), and stream vault events.
-5. **Public IPFS pin** — set `PINATA_JWT` so each reasoning blob is pinned to IPFS
+3. **Public IPFS pin** — set `PINATA_JWT` so each reasoning blob is pinned to IPFS
    (code is wired in `attest.ts`); today the blob is published locally to
    `amanah/audit/<hash>.json` and integrity-checked by the MCP.
-6. **Live principal lock** — the invariant is enforced in-contract + unit-tested;
+4. **Live principal lock** — the invariant is enforced in-contract + unit-tested;
    the live vault is seeded with principal = 0. Add a `lock_principal` entrypoint +
    redeploy to show a non-zero locked principal on the dashboard.

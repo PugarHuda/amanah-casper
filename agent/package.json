@@ -11,10 +11,12 @@
   },
   "dependencies": {
     "@make-software/casper-x402": "^1.0.0",
+    "@types/ws": "^8.18.1",
     "@x402/core": "2.15.0",
     "blakejs": "^1.2.1",
     "casper-js-sdk": "^5.0.12",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "ws": "^8.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
