@@ -85,10 +85,10 @@ npm run start -- -p 3100          # terminal 1: serve the prod build
 # terminal 2:
 $env:QA_BASE="http://localhost:3100" ; npm run test:e2e
 ```
-Expect **11 passed** — it clicks every page, checks live data (treasury $1M,
-reputation 1, live stream connects), and asserts every cspr.live link is a real
-deep link (no fake numbers, no homepage links). A 12th test (`click-live.spec.ts`)
-verifies the CSPR.click modal actually opens.
+Expect **12 passed** — it clicks every page, checks live data (treasury $1M,
+reputation 1, live SpendGate cap, live stream connects), asserts every cspr.live
+link is a real deep link (no fake numbers, no homepage links), and verifies the
+CSPR.click modal actually opens.
 
 ### Check all 4 MCP tools are live
 ```powershell
@@ -121,4 +121,6 @@ npx tsx src/find-state-seeds.ts                  # rediscover state-dict seeds v
 | MCP: all 4 tools read live chain state | ✅ live | `src/smoke.ts` |
 | CSPR.click wallet on /connect (hosted SDK) | ✅ live | `/connect` |
 | CSPR.cloud Streaming API live event feed | ✅ live | `/dashboard` + `agent/src/stream.ts` |
-| Web: dashboard + agent console, real deep links | ✅ live | `test:e2e` 11/11 |
+| Agent consumes official CSPR.cloud MCP (82 tools) | ✅ live | `agent/src/cspr-mcp.ts` |
+| Guardrail limits read live from SpendGate | ✅ live | dashboard + `/agent` |
+| Web: dashboard + agent console, real deep links | ✅ live | `test:e2e` 12/12 |

@@ -6,7 +6,7 @@ import { getDashboard } from "@/lib/data";
 export const revalidate = 30;
 
 export default async function Dashboard() {
-  const { treasuryId, totalTreasury, banner, holdings, trail, vaultHash } = await getDashboard();
+  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, vaultHash } = await getDashboard();
 
   const explorerBase = "https://testnet.cspr.live";
   const accountUrl = `${explorerBase}/account/0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`;
@@ -81,12 +81,12 @@ export default async function Dashboard() {
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>Valid ✓</div>
               </div>
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
-                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Allowlisted targets</div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>3 of 3</div>
+                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Per-tx cap</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>{compliance.txCap}</div>
               </div>
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface-subtle)" }}>
                 <div style={{ fontSize: 13, color: "var(--faint)", fontWeight: 600 }}>Daily limit used</div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>$50K / $2M</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>{compliance.dailyUsed} / {compliance.dailyLimit}</div>
               </div>
             </div>
           </div>

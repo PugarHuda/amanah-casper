@@ -17,11 +17,13 @@ loop runs end-to-end against the live node. Four on-chain steps are verified wit
 public proof hashes: **attestation**, **x402 settlement**, **reallocate** (allowlist
 + compliance gated), and **reputation** (`record_payment`). Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
-contract-event feed over WebSocket→SSE), the **CSPR.click** wallet on `/connect`
-(official hosted SDK — Casper Wallet / Ledger / social login), our own **MCP** server
-(all four tools read live chain state), and **Venice** reasoning. The web dashboard's
-treasury, audit trail, reputation, and live event feed all read live chain state; the
-agent console renders the latest published reasoning blob + its on-chain attestation.
+contract-event feed over WebSocket→SSE); the agent **consumes the official hosted
+CSPR.cloud MCP server** (82 tools) each cycle for an independent second source of
+on-chain truth; the **CSPR.click** wallet on `/connect` (official hosted SDK — Casper
+Wallet / Ledger / social login); our own **MCP** server (all four tools read live
+chain state); and **Venice** reasoning. The dashboard's treasury, audit trail,
+reputation, live event feed, and **guardrail limits read live from chain**; the agent
+console renders the latest published reasoning blob + its on-chain attestation.
 See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
 
 ## Cycle (every `CYCLE_MS`, default 60s — all steps real, no mock)
@@ -70,7 +72,7 @@ in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 | Module | Stack | What it is |
 |---|---|---|
 | [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry, PaymentToken. On-chain Ed25519 verification is the heart. 6/6 OdraVM tests pass. |
-| [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice (OpenAI-compat) | The autonomous loop: ingest → x402 → reason → attest → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. |
+| [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via the official CSPR.cloud MCP** → x402 → reason → attest → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. `npx tsx src/cspr-mcp.ts` demos the official-MCP consumption; `npx tsx src/stream.ts` watches events live. |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | The x402-gated premium-signal API the agent pays — agent-pays-agent commerce, settled on-chain via CEP-3009. |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
 | [`bot/`](bot) | TypeScript · grammy | Optional Telegram notifier + `/audit`. |
@@ -130,6 +132,9 @@ Banned in the core loop: hardcoded prices, fake tx, static reasoning templates,
 simulated settlement. Every loop step (ingest → x402 → reason → attest →
 guardrail → reallocate) touches testnet or a real public API a judge can check,
 and the dashboard's treasury + audit trail read live chain state.
+
+Guardrail limits on the dashboard/console (per-tx cap, daily limit, spent today)
+are now read live from the SpendGate contract — no longer hardcoded.
 
 Honest caveats (small, disclosed): the principal-lock invariant is enforced
 in-contract and unit-tested (`reallocate_rejected_when_it_would_touch_principal`)

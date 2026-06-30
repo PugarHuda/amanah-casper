@@ -14,6 +14,7 @@ import {
   escalateToHuman,
 } from "./execute.js";
 import { recordPayment } from "./reputation.js";
+import { getAgentInsights } from "./cspr-mcp.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -29,6 +30,12 @@ async function runCycle(cycle: number): Promise<void> {
   // 1. INGEST
   const prices = await ingest();
   log(cycle, "ingest", prices);
+
+  // 1b. ENRICH (best-effort) — second, independent source of on-chain truth from
+  // the OFFICIAL CSPR.cloud MCP server (agent balance + CSPR/USD rate). Time-bounded
+  // and never throws, so it can't stall or break the cycle.
+  const insights = await getAgentInsights(key.publicKey.toHex());
+  if (insights) log(cycle, "cspr-mcp.insights", insights);
 
   // 2. PAY (x402) — buy the premium signal; capture settlement deploy hash.
   let premiumSignal: unknown = null;

@@ -127,14 +127,41 @@ async function readI64(index: number, mappingKey: number[]): Promise<number> {
 const usd = (units: bigint) =>
   "$" + (Number(units) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
+// SpendGate live limits (Var fields: max_per_tx=2, daily_limit=3, spent_today=4).
+const SPENDGATE_SEED = process.env.SPENDGATE_STATE_SEED || "";
+function sgDictAddr(index: number): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index)]), undefined, 32));
+  return hex(blake2b(Buffer.concat([Buffer.from(SPENDGATE_SEED, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+async function sgReadBig(index: number): Promise<bigint> {
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return 0n;
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${sgDictAddr(index)}` },
+  });
+  if (r.error) return 0n;
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  const len = arr[0] ?? 0;
+  let v = 0n;
+  for (let i = 0; i < len; i++) v += BigInt(arr[1 + i] ?? 0) << BigInt(8 * i);
+  return v;
+}
+
+async function liveGuards(): Promise<string[]> {
+  if (!SPENDGATE_SEED) {
+    return ["Cap (set SPENDGATE_STATE_SEED)", "Principal locked", "Compliance: Valid"];
+  }
+  try {
+    const [cap, daily, spent] = await Promise.all([sgReadBig(2), sgReadBig(3), sgReadBig(4)]);
+    return [`Cap ${usd(cap)} / tx`, `Daily limit ${usd(daily)}`, `Spent ${usd(spent)} today`, "Principal locked", "Compliance: Valid"];
+  } catch {
+    return ["Cap (read failed)", "Principal locked", "Compliance: Valid"];
+  }
+}
+
 export async function getVaultState(): Promise<VaultState> {
-  const guards = [
-    "Cap $500K / tx",
-    "Daily limit $2M",
-    "Allowlist · 3 targets",
-    "Principal locked",
-    "Compliance: Valid",
-  ]; // ponytail: configured guard params; read SpendGate/Compliance state to make live
+  const guards = await liveGuards();
   if (!STATE_SEED) {
     return {
       treasuryId: "TREASURY · CASPER-TEST (set VAULT_STATE_SEED for live reads)",

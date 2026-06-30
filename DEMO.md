@@ -111,13 +111,19 @@ To re-prove the reallocate from scratch on the live contracts:
 - **CSPR.click** — official hosted wallet SDK on `/connect` (Casper Wallet / Ledger
   / MetaMask Snap / Google+Apple social login). `csprclick-template` on localhost;
   set `NEXT_PUBLIC_CSPR_CLICK_APP_ID` for a deployed domain.
-- **MCP** — our read-only server, all 4 tools decode live chain state.
+- **Official CSPR.cloud MCP server** — the agent *consumes* the partner's hosted
+  MCP (`mcp.testnet.cspr.cloud`, 82 tools) every cycle as an independent second
+  source of on-chain truth (agent balance + CSPR/USD rate, logged as the
+  `cspr-mcp.insights` step). Demo: `cd agent && npx tsx src/cspr-mcp.ts`.
+- **MCP** — our own read-only server, all 4 tools decode live chain state.
+- **SpendGate guardrails** — per-tx cap / daily limit / spent-today read live from
+  the contract (dashboard + console + our MCP). No hardcoded guard values.
 - **Venice** — reasoning (`deepseek-v4-flash`).
 
 **Next, to deepen partner integration (ranked):**
 1. **CSPR.fans** registration — unlocks the community-vote auto-advance path.
-2. **Official Casper MCP + CSPR.trade MCP** — have the agent *consume* these to
-   execute swaps / read state, alongside our read-only server.
+2. **CSPR.trade MCP** — have the agent consume the DEX MCP to execute swaps (we
+   already consume the official CSPR.cloud MCP for reads).
 3. **Public IPFS pin** — set `PINATA_JWT` so each reasoning blob is pinned to IPFS
    (code is wired in `attest.ts`); today the blob is published locally to
    `amanah/audit/<hash>.json` and integrity-checked by the MCP.

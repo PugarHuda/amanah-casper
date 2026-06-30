@@ -15,6 +15,8 @@ import {
   vaultReadable,
   getReputationScore,
   reputationReadable,
+  getSpendGateState,
+  spendGateReadable,
   shortHash,
   relTime,
   type RawDeploy,
@@ -104,6 +106,18 @@ function fmtUsd(atomic6dp: bigint): string {
     : `$${dollars.toLocaleString("en-US")}`;
 }
 
+// Live guardrail chip labels from on-chain SpendGate limits (falls back to mock).
+function liveGuards(sg: { maxPerTx: bigint; dailyLimit: bigint; spentToday: bigint } | null): string[] {
+  if (!sg) return mock.guards;
+  return [
+    `Cap ${fmtUsd(sg.maxPerTx)} / tx`,
+    `Daily limit ${fmtUsd(sg.dailyLimit)}`,
+    `Spent ${fmtUsd(sg.spentToday)} today`,
+    "Principal locked",
+    "Compliance: Valid",
+  ];
+}
+
 // Vault asset presentation config.
 const ASSET_VIEW: Record<string, { name: string; unit: string; color: string; bg: string }> = {
   Gold: { name: "Gold (tokenized)", unit: "XAU", color: "#e7a83c", bg: "#fbf1dc" },
@@ -131,12 +145,13 @@ export async function getAgentConsole() {
   // Defensive: older blobs stored riskScore on a 0..100 scale (schema says 0..1).
   const risk = d.riskScore != null ? (d.riskScore > 1 ? d.riskScore / 100 : d.riskScore) : null;
 
-  // Parallel: latest attest deploy hash, attest count, vault state, reputation.
-  const [deploys, attestCount, vault, repScore] = await Promise.all([
+  // Parallel: latest attest deploy hash, attest count, vault state, reputation, spend gate.
+  const [deploys, attestCount, vault, repScore, spendGate] = await Promise.all([
     live() ? getContractDeploys([ATTESTATION()], 1) : Promise.resolve([]),
     live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
     vaultReadable() ? getVaultState() : Promise.resolve(null),
     reputationReadable() ? getReputationScore(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
+    spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
   ]);
   const attestDeploy = deploys[0];
   const attestDeployHash = attestDeploy?.deploy_hash ?? "";
@@ -209,7 +224,7 @@ export async function getAgentConsole() {
   return {
     metrics,
     assets,
-    guards: mock.guards,
+    guards: liveGuards(spendGate),
     steps,
     reasoningHash: `0x${hash}`,
     decision: {
@@ -232,11 +247,24 @@ export async function getDashboard() {
   let holdings = mock.holdings;
   let treasuryId = mock.treasuryId;
   let banner = mock.banner;
+  // Compliance card: live SpendGate daily-limit usage + per-tx cap (fallback honest mock).
+  let compliance = { dailyUsed: "$50K", dailyLimit: "$2M", txCap: "$500K" };
 
   if (live()) {
     // Include x402 payment deploys alongside vault/attestation/reputation.
     const deploys = await getContractDeploys([VAULT(), ATTESTATION(), X402(), REPUTATION()], 8);
     if (deploys.length) trail = deploys.map(deployToTrail);
+  }
+
+  if (spendGateReadable()) {
+    const sg = await getSpendGateState();
+    if (sg) {
+      compliance = {
+        dailyUsed: fmtUsd(sg.spentToday),
+        dailyLimit: fmtUsd(sg.dailyLimit),
+        txCap: fmtUsd(sg.maxPerTx),
+      };
+    }
   }
 
   if (vaultReadable()) {
@@ -283,6 +311,7 @@ export async function getDashboard() {
     banner,
     holdings,
     trail,
+    compliance,
     vaultHash: VAULT(),
   };
 }

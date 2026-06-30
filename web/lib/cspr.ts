@@ -192,6 +192,44 @@ export async function getVaultState(): Promise<{
   }
 }
 
+// --- SpendGate live limits (Var fields, U512 blob, 6-dp USD units) -----------
+// Field order from spend_gate.rs (1-indexed, Odra reserves 0): owner=1,
+// max_per_tx=2, daily_limit=3, spent_today=4. Needs SPENDGATE_STATE_SEED.
+const SPENDGATE_SEED = process.env.SPENDGATE_STATE_SEED || "";
+export const spendGateReadable = () => !!SPENDGATE_SEED;
+
+function sgDictAddr(index: number): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index)]), undefined, 32));
+  const seed = Buffer.from(SPENDGATE_SEED, "hex");
+  return hex(blake2b(Buffer.concat([seed, Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+
+async function sgReadBig(index: number): Promise<bigint> {
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return 0n;
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${sgDictAddr(index)}` },
+  });
+  if (r.error) return 0n;
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  const len = arr[0] ?? 0;
+  let v = 0n;
+  for (let i = 0; i < len; i++) v += BigInt(arr[1 + i] ?? 0) << BigInt(8 * i);
+  return v;
+}
+
+/** Live SpendGate limits (atomic 6-dp USD units). null if seed unset. */
+export async function getSpendGateState(): Promise<{ maxPerTx: bigint; dailyLimit: bigint; spentToday: bigint } | null> {
+  if (!SPENDGATE_SEED) return null;
+  try {
+    const [maxPerTx, dailyLimit, spentToday] = await Promise.all([sgReadBig(2), sgReadBig(3), sgReadBig(4)]);
+    return { maxPerTx, dailyLimit, spentToday };
+  } catch {
+    return null;
+  }
+}
+
 // --- ReputationRegistry score (Mapping<Address,i64>, field index 1) ----------
 // score key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes. i64 parsed
 // comes back as an 8-byte little-endian array on Casper 2.0. Needs REPUTATION_STATE_SEED.

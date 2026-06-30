@@ -6,7 +6,7 @@ import { test, expect, type Page } from "@playwright/test";
 const BASE = process.env.QA_BASE || "http://localhost:3100";
 
 // Fake values that must NOT appear on live pages (they were the old mock data).
-const STALE_FAKES = ["12.84M", "12,840,219", "4,218", "$11.9M", "$184K"];
+const STALE_FAKES = ["12.84M", "12,840,219", "4,218", "$11.9M", "$184K", "$420K"];
 
 async function gotoAndSettle(page: Page, path: string) {
   // domcontentloaded, not networkidle: /dashboard holds an open SSE connection
@@ -104,6 +104,16 @@ test.describe("Amanah manual-click QA", () => {
     const vh = await viewAll.getAttribute("href");
     console.log("View all href:", vh);
     expect(vh).toContain("/account/");
+  });
+
+  test("dashboard compliance card shows live SpendGate limits", async ({ page }) => {
+    await gotoAndSettle(page, "/dashboard");
+    // Live per-tx cap is $100,000 (the on-chain SpendGate value), not the old fake $500K.
+    await expect(page.getByText("Per-tx cap")).toBeVisible();
+    const cap = await page.getByText("Per-tx cap").locator("xpath=following-sibling::*[1]").innerText();
+    console.log("Live per-tx cap:", cap);
+    expect(cap).toMatch(/^\$[\d,]+/);
+    expect(cap).not.toContain("500");
   });
 
   test("dashboard live feed connects to CSPR.cloud streaming (SSE)", async ({ page }) => {
