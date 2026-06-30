@@ -147,7 +147,10 @@ async function rpc(method: string, params: unknown): Promise<{ result?: any; err
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-    next: { revalidate: 60 },
+    // No fetch-cache: the state-root-hash changes every block, and caching it
+    // serves stale reads (e.g. a reputation write looks absent). Page-level ISR
+    // (revalidate on /agent, /dashboard) already throttles re-render frequency.
+    cache: "no-store",
   });
   return res.json();
 }
@@ -184,6 +187,44 @@ export async function getVaultState(): Promise<{
     }
     const principal = await readBig(2);
     return { holdings, principal, total };
+  } catch {
+    return null;
+  }
+}
+
+// --- ReputationRegistry score (Mapping<Address,i64>, field index 1) ----------
+// score key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes. i64 parsed
+// comes back as an 8-byte little-endian array on Casper 2.0. Needs REPUTATION_STATE_SEED.
+const REP_SEED = process.env.REPUTATION_STATE_SEED || "";
+export const reputationReadable = () => !!REP_SEED;
+
+function repDictAddr(index: number, mappingKey: number[]): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
+  const seed = Buffer.from(REP_SEED, "hex");
+  return hex(blake2b(Buffer.concat([seed, Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+
+/** Live reputation score for an account-hash (hex, no prefix). null if unreadable. */
+export async function getReputationScore(accountHashHex: string): Promise<number | null> {
+  if (!REP_SEED || accountHashHex.length !== 64) return null;
+  try {
+    const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+    if (!srh) return null;
+    const mappingKey = [0x00, ...Array.from(Buffer.from(accountHashHex, "hex"))];
+    const r = await rpc("state_get_dictionary_item", {
+      state_root_hash: srh,
+      dictionary_identifier: { Dictionary: `dictionary-${repDictAddr(1, mappingKey)}` },
+    });
+    if (r.error) return 0; // missing = get_or_default = 0
+    const v = r.result?.stored_value?.CLValue?.parsed;
+    if (typeof v === "number") return Math.round(v);
+    if (Array.isArray(v)) {
+      let n = 0n;
+      for (let i = 0; i < v.length; i++) n |= BigInt(v[i] & 0xff) << BigInt(8 * i);
+      if (n >= 1n << 63n) n -= 1n << 64n;
+      return Number(n);
+    }
+    return 0;
   } catch {
     return null;
   }

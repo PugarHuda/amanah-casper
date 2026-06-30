@@ -110,7 +110,17 @@ async function readI64(index: number, mappingKey: number[]): Promise<number> {
   });
   if (r.error) return 0; // missing = get_or_default = 0
   const v = r.result?.stored_value?.CLValue?.parsed;
-  return typeof v === "number" ? Math.round(v) : 0;
+  // i64 CLValue.parsed comes back as a JSON number on some nodes, but Casper 2.0
+  // returns it as an 8-byte little-endian array (e.g. [1,0,0,0,0,0,0,0] = 1).
+  if (typeof v === "number") return Math.round(v);
+  if (Array.isArray(v)) {
+    let n = 0n;
+    for (let i = 0; i < v.length; i++) n |= BigInt(v[i] & 0xff) << BigInt(8 * i);
+    // sign-extend a two's-complement i64
+    if (n >= 1n << 63n) n -= 1n << 64n;
+    return Number(n);
+  }
+  return 0;
 }
 
 // 6-dp atomic units -> "$X,XXX" USD (the vault tracks notional USD value, 6 decimals)

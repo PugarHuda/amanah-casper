@@ -21,6 +21,7 @@ The three on-chain steps of the loop, each a real transaction:
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` | [view](https://testnet.cspr.live/deploy/a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8) |
 | x402 settlement — `transfer_with_authorization` (CEP-3009) | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` | [view](https://testnet.cspr.live/deploy/391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398) |
 | Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` | [view](https://testnet.cspr.live/deploy/eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0) |
+| Reputation — `record_payment` credits the x402 proof (anti-replay) | `c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c` | [view](https://testnet.cspr.live/deploy/c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c) |
 
 Supporting setup txs (made the reallocate possible): `add_allowlist`
 `b28aec831ae0161137c17e965a023f176f8be88239fb2e172e0e924f5c7214a4`, `set_status(Valid)`
@@ -49,11 +50,15 @@ cd agent && MAX_CYCLES=1 npm run dev
 
 # D — query the agent like a judge would, over MCP
 cd mcp && npm install && npx tsx src/server.ts           # stdio MCP server
-#   get_vault_state  -> live holdings + total decoded from the vault
+#   get_vault_state  -> live holdings + total decoded from the vault ($1.00M)
 #   get_audit_trail  -> the real deploys above, labelled by contract
 #   get_attestation <hash> -> reads the published reasoning blob, recomputes
 #                             blake2b, confirms it matches what was attested
+#   get_reputation <account-hash> -> live i64 score from ReputationRegistry (= 1)
 ```
+
+All four MCP tools are LIVE (decoded straight from chain). Quick check:
+`cd mcp && npx tsx src/smoke.ts` prints reputation=1, vault=$1M, attestation verified=true.
 
 To re-prove the reallocate from scratch on the live contracts:
 `cd agent && DRY_RUN=false npx tsx src/go-live.ts` (idempotent).

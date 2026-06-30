@@ -13,11 +13,16 @@ import {
   getDeployCount,
   getVaultState,
   vaultReadable,
+  getReputationScore,
+  reputationReadable,
   shortHash,
   relTime,
   type RawDeploy,
 } from "./cspr";
 import type { Holding } from "./mock";
+
+// Agent account-hash (the signer whose reputation we display).
+const AGENT_ACCOUNT_HASH = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f";
 
 const VAULT = () => process.env.NEXT_PUBLIC_VAULT_HASH || "";
 const ATTESTATION = () => process.env.NEXT_PUBLIC_ATTESTATION_HASH || "";
@@ -123,12 +128,15 @@ export async function getAgentConsole() {
   const { hash, blob } = latest;
   const d = blob.decision ?? {};
   const p = blob.prices ?? {};
+  // Defensive: older blobs stored riskScore on a 0..100 scale (schema says 0..1).
+  const risk = d.riskScore != null ? (d.riskScore > 1 ? d.riskScore / 100 : d.riskScore) : null;
 
-  // Parallel: latest attest deploy hash, attest count, vault state.
-  const [deploys, attestCount, vault] = await Promise.all([
+  // Parallel: latest attest deploy hash, attest count, vault state, reputation.
+  const [deploys, attestCount, vault, repScore] = await Promise.all([
     live() ? getContractDeploys([ATTESTATION()], 1) : Promise.resolve([]),
     live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
     vaultReadable() ? getVaultState() : Promise.resolve(null),
+    reputationReadable() ? getReputationScore(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
   ]);
   const attestDeploy = deploys[0];
   const attestDeployHash = attestDeploy?.deploy_hash ?? "";
@@ -143,11 +151,16 @@ export async function getAgentConsole() {
     },
     {
       label: "Risk score",
-      value: d.riskScore != null ? d.riskScore.toFixed(2) : mock.metrics[1].value,
-      delta: d.riskScore != null ? (d.riskScore < 0.5 ? "Low" : d.riskScore < 0.75 ? "Medium" : "High") : mock.metrics[1].delta,
-      deltaColor: d.riskScore != null ? (d.riskScore < 0.5 ? "var(--green)" : "var(--red)") : "var(--faint)",
+      value: risk != null ? risk.toFixed(2) : mock.metrics[1].value,
+      delta: risk != null ? (risk < 0.5 ? "Low" : risk < 0.75 ? "Medium" : "High") : mock.metrics[1].delta,
+      deltaColor: risk != null ? (risk < 0.5 ? "var(--green)" : "var(--red)") : "var(--faint)",
     },
-    { label: "Reputation", value: "—", delta: "pending chain read", deltaColor: "var(--faint)" },
+    {
+      label: "Reputation",
+      value: repScore != null ? String(repScore) : "—",
+      delta: repScore != null ? "on-chain proof" : "set REP seed",
+      deltaColor: repScore != null && repScore > 0 ? "var(--green)" : "var(--faint)",
+    },
     {
       label: "Attestations",
       value: attestCount != null ? attestCount.toLocaleString("en-US") : mock.metrics[3].value,

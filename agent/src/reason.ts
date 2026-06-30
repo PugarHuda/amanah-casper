@@ -82,5 +82,10 @@ function extractJson(text: string): unknown | null {
 function normalize(d: Decision): Decision {
   // Guardrail: a non-rebalance action never moves funds.
   if (d.action !== "rebalance") d.amount = 0;
+  // Models sometimes return risk/confidence on a 0..100 scale despite the 0..1
+  // schema (observed: deepseek returned riskScore 20). Coerce back to 0..1 so
+  // every downstream consumer (web badge, escalation threshold) reads it right.
+  if (d.riskScore > 1) d.riskScore = d.riskScore / 100;
+  if (d.confidence > 1) d.confidence = d.confidence / 100;
   return d;
 }

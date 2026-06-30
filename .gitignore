@@ -14,6 +14,10 @@ contracts/wasm/
 keys/
 # runtime-published reasoning blobs (regenerated each cycle by attest.ts)
 audit/
+# playwright artifacts
+test-results/
+playwright-report/
+playwright/.cache/
 # os
 .DS_Store
 Thumbs.db
