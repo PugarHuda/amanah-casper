@@ -17,6 +17,8 @@ import {
   reputationReadable,
   getSpendGateState,
   spendGateReadable,
+  getComplianceState,
+  complianceReadable,
   shortHash,
   relTime,
   type RawDeploy,
@@ -247,8 +249,12 @@ export async function getDashboard() {
   let holdings = mock.holdings;
   let treasuryId = mock.treasuryId;
   let banner = mock.banner;
-  // Compliance card: live SpendGate daily-limit usage + per-tx cap (fallback honest mock).
-  let compliance = { dailyUsed: "$50K", dailyLimit: "$2M", txCap: "$500K" };
+  // Compliance card: live SpendGate daily-limit usage + per-tx cap + KYC/allowlist
+  // status (fallback honest mock).
+  let compliance = {
+    dailyUsed: "$50K", dailyLimit: "$2M", txCap: "$500K",
+    vaultStatus: "Valid", allowlisted: true,
+  };
 
   if (live()) {
     // Include x402 payment deploys alongside vault/attestation/reputation.
@@ -259,11 +265,16 @@ export async function getDashboard() {
   if (spendGateReadable()) {
     const sg = await getSpendGateState();
     if (sg) {
-      compliance = {
-        dailyUsed: fmtUsd(sg.spentToday),
-        dailyLimit: fmtUsd(sg.dailyLimit),
-        txCap: fmtUsd(sg.maxPerTx),
-      };
+      compliance.dailyUsed = fmtUsd(sg.spentToday);
+      compliance.dailyLimit = fmtUsd(sg.dailyLimit);
+      compliance.txCap = fmtUsd(sg.maxPerTx);
+    }
+  }
+  if (complianceReadable()) {
+    const cs = await getComplianceState(AGENT_ACCOUNT_HASH);
+    if (cs) {
+      compliance.vaultStatus = cs.status;
+      compliance.allowlisted = cs.allowlisted;
     }
   }
 

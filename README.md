@@ -76,6 +76,7 @@ in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | The x402-gated premium-signal API the agent pays — agent-pays-agent commerce, settled on-chain via CEP-3009. |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
 | [`bot/`](bot) | TypeScript · grammy | Optional Telegram notifier + `/audit`. |
+| [`skill/`](skill) | `SKILL.md` + `references/llms.txt` | **AI Agent Skill** — drop into Claude Code / Cursor / etc. so any AI agent can inspect and *verify* the Amanah treasury (holdings, attestations, reputation, proofs) through our MCP + cspr.live. Completes the prized **AI Agent Skills + MCP + x402** trio. |
 | [`web/`](web) | Next.js 15 · React 19 | Landing + dashboard + agent console + connect. **Live**: treasury/holdings + reputation decoded from chain, audit trail + **real-time contract-event feed** (CSPR.cloud Streaming API via an SSE relay at `/api/stream`), **CSPR.click** wallet on `/connect`, agent console from the latest published reasoning blob. Playwright manual-click E2E: `npm run test:e2e` (11/11). |
 
 ## Quickstart
@@ -133,8 +134,9 @@ simulated settlement. Every loop step (ingest → x402 → reason → attest →
 guardrail → reallocate) touches testnet or a real public API a judge can check,
 and the dashboard's treasury + audit trail read live chain state.
 
-Guardrail limits on the dashboard/console (per-tx cap, daily limit, spent today)
-are now read live from the SpendGate contract — no longer hardcoded.
+Guardrail limits (per-tx cap, daily limit, spent today) AND compliance state
+(KYC status, allowlist) on the dashboard/console are read live from the SpendGate
+and ComplianceRegistry contracts — no longer hardcoded.
 
 Honest caveats (small, disclosed): the principal-lock invariant is enforced
 in-contract and unit-tested (`reallocate_rejected_when_it_would_touch_principal`)

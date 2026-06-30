@@ -77,8 +77,16 @@ export default async function Dashboard() {
             <div style={{ marginTop: 24, marginBottom: 14, fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>COMPLIANCE STATUS</div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
-                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Vault status</div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>Valid ✓</div>
+                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Compliance status</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.vaultStatus === "Valid" ? "var(--green-deep)" : "var(--ink)" }}>
+                  {compliance.vaultStatus}{compliance.vaultStatus === "Valid" ? " ✓" : ""}
+                </div>
+              </div>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Agent allowlisted</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.allowlisted ? "var(--green-deep)" : "var(--ink)" }}>
+                  {compliance.allowlisted ? "Yes ✓" : "No"}
+                </div>
               </div>
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Per-tx cap</div>

@@ -116,8 +116,12 @@ To re-prove the reallocate from scratch on the live contracts:
   source of on-chain truth (agent balance + CSPR/USD rate, logged as the
   `cspr-mcp.insights` step). Demo: `cd agent && npx tsx src/cspr-mcp.ts`.
 - **MCP** — our own read-only server, all 4 tools decode live chain state.
-- **SpendGate guardrails** — per-tx cap / daily limit / spent-today read live from
-  the contract (dashboard + console + our MCP). No hardcoded guard values.
+- **SpendGate + Compliance** — per-tx cap / daily limit / spent-today AND KYC status
+  + allowlist read live from the contracts (dashboard + console + our MCP). No
+  hardcoded guard or compliance values.
+- **AI Agent Skill** — `skill/SKILL.md` (+ `references/llms.txt`) lets any AI coding
+  agent (Claude Code, Cursor, …) inspect + verify the treasury via our MCP and
+  cspr.live. Completes the prized AI Agent Skills + MCP + x402 trio.
 - **Venice** — reasoning (`deepseek-v4-flash`).
 
 **Next, to deepen partner integration (ranked):**

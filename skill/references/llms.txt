@@ -1,0 +1,82 @@
+# Amanah — full reference for AI agents
+
+Autonomous compliant RWA treasury agent on Casper testnet (Casper Agentic
+Buildathon 2026). This file is the complete reference backing SKILL.md.
+
+## Network
+
+- Chain: casper-test
+- Node RPC (keyless): https://node.testnet.casper.network/rpc
+- Explorer: https://testnet.cspr.live
+- Indexer: CSPR.cloud REST https://api.testnet.cspr.cloud (header `authorization: <key>`)
+- CSPR.cloud Streaming (WS): wss://streaming.testnet.cspr.cloud/contract-events?contract_hash=<hash>
+- Official CSPR.cloud MCP: https://mcp.testnet.cspr.cloud/mcp (header `X-CSPR-Cloud-Api-Key: <key>`)
+
+## Agent account
+
+- Public key: 0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa
+- Account hash: 27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f
+
+## Deployed contracts (package hash · contract hash)
+
+| Contract | Package hash | Contract hash |
+|----------|--------------|---------------|
+| RwaVault | 438118a13b5cdcaed1f3cd72bbdcbb3347cd38d2a0d98d2beaa2993a16233347 | 15785924492b910a8e42d759ff4c684631fe367858d5bde14f13ecf71ec63a50 |
+| AttestationLog | 365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532 | c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003 |
+| SpendGate | ae3f3d876c905f3d691133e244dcaa842aff56b540696d843db43030e0e9d92e | — |
+| ComplianceRegistry | f4a43bd6671e92a085b5598cad396e71279cf18a7271fac0f6d7ef5cb7b8e572 | 9a2e762024af… |
+| ReputationRegistry | c2650647e7ddba168e52d0a57f6670b2953b821b8d3c36827cf675f3e548ca0b | fb503979069fec873bcde40182bbe14578f159c18e4513606bb48de9ad15069e |
+| PaymentToken (CEP-18+CEP-3009) | d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79 | — |
+
+## Verifiable proof transactions (open on testnet.cspr.live/deploy/<hash>)
+
+- Attestation (reasoning signed + verified on-chain): a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8
+- x402 settlement (CEP-3009 transfer_with_authorization): 391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398
+- Reallocate ($50K yield Gold->T-bond, SpendGate+Compliance gated): eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0
+- Reputation (record_payment, anti-replay): c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c
+
+## Amanah MCP server (stdio) — tool I/O
+
+- get_vault_state() -> { treasuryId, totalTreasury, holdings[], guards[], principalLocked }
+  holdings = [{ name, sub, value (USD), change }]. guards read live from SpendGate.
+- get_audit_trail() -> [{ kind, hash, status, time }] (recent deploys for our contracts)
+- get_attestation(hash) -> { reasoningHash, decision, signer, blockTime, verified, note }
+  `verified` = local blob hashes back to `hash`. Always cross-check the deploy on cspr.live.
+- get_reputation(address) -> { address, score, note }  (account-hash; score is on-chain i64)
+
+## On-chain state decode (no entrypoint call needed)
+
+Odra stores each Var/Mapping field in the contract's "state" dictionary:
+- item key  = blake2b256( be32(field_index) ++ mapping_key_bytes )   (fields 1-indexed; 0 reserved)
+- dict addr = blake2b256( state_seed_uref_addr ++ ascii(item_key) )
+- query JSON-RPC state_get_dictionary_item { Dictionary: "dictionary-<addr>" }
+- U256/U512 values are stored as a List<U8> blob = [significant_byte_count, ...little-endian]
+- i64 parsed comes back as an 8-byte little-endian array; enum (Status/AssetId) as a 1-byte variant
+- Mapping<Address,_> key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes
+
+State-dict seeds (uref addr, hex): vault f92ae6151d9599cebe4ad86e02d39141a1179c9a9e2e3c447ee1b8da77c4f4bb,
+reputation 65a90d00ef950ce780370b0b2bb054f93c7b8431534b1fc30808222d7b1e5bb7,
+attestation 739ed994a635834f536dee0f3af7a7ce5341d91ef6952a548aed7a3de0b0594a,
+spendgate 88254c6145e73b973982e335ca2f55a181b7144d58a030732099b4532fa6feab,
+compliance 273a2df883a8762478d7ccc9e2670e40567ae7f843f9081fb8a2e8d817d2c51a.
+RwaVault fields: allocations=1 (key=1-byte AssetId Gold0/TBond1/WTI2/CSPR3), principal_locked=2.
+SpendGate fields: max_per_tx=2, daily_limit=3, spent_today=4 (U512, 6-dp USD), allowlist=7.
+ReputationRegistry: score=1 (Mapping<Address,i64>). ComplianceRegistry: status=1 (0=Pending,1=Valid,2=Revoked).
+
+## The cycle (what the agent does each CYCLE_MS)
+
+ingest live RWA prices -> enrich via official CSPR.cloud MCP (balance + CSPR rate)
+-> pay premium signal via x402 (CEP-3009 settle, real tx) -> LLM reason (Venice)
+-> blake2b(reasoning) + Ed25519 sign -> AttestationLog.attest (verifies sig ON-CHAIN, publishes blob)
+-> SpendGate.check + ComplianceRegistry.assert_valid -> RwaVault.reallocate (yield only)
+-> ReputationRegistry.record_payment.
+
+## Errors (shared enum, on-chain reverts)
+
+1 NotAuthorized · 2 OverTxCap · 3 NotAllowlisted · 4 OverDailyLimit · 5 Expired ·
+6 NotCompliant · 7 InvalidAttestation · 8 UnknownSigner · 9 ReplayedProof ·
+10 TouchesPrincipal · 11 InsufficientAllocation · 12 AddressNotSet.
+
+## Repo
+
+https://github.com/PugarHuda/amanah-casper — see README.md, DEMO.md, USER_STEPS.md.

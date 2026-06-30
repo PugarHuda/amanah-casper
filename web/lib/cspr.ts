@@ -230,6 +230,52 @@ export async function getSpendGateState(): Promise<{ maxPerTx: bigint; dailyLimi
   }
 }
 
+// --- ComplianceRegistry status + SpendGate allowlist (live KYC/allowlist) ----
+// Compliance status: Mapping<Address,Status> field 1; Status enum byte 0=Pending,
+// 1=Valid, 2=Revoked. SpendGate allowlist: Mapping<Address,bool> field 7.
+// Mapping key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes.
+const COMPLIANCE_SEED = process.env.COMPLIANCE_STATE_SEED || "";
+export const complianceReadable = () => !!COMPLIANCE_SEED && !!SPENDGATE_SEED;
+
+const STATUS_LABEL = ["Pending", "Valid", "Revoked"] as const;
+
+async function readByte(seed: string, index: number, mappingKey: number[]): Promise<number | null> {
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return null;
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
+  const dictAddr = hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${dictAddr}` },
+  });
+  if (r.error) return null; // missing entry
+  const p = r.result?.stored_value?.CLValue?.parsed;
+  if (Array.isArray(p)) return p[0] ?? 0;
+  if (typeof p === "number") return p;
+  if (typeof p === "boolean") return p ? 1 : 0;
+  return null;
+}
+
+/** Live KYC status + allowlist flag for an account-hash (hex). */
+export async function getComplianceState(
+  accountHashHex: string,
+): Promise<{ status: string; allowlisted: boolean } | null> {
+  if (!COMPLIANCE_SEED || !SPENDGATE_SEED || accountHashHex.length !== 64) return null;
+  try {
+    const key = [0x00, ...Array.from(Buffer.from(accountHashHex, "hex"))];
+    const [statusByte, allowByte] = await Promise.all([
+      readByte(COMPLIANCE_SEED, 1, key),
+      readByte(SPENDGATE_SEED, 7, key),
+    ]);
+    return {
+      status: STATUS_LABEL[statusByte ?? 0] ?? "Pending",
+      allowlisted: (allowByte ?? 0) === 1,
+    };
+  } catch {
+    return null;
+  }
+}
+
 // --- ReputationRegistry score (Mapping<Address,i64>, field index 1) ----------
 // score key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes. i64 parsed
 // comes back as an 8-byte little-endian array on Casper 2.0. Needs REPUTATION_STATE_SEED.

@@ -114,6 +114,11 @@ test.describe("Amanah manual-click QA", () => {
     console.log("Live per-tx cap:", cap);
     expect(cap).toMatch(/^\$[\d,]+/);
     expect(cap).not.toContain("500");
+    // Live KYC/allowlist (read from ComplianceRegistry + SpendGate), not the old fake "3 of 3".
+    await expect(page.getByText("Compliance status", { exact: true })).toBeVisible();
+    await expect(page.getByText("Agent allowlisted", { exact: true })).toBeVisible();
+    const body = await page.locator("body").innerText();
+    expect(body).not.toContain("3 of 3");
   });
 
   test("dashboard live feed connects to CSPR.cloud streaming (SSE)", async ({ page }) => {

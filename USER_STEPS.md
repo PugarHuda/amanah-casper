@@ -122,5 +122,6 @@ npx tsx src/find-state-seeds.ts                  # rediscover state-dict seeds v
 | CSPR.click wallet on /connect (hosted SDK) | ✅ live | `/connect` |
 | CSPR.cloud Streaming API live event feed | ✅ live | `/dashboard` + `agent/src/stream.ts` |
 | Agent consumes official CSPR.cloud MCP (82 tools) | ✅ live | `agent/src/cspr-mcp.ts` |
-| Guardrail limits read live from SpendGate | ✅ live | dashboard + `/agent` |
+| Guardrails + compliance read live (SpendGate + ComplianceRegistry) | ✅ live | dashboard + `/agent` |
+| AI Agent Skill (SKILL.md + references) | ✅ shipped | `skill/` |
 | Web: dashboard + agent console, real deep links | ✅ live | `test:e2e` 12/12 |
