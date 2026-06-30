@@ -12,6 +12,15 @@ signed and **verified on-chain by the contract itself** before it's recorded —
 publicly checkable on [cspr.live](https://testnet.cspr.live), not logged to a
 private database.
 
+**Why it matters (the real-world case → [USE_CASE.md](USE_CASE.md)).** Tokenized
+RWA is heading on-chain at scale, and that capital needs management that a
+fiduciary can defend to a regulator: capital preserved, mandate + KYC enforced,
+and every decision independently verifiable after the fact. Amanah makes all three
+**structural and on-chain** — principal is untouchable by a vault invariant,
+spending passes SpendGate + ComplianceRegistry, and each decision proves itself.
+Prices are real and attributed (US EIA, US Treasury, metalpriceapi, CoinGecko) —
+no invented numbers.
+
 **Status: live on casper-test.** All six contracts are deployed and the off-chain
 loop runs end-to-end against the live node. Four on-chain steps are verified with
 public proof hashes: **attestation**, **x402 settlement**, **reallocate** (allowlist

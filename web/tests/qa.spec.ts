@@ -41,6 +41,10 @@ test.describe("Amanah manual-click QA", () => {
     // Reasoning hash is a real 64-hex blake2b (0x + 64 chars).
     const hashText = await page.getByText(/^0x[0-9a-f]{64}$/i).first().textContent().catch(() => null);
     console.log("Reasoning hash:", hashText);
+    // Real RWA data provenance is shown on the ingest step (named providers, not "toy data").
+    const ingest = await page.getByText(/^INGEST ·/).first().textContent();
+    console.log("Ingest provenance:", ingest);
+    expect(ingest).toMatch(/EIA|metalpriceapi|coingecko|treasury|avg_interest/i);
   });
 
   test("agent console shows no stale fake numbers", async ({ page }) => {

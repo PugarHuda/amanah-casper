@@ -89,11 +89,23 @@ function latestReasoningBlob(): { hash: string; blob: AgentBlob } | null {
 type AgentBlob = {
   cycle?: number;
   pubkey?: string;
-  prices?: { goldUsd?: number | null; tbondYieldPct?: number | null; wtiUsd?: number | null; csprUsd?: number | null };
+  prices?: { goldUsd?: number | null; tbondYieldPct?: number | null; wtiUsd?: number | null; csprUsd?: number | null; notes?: string[] };
   decision?: { action?: string; fromAsset?: string; toAsset?: string; amount?: number; confidence?: number; riskScore?: number; reasoningSteps?: string[] };
   model?: string;
   at?: string;
 };
+
+// Real RWA data providers, pulled from the blob's per-source notes (e.g.
+// "gold: metalpriceapi XAU") → short provider names for the ingest provenance tag.
+function dataSources(notes?: string[]): string {
+  if (!notes?.length) return "live public APIs";
+  const seen = new Set<string>();
+  for (const n of notes) {
+    const provider = /:\s*([a-z0-9_.]+)/i.exec(n)?.[1];
+    if (provider) seen.add(provider);
+  }
+  return seen.size ? Array.from(seen).join(" · ") : "live public APIs";
+}
 
 // Format a price number with locale commas.
 function fmt(n: number, dp = 0): string {
@@ -203,7 +215,7 @@ export async function getAgentConsole() {
   });
 
   const steps = [
-    { n: "01", text: `Ingested live RWA prices — gold $${p.goldUsd ?? "?"} /oz, T-bond ${p.tbondYieldPct ?? "?"}%, WTI $${p.wtiUsd ?? "?"} /bbl.`, tag: "INGEST · live public APIs", tagColor: "var(--faint)" },
+    { n: "01", text: `Ingested live RWA prices — gold $${p.goldUsd ?? "?"} /oz, T-bond ${p.tbondYieldPct ?? "?"}%, WTI $${p.wtiUsd ?? "?"} /bbl.`, tag: `INGEST · ${dataSources(p.notes)}`, tagColor: "var(--faint)" },
     ...(d.reasoningSteps ?? []).slice(0, 4).map((s, i) => ({
       n: String(i + 2).padStart(2, "0"), text: s,
       tag: `REASON · ${blob.model ?? "Venice"}`, tagColor: "var(--faint)",
