@@ -10,6 +10,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@make-software/csprclick-core-types": "^2.1.0",
     "blakejs": "^1.2.1",
     "next": "^15.5.4",
     "react": "19.0.0",

@@ -58,10 +58,15 @@ Makes every reasoning blob verifiable by anyone, not just repo holders.
 2. Add to `agent/.env`: `PINATA_JWT=<your_jwt>`
 3. Next agent cycle pins automatically (code is already wired in `attest.ts`).
 
-### 6. CSPR.click real wallet (replaces the `alert()` stub on /connect)
-1. Get an **app-id** at console.cspr.build (CSPR.click / Click SDK).
-2. Tell me the app-id — I'll wire the official SDK into `web/app/connect/page.tsx`
-   (connect / sign / store address) and test it.
+### 6. CSPR.click real wallet — ✅ DONE (just swap in your prod app-id)
+The official CSPR.click SDK is wired on `/connect` (loads from the CSPR.click CDN —
+no stub). `signIn()` opens the real modal: Casper Wallet, Ledger, MetaMask Snap,
+and Google/Apple social login. It works **right now on localhost** with the
+`csprclick-template` app-id.
+- For a **deployed domain** you need your own app-id: get it at console.cspr.build,
+  then set `NEXT_PUBLIC_CSPR_CLICK_APP_ID=<your-id>` in `web/.env.local` (rebuild).
+- That's the only change — the integration code is done and tested
+  (`npm run test:e2e` includes a live SDK check).
 
 ### 7. Consume official Casper MCP / CSPR.trade MCP
 1. Get the endpoint + auth for those MCP servers from the buildathon partners.

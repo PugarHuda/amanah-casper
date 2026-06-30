@@ -103,7 +103,7 @@ test.describe("Amanah manual-click QA", () => {
     expect(vh).toContain("/account/");
   });
 
-  test("connect page wallet rows + email form render", async ({ page }) => {
+  test("connect page wallet rows + CSPR.click integration render", async ({ page }) => {
     await gotoAndSettle(page, "/connect");
     await expect(page.getByText(/connect to amanah/i)).toBeVisible();
     for (const w of ["CSPR.click", "Casper Wallet", "Ledger"]) {
@@ -111,7 +111,11 @@ test.describe("Amanah manual-click QA", () => {
     }
     // Honest copy: "via Venice", not "Claude".
     await expect(page.getByText(/via Venice/i)).toBeVisible();
-    await expect(page.getByPlaceholder(/fund\.com/i)).toBeVisible();
+    // CSPR.click SDK is wired: the social/email button + the app-id line render.
+    await expect(page.getByRole("button", { name: /CSPR\.click/i })).toBeVisible();
+    const appLine = await page.getByText(/CSPR\.click app:/i).innerText();
+    console.log("Connect:", appLine);
+    expect(appLine).toContain("csprclick-template");
   });
 
   test("nav links work from every page", async ({ page }) => {

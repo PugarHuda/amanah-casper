@@ -105,11 +105,14 @@ x402 Facilitator (CEP-3009 settlement) · CSPR.cloud REST (audit trail + rates) 
 our own MCP server (vault + audit live; attestation verified against the published
 blob) · Venice reasoning (`deepseek-v4-flash`).
 
+**Also live:** CSPR.click wallet on `/connect` — official hosted SDK (Casper
+Wallet / Ledger / MetaMask Snap / Google+Apple social login), `signIn()` opens the
+real modal. Works on localhost with the `csprclick-template` app-id; set
+`NEXT_PUBLIC_CSPR_CLICK_APP_ID` for a deployed domain.
+
 **Next, to deepen partner integration (ranked):**
 1. **CSPR.fans** registration — unlocks the community-vote auto-advance path.
-2. **CSPR.click AI Agent Skill** — replace the stubbed wallet on `/connect` with
-   the official skill (wallet creation/connect/sign). Seam: `app/connect/page.tsx`.
-3. **Official Casper MCP + CSPR.trade MCP** — have the agent *consume* these to
+2. **Official Casper MCP + CSPR.trade MCP** — have the agent *consume* these to
    execute swaps / read state, alongside our read-only server.
 4. **CSPR.cloud Streaming API** — push the agent-console step-stream live over SSE
    (it's currently a representative view), and stream vault events.
