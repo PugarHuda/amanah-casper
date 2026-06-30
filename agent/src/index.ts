@@ -53,6 +53,7 @@ async function runCycle(cycle: number): Promise<void> {
   // 4. ATTEST — hash + sign + record reasoning on-chain.
   const blob: ReasoningBlob = {
     cycle,
+    pubkey: key.publicKey.toHex(),
     prices,
     premiumSignal,
     decision,

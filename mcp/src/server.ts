@@ -1,6 +1,7 @@
 // Amanah MCP server (stdio). Exposes read-only on-chain state so a judge or LLM
 // can ask "why did it rebalance?" and inspect attestations, reputation, and the
 // audit trail.
+import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";

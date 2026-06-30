@@ -1,8 +1,14 @@
 import Nav from "@/components/Nav";
 import { getDashboard } from "@/lib/data";
 
+// Revalidate dashboard every 30 seconds so live vault + trail stay fresh.
+export const revalidate = 30;
+
 export default async function Dashboard() {
-  const { treasuryId, totalTreasury, banner, holdings, trail } = await getDashboard();
+  const { treasuryId, totalTreasury, banner, holdings, trail, vaultHash } = await getDashboard();
+
+  const explorerBase = "https://testnet.cspr.live";
+  const accountUrl = `${explorerBase}/account/0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`;
 
   return (
     <main className="page">
@@ -19,7 +25,12 @@ export default async function Dashboard() {
               Audit dashboard
             </h1>
           </div>
-          <a href="https://cspr.live" style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--border)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 600, color: "var(--ink2)" }}>
+          <a
+            href={vaultHash ? `${explorerBase}/contract-package/${vaultHash}` : explorerBase}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--border)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 600, color: "var(--ink2)" }}
+          >
             <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--blue)" }} />
             Open on cspr.live ↗
           </a>
@@ -74,7 +85,7 @@ export default async function Dashboard() {
               </div>
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface-subtle)" }}>
                 <div style={{ fontSize: 13, color: "var(--faint)", fontWeight: 600 }}>Daily limit used</div>
-                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>$420K / $2M</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>$50K / $2M</div>
               </div>
             </div>
           </div>
@@ -83,11 +94,17 @@ export default async function Dashboard() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>ON-CHAIN AUDIT TRAIL</div>
-              <div className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>last 24h</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>live · testnet</div>
             </div>
             <div style={{ border: "1px solid var(--border2)", borderRadius: 18, overflow: "hidden", background: "var(--surface-subtle)" }}>
               {trail.map((t, i) => (
-                <a key={i} href="https://cspr.live" className="trail-row">
+                <a
+                  key={i}
+                  href={t.fullHash ? `${explorerBase}/deploy/${t.fullHash}` : explorerBase}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="trail-row"
+                >
                   <span style={{ width: 34, height: 34, borderRadius: 10, background: t.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 13 }}>{t.icon}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>{t.kind}</div>
@@ -101,7 +118,14 @@ export default async function Dashboard() {
               ))}
             </div>
             <div style={{ marginTop: 14, textAlign: "center" }}>
-              <a href="https://cspr.live" style={{ fontSize: 14, fontWeight: 600, color: "#15120e", textDecoration: "none" }}>View all 4,218 deploys on cspr.live ↗</a>
+              <a
+                href={accountUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 14, fontWeight: 600, color: "#15120e", textDecoration: "none" }}
+              >
+                View all deploys on testnet.cspr.live ↗
+              </a>
             </div>
           </div>
         </div>

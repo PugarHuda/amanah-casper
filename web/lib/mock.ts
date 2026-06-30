@@ -10,7 +10,7 @@ export type Holding = {
   name: string; sub: string; value: string; chg: string; chgColor: string; color: string; bg: string;
 };
 export type TrailRow = {
-  icon: string; kind: string; hash: string; status: string; statusColor: string; time: string; bg: string;
+  icon: string; kind: string; hash: string; fullHash?: string; status: string; statusColor: string; time: string; bg: string;
 };
 export type Post = { date: string; title: string; excerpt: string; tag: string; tagColor: string };
 

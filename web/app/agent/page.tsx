@@ -11,7 +11,12 @@ const Check = () => (
 );
 
 export default async function Agent() {
-  const { metrics, assets, guards, steps, reasoningHash, decision, cycleId } = await getAgentConsole();
+  const { metrics, assets, guards, steps, reasoningHash, decision, cycleId, attestDeployHash } =
+    await getAgentConsole();
+
+  const attestUrl = attestDeployHash
+    ? `https://testnet.cspr.live/deploy/${attestDeployHash}`
+    : "https://testnet.cspr.live";
 
   return (
     <main className="page">
@@ -41,11 +46,11 @@ export default async function Agent() {
           {/* LEFT: ALLOCATION + GUARDRAILS */}
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px", marginBottom: 18 }}>PORTFOLIO ALLOCATION</div>
+            {/* Live bar — widths from vault-derived asset weights */}
             <div style={{ display: "flex", height: 18, borderRadius: 9, overflow: "hidden", marginBottom: 24 }}>
-              <div style={{ width: "42%", background: "#e7a83c" }} />
-              <div style={{ width: "33%", background: "#3f86e6" }} />
-              <div style={{ width: "18%", background: "#2c2620" }} />
-              <div style={{ width: "7%", background: "#cdbfa6" }} />
+              {assets.map((a) => (
+                <div key={a.name} style={{ flex: `0 0 ${a.weight}`, background: a.color }} />
+              ))}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {assets.map((a) => (
@@ -73,7 +78,9 @@ export default async function Agent() {
           <div style={{ border: "1px solid var(--border2)", borderRadius: 20, background: "var(--surface-subtle)", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid var(--border2)" }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>PROOF-OF-REASONING</div>
-              <a href="https://cspr.live" className="mono" style={{ fontSize: 12, color: "var(--blue)", textDecoration: "none" }}>verify on cspr.live ↗</a>
+              <a href={attestUrl} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12, color: "var(--blue)", textDecoration: "none" }}>
+                verify on cspr.live ↗
+              </a>
             </div>
             <div style={{ flex: 1, padding: "8px 0" }}>
               {steps.map((s) => (

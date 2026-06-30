@@ -71,6 +71,18 @@ export type RawDeploy = {
   entry_point_id?: number;
 };
 
+/** Total deploy count for a contract package from CSPR.cloud item_count. */
+export async function getDeployCount(packageHash: string): Promise<number | null> {
+  try {
+    const d = await cloudGet<{ item_count?: number }>(
+      `/deploys?contract_package_hash=${packageHash}&page=1&page_size=1`,
+    );
+    return d.item_count ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getRecentDeploys(limit = 6): Promise<RawDeploy[]> {
   try {
     const d = await cloudGet<{ data?: RawDeploy[] }>(`/deploys?page=1&page_size=${limit}`);

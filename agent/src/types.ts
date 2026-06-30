@@ -44,6 +44,7 @@ export interface Decision {
 /** The blob that gets hashed + signed + attested on-chain. */
 export interface ReasoningBlob {
   cycle: number;
+  pubkey: string; // hex-encoded Ed25519 public key that signed the blob
   prices: PriceSnapshot;
   premiumSignal: unknown;
   decision: Decision;

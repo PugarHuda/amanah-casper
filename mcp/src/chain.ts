@@ -1,15 +1,14 @@
 // Typed read functions for Amanah on-chain state, for a judge/LLM to query the
-// agent. getVaultState + getAuditTrail are LIVE (decoded from the deployed
-// RwaVault state dictionary / CSPR.cloud deploys, same proven derivation as
-// agent/src/read-vault.ts and web/lib/cspr.ts). getAttestation/getReputation
-// stay stubbed — see their ponytail notes.
+// agent. getVaultState + getAuditTrail + getAttestation are LIVE.
+// getReputation is live when REPUTATION_STATE_SEED is set (see .env.example).
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { blake2b } from "blakejs";
 
 const RPC = process.env.CASPER_RPC_URL || "https://node.testnet.casper.network/rpc";
-const STATE_SEED = process.env.VAULT_STATE_SEED || ""; // RwaVault "state" dict seed uref addr (hex)
+const STATE_SEED = process.env.VAULT_STATE_SEED || "";      // RwaVault "state" dict seed uref addr
+const REP_STATE_SEED = process.env.REPUTATION_STATE_SEED || ""; // ReputationRegistry seed (see .env.example)
 const CLOUD_BASE = process.env.CSPR_CLOUD_BASE || "https://api.testnet.cspr.cloud";
 const CLOUD_KEY = process.env.CSPR_CLOUD_API_KEY || "";
 
@@ -94,6 +93,26 @@ async function readBig(index: number, mappingKey: number[] = []): Promise<bigint
   return v;
 }
 
+// Read an i64 field from the ReputationRegistry's "state" dict.
+// i64 CLValue.parsed is a JSON number, not a List<U8> byte blob.
+function repDictAddr(index: number, mappingKey: number[]): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
+  const seed = Buffer.from(REP_STATE_SEED, "hex");
+  return hex(blake2b(Buffer.concat([seed, Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+
+async function readI64(index: number, mappingKey: number[]): Promise<number> {
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return 0;
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${repDictAddr(index, mappingKey)}` },
+  });
+  if (r.error) return 0; // missing = get_or_default = 0
+  const v = r.result?.stored_value?.CLValue?.parsed;
+  return typeof v === "number" ? Math.round(v) : 0;
+}
+
 // 6-dp atomic units -> "$X,XXX" USD (the vault tracks notional USD value, 6 decimals)
 const usd = (units: bigint) =>
   "$" + (Number(units) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -176,14 +195,41 @@ export async function getAttestation(hash: string): Promise<Attestation & { note
 }
 
 export async function getReputation(address: string): Promise<Reputation & { note?: string }> {
-  // ponytail: ReputationRegistry score is a Mapping<Address,i64>; the dict key is the
-  // bytesrepr of the Address Key (tag + 32 bytes), not a flat int — wire with the same
-  // readBig() once the Address-key encoding is added. score:-1 signals "not live yet".
-  return {
-    address,
-    score: -1,
-    note: "get_reputation is not live yet (Address-key dict decode pending). -1 = unknown, not a real score.",
-  };
+  // ReputationRegistry.score: Mapping<Address, i64>, field index 1.
+  // Key::Account(hash) bytesrepr = [0x00] + 32 account-hash bytes.
+  // Requires REPUTATION_STATE_SEED (the reputation contract's "state" dict seed uref addr).
+  // Extract it: query the Casper node for the reputation contract entity named keys,
+  // then read the "state" URef address and set it in mcp/.env as REPUTATION_STATE_SEED.
+  if (!REP_STATE_SEED) {
+    return {
+      address,
+      score: -1,
+      note: "Set REPUTATION_STATE_SEED in mcp/.env to enable live reads. Find it by querying the Casper node for the ReputationRegistry contract entity named keys (look for the 'state' URef). Agent account-hash: 27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f",
+    };
+  }
+  // Parse "account-hash-<hex>" or raw 64-char hex → 32 bytes.
+  const raw = address.replace(/^account-hash-/i, "").replace(/^0x/, "").toLowerCase();
+  if (raw.length !== 64) {
+    return {
+      address,
+      score: -1,
+      note: `Pass 'account-hash-<64-hex>'. Got ${raw.length} chars. Agent account-hash: 27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f`,
+    };
+  }
+  try {
+    // Key::Account bytesrepr = [0x00] + 32 account hash bytes (tag 0 = Account)
+    const mappingKey = [0x00, ...Array.from(Buffer.from(raw, "hex"))];
+    const score = await readI64(1, mappingKey);
+    return {
+      address,
+      score,
+      note: score > 0
+        ? `Live score: ${score} payment proof${score === 1 ? "" : "s"} recorded on-chain in ReputationRegistry.`
+        : "Score 0: address not yet credited via record_payment.",
+    };
+  } catch (e) {
+    return { address, score: -1, note: `Chain read error: ${(e as Error).message}` };
+  }
 }
 
 // --- audit trail: live CSPR.cloud deploys for our contracts ----------------
