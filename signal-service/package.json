@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "x402-gated premium RWA signal API — the agent's paid counterparty",
+  "description": "x402-gated premium RWA signal API \u2014 the agent's paid counterparty",
   "scripts": {
     "dev": "tsx src/server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/*.test.ts"
   },
   "dependencies": {
     "@make-software/casper-x402": "^1.0.0",

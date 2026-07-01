@@ -63,8 +63,8 @@ export async function reason(
 }
 
 // Tolerant parse: direct JSON, else the first {...} block (reasoning models
-// sometimes emit a <think> preamble despite response_format).
-function extractJson(text: string): unknown | null {
+// sometimes emit a <think> preamble despite response_format). Exported for tests.
+export function extractJson(text: string): unknown | null {
   try {
     return JSON.parse(text);
   } catch {
@@ -81,7 +81,8 @@ function extractJson(text: string): unknown | null {
   return null;
 }
 
-function normalize(d: Decision): Decision {
+// Exported for tests. Coerces model output back into the typed invariants.
+export function normalize(d: Decision): Decision {
   // Guardrail: a non-rebalance action never moves funds.
   if (d.action !== "rebalance") d.amount = 0;
   // Models sometimes return risk/confidence on a 0..100 scale despite the 0..1

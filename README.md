@@ -154,6 +154,22 @@ Casper testnet key (`AGENT_KEY_PEM`), a CSPR.cloud access token (x402 facilitato
 and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secrets,
 `*.pem`, and `web/.env.local` are gitignored.
 
+## Testing
+
+**48 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+
+- **25 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+  golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
+  `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the web
+  formatters, MCP attestation round-trip. Every fixed bug has a regression test.
+- **4 integration** (live casper-test): vault decodes to **$1M / $800K principal**,
+  reputation ≥ 1, compliance Valid, and every published blob hashes to its filename.
+- **12 E2E** (Playwright manual-click): live data, real deep links, no stale fakes.
+- **7 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant.
+
+`./scripts/test-all.ps1` runs the offline layers; `tsc --noEmit` is clean on all
+four TS packages.
+
 ## No-mock contract
 
 Banned in the core loop: hardcoded prices, fake tx, static reasoning templates,

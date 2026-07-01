@@ -106,7 +106,7 @@ type AgentBlob = {
 
 // Real RWA data providers, pulled from the blob's per-source notes (e.g.
 // "gold: metalpriceapi XAU") → short provider names for the ingest provenance tag.
-function dataSources(notes?: string[]): string {
+export function dataSources(notes?: string[]): string {
   if (!notes?.length) return "live public APIs";
   const seen = new Set<string>();
   for (const n of notes) {
@@ -121,8 +121,8 @@ function fmt(n: number, dp = 0): string {
   return n.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
 }
 
-// Format an atomic 6-dp vault amount as a USD string.
-function fmtUsd(atomic6dp: bigint): string {
+// Format an atomic 6-dp vault amount as a USD string. Exported for tests.
+export function fmtUsd(atomic6dp: bigint): string {
   const dollars = Number(atomic6dp / 1_000_000n);
   return dollars >= 1_000_000
     ? `$${(dollars / 1_000_000).toFixed(2)}M`
