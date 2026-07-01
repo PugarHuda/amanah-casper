@@ -6,7 +6,7 @@ import { getDashboard } from "@/lib/data";
 export const revalidate = 30;
 
 export default async function Dashboard() {
-  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, vaultHash } = await getDashboard();
+  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, trailLive, vaultHash } = await getDashboard();
 
   const explorerBase = "https://testnet.cspr.live";
   const accountUrl = `${explorerBase}/account/0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`;
@@ -103,7 +103,7 @@ export default async function Dashboard() {
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>ON-CHAIN AUDIT TRAIL</div>
-              <div className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>live · testnet</div>
+              <div className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>{trailLive ? "live · testnet" : "representative"}</div>
             </div>
             <div style={{ border: "1px solid var(--border2)", borderRadius: 18, overflow: "hidden", background: "var(--surface-subtle)" }}>
               {trail.map((t, i) => (

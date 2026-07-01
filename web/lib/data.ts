@@ -180,18 +180,18 @@ export async function getAgentConsole() {
   const attestDeploy = deploys[0];
   const attestDeployHash = attestDeploy?.deploy_hash ?? "";
 
-  // Live metrics (fall back to mock field if unavailable).
+  // Live metrics. Null sub-reads render "—" (never a stale fake number).
   const metrics = [
     {
       label: "Treasury value",
-      value: vault && vault.total > 0n ? fmtUsd(vault.total) : mock.metrics[0].value,
-      delta: vault ? "on-chain · live" : mock.metrics[0].delta,
+      value: vault && vault.total > 0n ? fmtUsd(vault.total) : "—",
+      delta: vault ? "on-chain · live" : "set vault seed",
       deltaColor: "var(--green)",
     },
     {
       label: "Risk score",
-      value: risk != null ? risk.toFixed(2) : mock.metrics[1].value,
-      delta: risk != null ? (risk < 0.5 ? "Low" : risk < 0.75 ? "Medium" : "High") : mock.metrics[1].delta,
+      value: risk != null ? risk.toFixed(2) : "—",
+      delta: risk != null ? (risk < 0.5 ? "Low" : risk < 0.75 ? "Medium" : "High") : "no blob",
       deltaColor: risk != null ? (risk < 0.5 ? "var(--green)" : "var(--red)") : "var(--faint)",
     },
     {
@@ -202,7 +202,7 @@ export async function getAgentConsole() {
     },
     {
       label: "Attestations",
-      value: attestCount != null ? attestCount.toLocaleString("en-US") : mock.metrics[3].value,
+      value: attestCount != null ? attestCount.toLocaleString("en-US") : "—",
       delta: "100% on-chain",
       deltaColor: "var(--blue)",
     },
@@ -220,7 +220,7 @@ export async function getAgentConsole() {
     const pct =
       vault && vault.total > 0n
         ? `${Math.round(Number((vault.holdings[a] ?? 0n) * 100n / vault.total))}%`
-        : mock.assets.find((x) => x.name === v.name)?.weight ?? "—";
+        : "—";
     return { name: v.name, price: assetPrices[a], weight: pct, color: v.color };
   });
 
@@ -272,17 +272,19 @@ export async function getDashboard() {
   let holdings = mock.holdings;
   let treasuryId = mock.treasuryId;
   let banner = mock.banner;
-  // Compliance card: live SpendGate daily-limit usage + per-tx cap + KYC/allowlist
-  // status (fallback honest mock).
+  // Honest fallbacks: "—" (not plausible-but-wrong numbers) until read from chain.
   let compliance = {
-    dailyUsed: "$50K", dailyLimit: "$2M", txCap: "$500K",
-    vaultStatus: "Valid", allowlisted: true,
+    dailyUsed: "—", dailyLimit: "—", txCap: "—",
+    vaultStatus: "—", allowlisted: false,
   };
+  // Track what's actually live so the UI never labels representative data "live".
+  let trailLive = false;
+  let treasuryLive = false;
 
   if (live()) {
     // Include x402 payment deploys alongside vault/attestation/reputation.
     const deploys = await getContractDeploys([VAULT(), ATTESTATION(), X402(), REPUTATION()], 8);
-    if (deploys.length) trail = deploys.map(deployToTrail);
+    if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }
   }
 
   if (spendGateReadable()) {
@@ -304,6 +306,7 @@ export async function getDashboard() {
   if (vaultReadable()) {
     const vault = await getVaultState();
     if (vault && vault.total > 0n) {
+      treasuryLive = true;
       totalTreasury = fmtUsd(vault.total);
       treasuryId = `TREASURY ${VAULT().slice(0, 4)}…${VAULT().slice(-4)} · CASPER-TEST`;
       holdings = (ASSET_ORDER as unknown as (keyof typeof ASSET_VIEW)[]).map((a): Holding => {
@@ -340,17 +343,14 @@ export async function getDashboard() {
   }
 
   return {
-    treasuryId,
+    treasuryId: treasuryLive ? treasuryId : "REPRESENTATIVE · CASPER-TEST",
     totalTreasury,
     banner,
     holdings,
     trail,
     compliance,
+    trailLive,
+    treasuryLive,
     vaultHash: VAULT(),
   };
-}
-
-// ponytail: live -> CMS / markdown index for the engineering blog.
-export async function getPosts() {
-  return mock.posts;
 }

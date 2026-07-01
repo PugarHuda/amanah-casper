@@ -1,13 +1,14 @@
 // Call the reasoning LLM via Venice (OpenAI-compatible API) and return a
 // strictly-typed Decision. Venice's /chat/completions is OpenAI-shaped, so a
-// plain fetch is enough — no SDK. We force JSON output (response_format) and
-// keep a tolerant extract + one retry for reasoning models that wrap prose.
+// plain fetch is enough — no SDK. Venice rejects response_format on our models, so
+// we constrain output with a schema hint + a tolerant extract + one retry.
 import { config } from "./config.js";
 import type { Decision, PriceSnapshot } from "./types.js";
 import {
   SYSTEM_PROMPT,
   buildUserPrompt,
   DECISION_SCHEMA,
+  type MarketContext,
 } from "./prompts/decide.js";
 
 const SCHEMA_HINT = `Return ONLY a single JSON object matching this schema — no \
@@ -17,9 +18,10 @@ export async function reason(
   cycle: number,
   prices: PriceSnapshot,
   premiumSignal: unknown,
+  marketContext?: MarketContext,
 ): Promise<Decision> {
   if (!config.veniceKey) throw new Error("Missing VENICE_API_KEY (see .env.example)");
-  const user = buildUserPrompt(cycle, prices, premiumSignal);
+  const user = buildUserPrompt(cycle, prices, premiumSignal, marketContext);
 
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await fetch(`${config.veniceBaseUrl}/chat/completions`, {

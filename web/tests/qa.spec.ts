@@ -157,11 +157,15 @@ test.describe("Amanah manual-click QA", () => {
     expect(appLine).toContain("csprclick-template");
   });
 
-  test("nav links work from every page", async ({ page }) => {
+  test("nav links work; 'Read the spec' is an honest external doc link", async ({ page }) => {
     await gotoAndSettle(page, "/dashboard");
-    // Click through nav to agent then back to dashboard.
+    // Click through nav to the agent console.
     await page.getByRole("link", { name: /protocol|agent/i }).first().click().catch(() => {});
-    await gotoAndSettle(page, "/writing");
-    await expect(page.locator("body")).toBeVisible();
+    await gotoAndSettle(page, "/");
+    // "Read the spec" points at the real GitHub docs, not a fabricated internal blog.
+    const spec = page.getByRole("link", { name: /read the spec/i });
+    const href = await spec.getAttribute("href");
+    console.log("Read the spec ->", href);
+    expect(href).toContain("github.com");
   });
 });

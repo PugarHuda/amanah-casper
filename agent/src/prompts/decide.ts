@@ -20,11 +20,26 @@ Return ONLY the structured decision. amount is in atomic vault units and must be
 0 unless action is 'rebalance'. fromAsset/toAsset must be two of: Gold, TBond, \
 WTI, CSPR.`;
 
+/** Extra market context sourced from the official Casper agentic MCP servers. */
+export interface MarketContext {
+  /** Agent's live CSPR balance + CSPR/USD rate (official CSPR.cloud MCP). */
+  csprCloud?: { balanceCspr: number | null; csprRateUsd: number | null } | null;
+  /** Live DEX quote for the CSPR reserve leg (official CSPR.trade DEX MCP). */
+  csprTradeDex?: { pair: string; executionPrice: number | null; priceImpactPct: number | null } | null;
+}
+
 export function buildUserPrompt(
   cycle: number,
   prices: PriceSnapshot,
   premiumSignal: unknown,
+  marketContext?: MarketContext,
 ): string {
+  const ctx = marketContext
+    ? `\nOn-chain market context (from the official Casper CSPR.cloud + CSPR.trade MCP servers):
+${JSON.stringify(marketContext, null, 2)}
+Use the DEX execution price + price impact to judge CSPR reserve liquidity, and the
+balance as available capital. Don't rebalance into a leg with high DEX price impact.\n`
+    : "";
   return `Cycle #${cycle}.
 
 Live RWA prices (null = data source unavailable this cycle):
@@ -32,7 +47,7 @@ ${JSON.stringify(prices, null, 2)}
 
 Premium signal (paid for via x402):
 ${JSON.stringify(premiumSignal, null, 2)}
-
+${ctx}
 Decide the single best action for this cycle.`;
 }
 

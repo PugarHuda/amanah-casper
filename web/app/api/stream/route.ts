@@ -29,6 +29,9 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
   const encoder = new TextEncoder();
   const sockets: WebSocket[] = [];
+  // Hoisted so BOTH the abort listener and the stream's cancel() can tear down
+  // (otherwise cancel() left the keepalive interval running forever).
+  let shutdown = () => {};
 
   const stream = new ReadableStream({
     start(controller) {
@@ -67,6 +70,9 @@ export async function GET(req: NextRequest): Promise<Response> {
           }
         });
         ws.on("error", (e: Error) => send({ type: "warn", label, message: e.message }));
+        // If an upstream socket drops, tell the client so its "LIVE" dot can go
+        // amber instead of implying a feed that's actually dead.
+        ws.on("close", () => send({ type: "warn", label, message: "stream closed" }));
         sockets.push(ws);
       }
 
@@ -81,7 +87,7 @@ export async function GET(req: NextRequest): Promise<Response> {
         }
       }, 25_000);
 
-      const shutdown = () => {
+      shutdown = () => {
         if (closed) return;
         closed = true;
         clearInterval(ka);
@@ -95,7 +101,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       req.signal.addEventListener("abort", shutdown);
     },
     cancel() {
-      sockets.forEach((s) => s.close());
+      shutdown();
     },
   });
 

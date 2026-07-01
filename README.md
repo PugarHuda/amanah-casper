@@ -27,9 +27,10 @@ public proof hashes: **attestation**, **x402 settlement**, **reallocate** (allow
 + compliance gated), and **reputation** (`record_payment`). Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
 contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
-servers** each cycle — **CSPR.cloud MCP** (82 tools: balance + rates, second source
-of on-chain truth) and the **CSPR.trade DEX MCP** (23 tools: a live CSPR↔sCSPR
-quote); the **CSPR.click** wallet on `/connect` (official hosted SDK — Casper Wallet
+servers** each cycle and **reasons over their data** — **CSPR.cloud MCP** (82 tools:
+balance + rates) and the **CSPR.trade DEX MCP** (23 tools: a live CSPR↔sCSPR quote)
+are fed into the LLM prompt and attested in the reasoning blob (the model cites the
+DEX price impact in its decision); the **CSPR.click** wallet on `/connect` (official hosted SDK — Casper Wallet
 / Ledger / social login); our own **MCP** server (all four tools read live chain
 state); **public IPFS pinning** of every reasoning blob (Pinata); and **Venice**
 reasoning. The dashboard's treasury, audit trail,
@@ -88,7 +89,7 @@ in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
 | [`bot/`](bot) | TypeScript · grammy | Optional Telegram notifier + `/audit`. |
 | [`skill/`](skill) | `SKILL.md` + `references/llms.txt` | **AI Agent Skill** — drop into Claude Code / Cursor / etc. so any AI agent can inspect and *verify* the Amanah treasury (holdings, attestations, reputation, proofs) through our MCP + cspr.live. Completes the prized **AI Agent Skills + MCP + x402** trio. |
-| [`web/`](web) | Next.js 15 · React 19 | Landing + dashboard + agent console + connect. **Live**: treasury/holdings + reputation decoded from chain, audit trail + **real-time contract-event feed** (CSPR.cloud Streaming API via an SSE relay at `/api/stream`), **CSPR.click** wallet on `/connect`, agent console from the latest published reasoning blob. Playwright manual-click E2E: `npm run test:e2e` (11/11). |
+| [`web/`](web) | Next.js 15 · React 19 | Landing + dashboard + agent console + connect. **Live**: treasury/holdings + reputation decoded from chain, audit trail + **real-time contract-event feed** (CSPR.cloud Streaming API via an SSE relay at `/api/stream`), **CSPR.click** wallet on `/connect`, agent console from the latest published reasoning blob. Playwright manual-click E2E: `npm run test:e2e` (12/12). |
 
 ## Quickstart
 
@@ -148,6 +149,10 @@ and the dashboard's treasury + audit trail read live chain state.
 Guardrail limits (per-tx cap, daily limit, spent today) AND compliance state
 (KYC status, allowlist) on the dashboard/console are read live from the SpendGate
 and ComplianceRegistry contracts — no longer hardcoded.
+
+When a chain read is unavailable (e.g. a clone without env vars), the UI shows `—`
+or a **"representative"** label — never a fabricated number dressed as live. The
+audit trail's "live · testnet" badge only appears when the trail is actually live.
 
 Honest caveats (small, disclosed): the principal-lock invariant is enforced
 in-contract and unit-tested (`reallocate_rejected_when_it_would_touch_principal`)

@@ -12,7 +12,6 @@ export type Holding = {
 export type TrailRow = {
   icon: string; kind: string; hash: string; fullHash?: string; status: string; statusColor: string; time: string; bg: string;
 };
-export type Post = { date: string; title: string; excerpt: string; tag: string; tagColor: string };
 
 export const metrics: Metric[] = [
   { label: "Treasury value", value: "$12.84M", delta: "+1.7% (24h)", deltaColor: "var(--green)" },
@@ -79,9 +78,3 @@ export const trail: TrailRow[] = [
   { icon: "!", kind: "Escalated · confidence 0.62", hash: "human review · resolved", status: "Approved", statusColor: "var(--gold-deep)", time: "4h ago", bg: "#faf0d8" },
 ];
 
-export const posts: Post[] = [
-  { date: "Jun 2026", title: "Principal-locked: why the agent can only ever touch yield", excerpt: "A vault invariant that makes catastrophic loss structurally impossible.", tag: "ARCHITECTURE", tagColor: "var(--gold-deep)" },
-  { date: "Jun 2026", title: "Agent-pays-agent: real x402 settlement on Casper testnet", excerpt: "Buying a premium signal and getting a deploy hash as the receipt.", tag: "PAYMENTS", tagColor: "var(--blue)" },
-  { date: "May 2026", title: "ERC-3643, on Casper: compliance without doxxing on-chain", excerpt: "Status registries and identity hashes that freeze bad actors fast.", tag: "COMPLIANCE", tagColor: "var(--green)" },
-  { date: "May 2026", title: "Reputation as a public good other protocols can read", excerpt: "Scoring an agent from payment proofs and decision outcomes.", tag: "INTEROP", tagColor: "var(--faint)" },
-];

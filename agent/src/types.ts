@@ -47,6 +47,9 @@ export interface ReasoningBlob {
   pubkey: string; // hex-encoded Ed25519 public key that signed the blob
   prices: PriceSnapshot;
   premiumSignal: unknown;
+  /** Market context from the official CSPR.cloud + CSPR.trade MCP servers, fed into
+   *  the reasoning and attested alongside it. */
+  marketContext?: unknown;
   decision: Decision;
   model: string;
   at: string;

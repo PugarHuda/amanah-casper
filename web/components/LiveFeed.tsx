@@ -26,6 +26,8 @@ export default function LiveFeed() {
       try {
         const msg = JSON.parse(e.data);
         if (msg.type === "ready") setStatus("live");
+        // An upstream contract socket dropped — reflect it instead of a false "live".
+        if (msg.type === "warn") setStatus("off");
         if (msg.type === "event") {
           setEvents((prev) =>
             [{ id: idRef.current++, label: msg.label, name: msg.name, deploy_hash: msg.deploy_hash, timestamp: msg.timestamp }, ...prev].slice(0, 8),

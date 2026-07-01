@@ -27,33 +27,6 @@ async function cloudGet<T = unknown>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// --- CSPR price / rate -----------------------------------------------------
-// ponytail: verify CSPR.cloud endpoint — currency_id mapping. "1" assumed = USD;
-// set CSPR_CLOUD_RATE_CURRENCY if different. Response shape unverified, so we
-// probe a couple of likely fields.
-export async function getCsprRate(): Promise<number | null> {
-  const cur = process.env.CSPR_CLOUD_RATE_CURRENCY || "1";
-  try {
-    const d = await cloudGet<{ data?: { amount?: number; rate?: number }; amount?: number; rate?: number }>(
-      `/rates/${cur}/latest`
-    );
-    return d.data?.amount ?? d.data?.rate ?? d.amount ?? d.rate ?? null;
-  } catch {
-    return null;
-  }
-}
-
-// --- Vault contract state --------------------------------------------------
-// ponytail: verify CSPR.cloud endpoint — GET /contracts/{hash}. Returns contract
-// metadata; the treasury totals/holdings live in named keys or a dictionary whose
-// layout is contract-specific. Decode once RwaVault is deployed and its ABI known.
-export async function getContract(contractHash: string): Promise<Record<string, unknown> | null> {
-  try {
-    return await cloudGet<Record<string, unknown>>(`/contracts/${contractHash}`);
-  } catch {
-    return null;
-  }
-}
 
 // --- Recent deploys (audit trail) ------------------------------------------
 // Verified live against api.testnet.cspr.cloud: GET /deploys returns

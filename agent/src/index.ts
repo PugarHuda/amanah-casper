@@ -59,8 +59,15 @@ async function runCycle(cycle: number): Promise<void> {
     log(cycle, "x402.error", { message: (e as Error).message });
   }
 
-  // 3. REASON
-  const decision = await reason(cycle, prices, premiumSignal);
+  // 3. REASON — the LLM now reasons over the official-MCP market context too, not
+  // just prices + the paid signal. The context is attested in the blob below.
+  const marketContext = {
+    csprCloud: insights,
+    csprTradeDex: dexQuote
+      ? { pair: dexQuote.pair, executionPrice: dexQuote.executionPrice, priceImpactPct: dexQuote.priceImpactPct }
+      : null,
+  };
+  const decision = await reason(cycle, prices, premiumSignal, marketContext);
   log(cycle, "reason", decision);
 
   // 4. ATTEST — hash + sign + record reasoning on-chain.
@@ -69,6 +76,7 @@ async function runCycle(cycle: number): Promise<void> {
     pubkey: key.publicKey.toHex(),
     prices,
     premiumSignal,
+    marketContext,
     decision,
     model: config.model,
     at: new Date().toISOString(),
@@ -77,7 +85,16 @@ async function runCycle(cycle: number): Promise<void> {
   log(cycle, "attest", attestation);
   console.log(`  ⛓  attest deploy: ${attestation.deployHash}`);
 
-  // 5. GUARDRAIL / CONFIDENCE
+  // 5. REPUTATION — credit the settled x402 payment. This happens on EVERY paid
+  // cycle (the payment is real regardless of the hold/escalate/rebalance outcome),
+  // so it runs before the branches below — not only on reallocation cycles.
+  if (x402DeployHash) {
+    const repHash = await recordPayment(rpc, key, x402DeployHash);
+    log(cycle, "reputation", { deployHash: repHash });
+    console.log(`  ⛓  reputation deploy: ${repHash}`);
+  }
+
+  // 6. GUARDRAIL / CONFIDENCE
   if (shouldEscalate(decision)) {
     await escalateToHuman(decision, attestation.reasoningHash);
     log(cycle, "escalate", { confidence: decision.confidence });
@@ -88,7 +105,7 @@ async function runCycle(cycle: number): Promise<void> {
     return;
   }
 
-  // 6. EXECUTE — RwaVault.reallocate (SpendGate + Compliance gated on-chain).
+  // 7. EXECUTE — RwaVault.reallocate (SpendGate + Compliance gated on-chain).
   const execHash = await executeReallocation(
     rpc,
     key,
@@ -97,13 +114,6 @@ async function runCycle(cycle: number): Promise<void> {
   );
   log(cycle, "execute", { deployHash: execHash });
   console.log(`  ⛓  reallocate deploy: ${execHash}`);
-
-  // 7. REPUTATION — credit the x402 payment proof, if we have one.
-  if (x402DeployHash) {
-    const repHash = await recordPayment(rpc, key, x402DeployHash);
-    log(cycle, "reputation", { deployHash: repHash });
-    console.log(`  ⛓  reputation deploy: ${repHash}`);
-  }
 }
 
 async function main(): Promise<void> {

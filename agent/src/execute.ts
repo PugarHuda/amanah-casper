@@ -60,7 +60,7 @@ export async function escalateToHuman(
   const msg =
     `[ESCALATION] confidence ${decision.confidence} < ${config.confidenceThreshold}. ` +
     `Proposed: ${decision.action} ${decision.amount} ${decision.fromAsset}->${decision.toAsset}. ` +
-    `Reasoning hash 0x${reasoningHashHex}. Awaiting human approval.`;
+    `Reasoning hash 0x${reasoningHashHex}. Human notified (advisory) — no move made this cycle.`;
   console.warn(msg);
 
   if (config.telegramToken && config.telegramChatId) {

@@ -10,7 +10,7 @@ const Logo = () => (
   </svg>
 );
 
-type Active = "protocol" | "writing" | "connect" | "dashboard" | null;
+type Active = "protocol" | "connect" | "dashboard" | null;
 
 export default function Nav({ active = null }: { active?: Active }) {
   const cls = (k: Active) => (active === k ? "active" : undefined);
@@ -27,7 +27,7 @@ export default function Nav({ active = null }: { active?: Active }) {
             <path d="M1 1l4.5 4.5L10 1" stroke="#1c1814" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
         </Link>
-        <Link href="/writing" className={cls("writing")}>Read the spec</Link>
+        <a href="https://github.com/PugarHuda/amanah-casper#readme" target="_blank" rel="noopener noreferrer">Read the spec</a>
         <Link href="/connect" className={cls("connect")}>Connect wallet</Link>
         <Link href="/dashboard" className={cls("dashboard")}>Dashboard</Link>
       </div>

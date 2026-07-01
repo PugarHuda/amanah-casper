@@ -93,8 +93,8 @@ async function readBig(index: number, mappingKey: number[] = []): Promise<bigint
   return v;
 }
 
-// Read an i64 field from the ReputationRegistry's "state" dict.
-// i64 CLValue.parsed is a JSON number, not a List<U8> byte blob.
+// Read an i64 field from the ReputationRegistry's "state" dict. On Casper 2.0 the
+// i64 CLValue.parsed comes back as an 8-byte little-endian array (see readI64).
 function repDictAddr(index: number, mappingKey: number[]): string {
   const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
   const seed = Buffer.from(REP_STATE_SEED, "hex");
