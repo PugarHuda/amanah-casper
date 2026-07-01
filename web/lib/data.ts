@@ -95,6 +95,33 @@ function latestReasoningBlob(): { hash: string; blob: AgentBlob; ipfsCid: string
   }
 }
 
+// Prod fallback: fetch the latest reasoning blob from PUBLIC IPFS (Pinata) when
+// there's no local audit/ dir (e.g. a Vercel deploy). Finds the newest tagged pin
+// via the Pinata pinList API, then fetches the blob from the gateway. Needs
+// PINATA_JWT (server-side). This is how the deployed console stays live.
+async function latestBlobFromPinata(): Promise<{ hash: string; blob: AgentBlob; ipfsCid: string } | null> {
+  const jwt = process.env.PINATA_JWT;
+  if (!jwt) return null;
+  try {
+    const list = await fetch(
+      "https://api.pinata.cloud/data/pinList?status=pinned&metadata[name]=amanah-reasoning&pageLimit=1&sortBy=date_pinned&sortOrder=DESC",
+      { headers: { authorization: `Bearer ${jwt}` }, next: { revalidate: 15 } },
+    );
+    if (!list.ok) return null;
+    const data = (await list.json()) as { rows?: { ipfs_pin_hash: string; metadata?: { keyvalues?: { hash?: string } } }[] };
+    const row = data.rows?.[0];
+    if (!row) return null;
+    const cid = row.ipfs_pin_hash;
+    const gw = process.env.PINATA_GATEWAY || "https://gateway.pinata.cloud";
+    const blobRes = await fetch(`${gw}/ipfs/${cid}`, { next: { revalidate: 15 } });
+    if (!blobRes.ok) return null;
+    const blob = (await blobRes.json()) as AgentBlob;
+    return { hash: row.metadata?.keyvalues?.hash ?? cid, blob, ipfsCid: cid };
+  } catch {
+    return null;
+  }
+}
+
 type AgentBlob = {
   cycle?: number;
   pubkey?: string;
@@ -153,7 +180,8 @@ const ASSET_ORDER = ["Gold", "TBond", "WTI", "CSPR"] as const;
 // Agent console: LIVE from the newest published reasoning blob + on-chain data
 // when available; falls back to the representative mock (clearly labelled).
 export async function getAgentConsole() {
-  const latest = latestReasoningBlob();
+  // Local audit/ blob (dev) first; else fetch the latest from public IPFS (prod).
+  const latest = latestReasoningBlob() ?? (await latestBlobFromPinata());
   if (!latest) {
     return {
       metrics: mock.metrics, assets: mock.assets, guards: mock.guards,

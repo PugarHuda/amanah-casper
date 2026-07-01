@@ -26,6 +26,7 @@ Copy the values from `web/.env.local` (all server-side; safe as Vercel env vars)
 | `VAULT_STATE_SEED`, `SPENDGATE_STATE_SEED`, `COMPLIANCE_STATE_SEED`, `REPUTATION_STATE_SEED` | live treasury / guardrail / compliance / reputation reads |
 | `CASPER_RPC_URL` | `https://node.testnet.casper.network/rpc` |
 | `NEXT_PUBLIC_CSPR_CLICK_APP_ID` | your CSPR.click app-id (or leave `csprclick-template`) |
+| `PINATA_JWT` | **makes the agent console live in prod** — fetches the latest reasoning blob from public IPFS (same JWT as `agent/.env`) |
 
 Redeploy after setting them: `npx vercel --prod`.
 
@@ -33,10 +34,9 @@ Redeploy after setting them: `npx vercel --prod`.
 
 - **Landing**, **Dashboard** (live $1M treasury / $800K principal / audit trail /
   guardrails / compliance — all read from casper-test), **Connect** (CSPR.click modal).
-- **Agent console**: shows the *representative* view unless the agent's published
-  reasoning blobs are present. On Vercel they aren't (they're generated locally into
-  `amanah/audit/`), so to make the console live in prod, fetch the blob from its IPFS
-  CID instead of the local file — a small follow-up if you want it.
+- **Agent console**: LIVE in prod too — with `PINATA_JWT` set, it fetches the latest
+  published reasoning blob from public IPFS (Pinata pinList → gateway), so the
+  deployed dashboard shows the real cycle without the local `audit/` files.
 
 ## Note on the live event feed
 

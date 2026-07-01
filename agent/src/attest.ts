@@ -61,7 +61,7 @@ export async function attest(
     paymentMotes: config.paymentMotes,
   });
 
-  const ipfsCid = await pinToIpfs(json);
+  const ipfsCid = await pinToIpfs(json, hashHex, blob.cycle);
   // Record the CID in a sidecar (the CID can't live inside the blob it identifies —
   // that would change the hash). The web/MCP read this to link "verify on IPFS".
   if (ipfsCid) persistCid(hashHex, ipfsCid);
@@ -98,13 +98,19 @@ function decisionLabel(d: Decision): string {
 // anyone — not just someone with the repo — can fetch the exact blob whose hash
 // was attested. Skipped (returns null) unless PINATA_JWT is set; the local
 // audit/<hash>.json copy is always written regardless.
-async function pinToIpfs(json: string): Promise<string | null> {
+async function pinToIpfs(json: string, hashHex: string, cycle: number): Promise<string | null> {
   if (!config.pinataJwt) return null;
   try {
     const res = await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${config.pinataJwt}` },
-      body: JSON.stringify({ pinataContent: JSON.parse(json) }),
+      // Tag the pin so the web can find the latest reasoning blob via the Pinata
+      // pinList API (metadata name + the blake2b hash / cycle in keyvalues) —
+      // this is how the deployed dashboard reads the console live, without the repo.
+      body: JSON.stringify({
+        pinataContent: JSON.parse(json),
+        pinataMetadata: { name: "amanah-reasoning", keyvalues: { hash: hashHex, cycle: String(cycle) } },
+      }),
     });
     if (!res.ok) {
       console.warn(`[attest] IPFS pin failed: ${res.status} ${(await res.text().catch(() => "")).slice(0, 120)}`);
