@@ -72,11 +72,22 @@ untouchable.**
 - The **CSPR.cloud / CSPR.click / x402** stack provides the indexer, wallet, and
   payment rails a production RWA product would actually need — all integrated here.
 
+## Separation of powers (the fiduciary crux — implemented, not claimed)
+
+A treasury story only holds if the party that *manages* funds is not the party that
+*authorizes* itself. Amanah enforces this on-chain: a **custodian** (a separate
+Casper key, `0109cd12…`) deploys and **owns** the SpendGate, allowlists the agent,
+and sets the agent's compliance status. The **agent** (`0147ebe7…`) can only
+reallocate yield *through the custodian's gates* — it cannot raise its own limits,
+allowlist itself, or clear its own KYC. Revoking the agent is the custodian calling
+`SpendGate.revoke()`; the agent cannot stop it. That's real custody separation, live
+on casper-test.
+
 ## Honest scope
 
 This is a testnet demonstrator. The assets are synthetic test tokens modeling real
-instruments; KYC is a status flag, not a full identity stack; the live vault is
-seeded with principal = 0 so the invariant is proven by unit test rather than a
-non-zero on-chain lock. The architecture and every guarantee above are real and
-running on casper-test today — productionizing is wiring real tokenized-RWA
-contracts and a real registrar behind the same gates.
+instruments, and KYC is a status flag rather than a full identity stack. But the
+core guarantees are now genuinely live, not just tested: **custody is separated**
+(custodian-owned gates, above) and the vault **locks $800K of its $1M as principal**
+on-chain (the agent moves only the $200K yield). Productionizing is wiring real
+tokenized-RWA contracts and a real registrar behind these same gates.

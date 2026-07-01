@@ -91,6 +91,11 @@ test.describe("Amanah manual-click QA", () => {
     const total = await page.getByText(/TOTAL TREASURY VALUE/i).locator("xpath=following-sibling::*[1]").innerText();
     console.log("Dashboard total treasury:", total);
     expect(total).toMatch(/^\$/);
+    // Non-zero locked principal from the custodian-separated vault v2 (was $0 before).
+    const principal = await page.getByText("PRINCIPAL LOCKED").locator("xpath=following-sibling::*[1]").innerText();
+    console.log("Principal locked:", principal);
+    expect(principal).toMatch(/\$\d/);
+    expect(principal).not.toBe("$0");
     // No stale fakes.
     const body = await page.locator("body").innerText();
     for (const fake of STALE_FAKES) {

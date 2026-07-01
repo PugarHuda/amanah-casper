@@ -57,14 +57,20 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 
 | Contract | Package hash |
 |---|---|
-| RwaVault | `438118a13b5cdcaed1f3cd72bbdcbb3347cd38d2a0d98d2beaa2993a16233347` |
+| RwaVault (v2, principal-locked $800K) | `c638780d65eec79d57115900664da1ddb242d1f313015b2de36567c105b1f479` |
 | AttestationLog | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
-| SpendGate | `ae3f3d876c905f3d691133e244dcaa842aff56b540696d843db43030e0e9d92e` |
-| ComplianceRegistry | `f4a43bd6671e92a085b5598cad396e71279cf18a7271fac0f6d7ef5cb7b8e572` |
+| SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
+| ComplianceRegistry (set by custodian) | `2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33` |
 | ReputationRegistry | `c2650647e7ddba168e52d0a57f6670b2953b821b8d3c36827cf675f3e548ca0b` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`
+Custodian account (owns the gates, separate key): `0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`
+
+**Separation of powers is real:** the **custodian** (a different key) deploys and
+**owns** SpendGate, allowlists the agent, and sets the agent's compliance status;
+the **agent** can only reallocate yield through those custodian-owned gates. The
+vault locks **$800K of the $1M as principal** — the agent moves only the $200K yield.
 
 **Verifiable proof transactions** (paste into [testnet.cspr.live](https://testnet.cspr.live)):
 
@@ -74,6 +80,7 @@ Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fd
 | x402 settlement — `transfer_with_authorization` | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |
 | Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` |
 | Reputation — `record_payment` credits the x402 proof (anti-replay) | `c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c` |
+| Reallocate — through **custodian-owned** gates, vault v2 (principal $800K) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
 
 The reallocate moved Gold $250K→$200K and T-bond $400K→$450K on-chain (verify via
 `agent/src/read-vault.ts`); the agent was allowlisted in SpendGate and marked Valid
@@ -155,9 +162,8 @@ or a **"representative"** label — never a fabricated number dressed as live. T
 audit trail's "live · testnet" badge only appears when the trail is actually live.
 
 Honest caveats (small, disclosed): the principal-lock invariant is enforced
-in-contract and unit-tested (`reallocate_rejected_when_it_would_touch_principal`)
-but the live vault is seeded with principal = 0, so the live guard is a forward
-guard (a non-zero lock needs a `lock_principal` entrypoint + redeploy); reasoning
+in-contract, unit-tested, AND live — the deployed vault v2 locks $800K principal
+(the agent can only touch the $200K yield); reasoning
 blobs are published to `audit/<hash>.json` and integrity-checked by the MCP, and
 pinned to **public IPFS** (Pinata) — the agent console links "verify blob on IPFS"
 so anyone can fetch the exact reasoning and recompute the attested hash without the

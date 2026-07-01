@@ -14,6 +14,7 @@ export const {
   KeyAlgorithm,
   ContractCallBuilder,
   SessionBuilder,
+  NativeTransferBuilder,
   AccountIdentifier,
   Args,
   CLValue,

@@ -14,7 +14,8 @@ const CLOUD_KEY = process.env.CSPR_CLOUD_API_KEY || "";
 
 // package hashes the audit trail labels rows by (env-overridable, defaults = deployed)
 const PKG = {
-  vault: process.env.RWA_VAULT_HASH || "438118a13b5cdcaed1f3cd72bbdcbb3347cd38d2a0d98d2beaa2993a16233347",
+  // vault v2 (custodian-separated deploy, non-zero principal) — see .env.deployed
+  vault: process.env.RWA_VAULT_HASH || "c638780d65eec79d57115900664da1ddb242d1f313015b2de36567c105b1f479",
   attestation: process.env.ATTESTATION_HASH || "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
   payment: process.env.PAYMENT_TOKEN_HASH || "d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79",
 } as const;

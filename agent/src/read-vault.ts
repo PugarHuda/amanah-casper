@@ -13,10 +13,10 @@ import { config } from "./config.js";
 import { ASSET_INDEX, type AssetId } from "./types.js";
 
 const RPC = config.rpcUrl;
-// RwaVault (438118a1…) "state" dictionary seed uref address (hex, no uref-/-suffix).
+// RwaVault v2 (c638780d…, custodian-separated) "state" dict seed uref address.
 const STATE_SEED =
   process.env.VAULT_STATE_SEED ??
-  "f92ae6151d9599cebe4ad86e02d39141a1179c9a9e2e3c447ee1b8da77c4f4bb";
+  "468adcc6a52351bacd555b9b78756fae31397609fefe4327fbfaa0b564f83848";
 
 const ALLOCATIONS_INDEX = 1;
 const PRINCIPAL_INDEX = 2;
