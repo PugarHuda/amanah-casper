@@ -1,0 +1,46 @@
+# Deploy the web dashboard to a public URL (Vercel)
+
+The web app isn't hosted yet — it runs locally. To give judges a live link, deploy
+the `web/` folder to Vercel (free). One-time, ~3 minutes.
+
+## Steps
+
+```bash
+cd web
+npx vercel login          # opens the browser — sign in (GitHub is easiest)
+npx vercel link           # create/link a project; set Root Directory = web
+npx vercel --prod         # builds + deploys → prints your public URL
+```
+
+## Set these environment variables (Vercel → Project → Settings → Environment Variables)
+
+Copy the values from `web/.env.local` (all server-side; safe as Vercel env vars):
+
+| Variable | Purpose |
+|---|---|
+| `CSPR_CLOUD_API_KEY` | live audit trail + streaming (the CSPR.cloud key) |
+| `CSPR_CLOUD_BASE` | `https://api.testnet.cspr.cloud` |
+| `NEXT_PUBLIC_VAULT_HASH` | vault v2 package hash |
+| `NEXT_PUBLIC_ATTESTATION_HASH`, `NEXT_PUBLIC_REPUTATION_HASH` | trail labels |
+| `NEXT_PUBLIC_X402_HASH` | x402 settlements in the trail |
+| `VAULT_STATE_SEED`, `SPENDGATE_STATE_SEED`, `COMPLIANCE_STATE_SEED`, `REPUTATION_STATE_SEED` | live treasury / guardrail / compliance / reputation reads |
+| `CASPER_RPC_URL` | `https://node.testnet.casper.network/rpc` |
+| `NEXT_PUBLIC_CSPR_CLICK_APP_ID` | your CSPR.click app-id (or leave `csprclick-template`) |
+
+Redeploy after setting them: `npx vercel --prod`.
+
+## What will be live on the hosted URL
+
+- **Landing**, **Dashboard** (live $1M treasury / $800K principal / audit trail /
+  guardrails / compliance — all read from casper-test), **Connect** (CSPR.click modal).
+- **Agent console**: shows the *representative* view unless the agent's published
+  reasoning blobs are present. On Vercel they aren't (they're generated locally into
+  `amanah/audit/`), so to make the console live in prod, fetch the blob from its IPFS
+  CID instead of the local file — a small follow-up if you want it.
+
+## Note on the live event feed
+
+The dashboard's CSPR.cloud Streaming feed (`/api/stream`) holds a WebSocket; Vercel
+caps a serverless function at 60s (set in `vercel.json`), so the feed reconnects
+periodically rather than staying open indefinitely. Fine for a demo; for an
+always-on feed, host on a normal Node server (Railway/Render/a VPS) instead.
