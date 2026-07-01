@@ -23,6 +23,7 @@ The three on-chain steps of the loop, each a real transaction:
 | Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` | [view](https://testnet.cspr.live/deploy/eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0) |
 | Reputation — `record_payment` credits the x402 proof (anti-replay) | `c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c` | [view](https://testnet.cspr.live/deploy/c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c) |
 | Reallocate v2 — through **custodian-owned** gates, $800K principal locked | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` | [view](https://testnet.cspr.live/deploy/e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149) |
+| **Autonomous reallocate — LLM-decided** (Gold→CSPR, conf 0.85) + attest `0746b729…` | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` | [view](https://testnet.cspr.live/deploy/9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a) |
 
 Supporting setup txs (made the reallocate possible): `add_allowlist`
 `b28aec831ae0161137c17e965a023f176f8be88239fb2e172e0e924f5c7214a4`, `set_status(Valid)`
@@ -134,6 +135,3 @@ To re-prove the reallocate from scratch on the live contracts:
 2. **CSPR.trade swap execution** — we consume the DEX MCP for read/quotes today;
    `build_swap` + local signing would let the agent execute a real swap (the vault
    holds synthetic RWA on testnet, so this is a mainnet-CSPR-leg extension).
-3. **Deterministic autonomous reallocate** — the current reallocate proofs are
-   agent-signed but decision-scripted; let a live LLM cycle decide + execute a
-   rebalance for a fully autonomous on-chain proof.

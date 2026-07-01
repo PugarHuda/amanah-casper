@@ -81,6 +81,14 @@ vault locks **$800K of the $1M as principal** — the agent moves only the $200K
 | Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` |
 | Reputation — `record_payment` credits the x402 proof (anti-replay) | `c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c` |
 | Reallocate — through **custodian-owned** gates, vault v2 (principal $800K) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
+| **Autonomous reallocate — the LLM decided it** (Gold→CSPR, conf 0.85) then signed + executed it | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` |
+
+The autonomous reallocate above is the whole thesis in one tx: a live cycle
+(`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
+vs cheap CSPR + the live CSPR.trade DEX price impact, decided to rotate a slice of
+gold yield into CSPR at confidence 0.85, signed that reasoning, attested it, and
+executed the move through the custodian-owned gates — no scripted decision. The
+attestation (`0746b729…`) and its published reasoning are checkable on-chain + IPFS.
 
 The reallocate moved Gold $250K→$200K and T-bond $400K→$450K on-chain (verify via
 `agent/src/read-vault.ts`); the agent was allowlisted in SpendGate and marked Valid
