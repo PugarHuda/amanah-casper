@@ -26,11 +26,13 @@ loop runs end-to-end against the live node. Four on-chain steps are verified wit
 public proof hashes: **attestation**, **x402 settlement**, **reallocate** (allowlist
 + compliance gated), and **reputation** (`record_payment`). Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
-contract-event feed over WebSocket→SSE); the agent **consumes the official hosted
-CSPR.cloud MCP server** (82 tools) each cycle for an independent second source of
-on-chain truth; the **CSPR.click** wallet on `/connect` (official hosted SDK — Casper
-Wallet / Ledger / social login); our own **MCP** server (all four tools read live
-chain state); and **Venice** reasoning. The dashboard's treasury, audit trail,
+contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
+servers** each cycle — **CSPR.cloud MCP** (82 tools: balance + rates, second source
+of on-chain truth) and the **CSPR.trade DEX MCP** (23 tools: a live CSPR↔sCSPR
+quote); the **CSPR.click** wallet on `/connect` (official hosted SDK — Casper Wallet
+/ Ledger / social login); our own **MCP** server (all four tools read live chain
+state); **public IPFS pinning** of every reasoning blob (Pinata); and **Venice**
+reasoning. The dashboard's treasury, audit trail,
 reputation, live event feed, and **guardrail limits read live from chain**; the agent
 console renders the latest published reasoning blob + its on-chain attestation.
 See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
@@ -81,7 +83,7 @@ in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 | Module | Stack | What it is |
 |---|---|---|
 | [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry, PaymentToken. On-chain Ed25519 verification is the heart. 6/6 OdraVM tests pass. |
-| [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via the official CSPR.cloud MCP** → x402 → reason → attest → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. `npx tsx src/cspr-mcp.ts` demos the official-MCP consumption; `npx tsx src/stream.ts` watches events live. |
+| [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | The x402-gated premium-signal API the agent pays — agent-pays-agent commerce, settled on-chain via CEP-3009. |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
 | [`bot/`](bot) | TypeScript · grammy | Optional Telegram notifier + `/audit`. |
@@ -152,7 +154,8 @@ in-contract and unit-tested (`reallocate_rejected_when_it_would_touch_principal`
 but the live vault is seeded with principal = 0, so the live guard is a forward
 guard (a non-zero lock needs a `lock_principal` entrypoint + redeploy); reasoning
 blobs are published to `audit/<hash>.json` and integrity-checked by the MCP, and
-pinned to public IPFS only when `PINATA_JWT` is set (code wired in `attest.ts`);
-the `/connect` wallet uses the `csprclick-template` app id until you set your own
-(`NEXT_PUBLIC_CSPR_CLICK_APP_ID`). All such seams are marked `// ponytail:` in the
+pinned to **public IPFS** (Pinata) — the agent console links "verify blob on IPFS"
+so anyone can fetch the exact reasoning and recompute the attested hash without the
+repo; the `/connect` wallet uses the `csprclick-template` app id until you set your
+own (`NEXT_PUBLIC_CSPR_CLICK_APP_ID`). All such seams are marked `// ponytail:` in the
 source. Run the manual-click QA with `cd web && npm run test:e2e`.

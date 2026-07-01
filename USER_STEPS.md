@@ -52,26 +52,26 @@ These keys are in chat transcripts and reused across `.env` files — rotate the
 
 ## 🟢 PRIORITY 3 — Optional polish (more partner-integration points = more judge value)
 
-### 5. Public IPFS pin (5 min — just an env var)
-Makes every reasoning blob verifiable by anyone, not just repo holders.
-1. Get a free JWT at **pinata.cloud** (API Keys → New Key).
-2. Add to `agent/.env`: `PINATA_JWT=<your_jwt>`
-3. Next agent cycle pins automatically (code is already wired in `attest.ts`).
+### 5. Public IPFS pin — ✅ DONE
+Your Pinata JWT is wired into `agent/.env`; every cycle pins the reasoning blob to
+public IPFS and the agent console links "verify blob on IPFS". Verified retrievable.
+(Rotate this JWT eventually — it appeared in chat: pinata.cloud → API Keys → Revoke → New Key.)
 
-### 6. CSPR.click real wallet — ✅ DONE (just swap in your prod app-id)
-The official CSPR.click SDK is wired on `/connect` (loads from the CSPR.click CDN —
-no stub). `signIn()` opens the real modal: Casper Wallet, Ledger, MetaMask Snap,
-and Google/Apple social login. It works **right now on localhost** with the
-`csprclick-template` app-id.
-- For a **deployed domain** you need your own app-id: get it at console.cspr.build,
-  then set `NEXT_PUBLIC_CSPR_CLICK_APP_ID=<your-id>` in `web/.env.local` (rebuild).
-- That's the only change — the integration code is done and tested
-  (`npm run test:e2e` includes a live SDK check).
+### 6. Consume official CSPR.cloud + CSPR.trade MCP — ✅ DONE
+The agent consumes both hosted MCP servers every cycle: CSPR.cloud MCP
+(`mcp.testnet.cspr.cloud`, balance + rate) and the CSPR.trade DEX MCP
+(`mcp.cspr.trade`, public, a live CSPR↔sCSPR quote). `npx tsx src/cspr-mcp.ts` and
+`npx tsx src/trade-mcp.ts` demo each.
 
-### 7. Consume official Casper MCP / CSPR.trade MCP
-1. Get the endpoint + auth for those MCP servers from the buildathon partners.
-2. Tell me — I'll have the agent *call* them (e.g. execute a swap) alongside our
-   read-only server.
+### 7. CSPR.click production app-id — ⏳ the only code item left
+The wallet works now on localhost with `csprclick-template`. For a deployed domain,
+create your own app-id and I'll wire it:
+1. console.cspr.build → **"CSPR.click keys"** section → **Create key**.
+2. Fill: **Name** `amanah`; **Domains** = your deploy URL (a real FQDN, e.g.
+   `amanah.vercel.app` — the domain field won't take bare `localhost`); **Network**
+   `Casper`; **Connected CSPR.cloud key** `amanah`; toggle ON **REST API +
+   Streaming API + RPC node** (we use all three).
+3. Send me the app-id → I set `NEXT_PUBLIC_CSPR_CLICK_APP_ID` in `web/.env.local`.
 
 ---
 
@@ -122,6 +122,8 @@ npx tsx src/find-state-seeds.ts                  # rediscover state-dict seeds v
 | CSPR.click wallet on /connect (hosted SDK) | ✅ live | `/connect` |
 | CSPR.cloud Streaming API live event feed | ✅ live | `/dashboard` + `agent/src/stream.ts` |
 | Agent consumes official CSPR.cloud MCP (82 tools) | ✅ live | `agent/src/cspr-mcp.ts` |
+| Agent consumes official CSPR.trade DEX MCP (23 tools) | ✅ live | `agent/src/trade-mcp.ts` |
+| Public IPFS pin of every reasoning blob (Pinata) | ✅ live | `/agent` "verify on IPFS" |
 | Guardrails + compliance read live (SpendGate + ComplianceRegistry) | ✅ live | dashboard + `/agent` |
 | AI Agent Skill (SKILL.md + references) | ✅ shipped | `skill/` |
 | Web: dashboard + agent console, real deep links | ✅ live | `test:e2e` 12/12 |

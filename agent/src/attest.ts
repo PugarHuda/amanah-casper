@@ -62,6 +62,9 @@ export async function attest(
   });
 
   const ipfsCid = await pinToIpfs(json);
+  // Record the CID in a sidecar (the CID can't live inside the blob it identifies —
+  // that would change the hash). The web/MCP read this to link "verify on IPFS".
+  if (ipfsCid) persistCid(hashHex, ipfsCid);
 
   return { reasoningHash: hashHex, deployHash, ipfsCid };
 }
@@ -73,6 +76,15 @@ function persistBlob(hashHex: string, json: string): void {
     writeFileSync(resolve(dir, `${hashHex}.json`), json);
   } catch (e) {
     console.warn("[attest] could not persist reasoning blob:", (e as Error).message);
+  }
+}
+
+function persistCid(hashHex: string, cid: string): void {
+  try {
+    const dir = resolve(import.meta.dirname, "../../audit");
+    writeFileSync(resolve(dir, `${hashHex}.cid`), cid);
+  } catch {
+    /* non-fatal */
   }
 }
 

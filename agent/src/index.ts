@@ -15,6 +15,7 @@ import {
 } from "./execute.js";
 import { recordPayment } from "./reputation.js";
 import { getAgentInsights } from "./cspr-mcp.js";
+import { getDexQuote } from "./trade-mcp.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -36,6 +37,11 @@ async function runCycle(cycle: number): Promise<void> {
   // and never throws, so it can't stall or break the cycle.
   const insights = await getAgentInsights(key.publicKey.toHex());
   if (insights) log(cycle, "cspr-mcp.insights", insights);
+
+  // 1c. DEX intelligence (best-effort) — live CSPR↔sCSPR quote from the official
+  // CSPR.trade DEX MCP, an extra market signal for the CSPR reserve leg.
+  const dexQuote = await getDexQuote();
+  if (dexQuote) log(cycle, "trade-mcp.quote", dexQuote);
 
   // 2. PAY (x402) — buy the premium signal; capture settlement deploy hash.
   let premiumSignal: unknown = null;

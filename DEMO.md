@@ -112,9 +112,13 @@ To re-prove the reallocate from scratch on the live contracts:
   / MetaMask Snap / Google+Apple social login). `csprclick-template` on localhost;
   set `NEXT_PUBLIC_CSPR_CLICK_APP_ID` for a deployed domain.
 - **Official CSPR.cloud MCP server** — the agent *consumes* the partner's hosted
-  MCP (`mcp.testnet.cspr.cloud`, 82 tools) every cycle as an independent second
-  source of on-chain truth (agent balance + CSPR/USD rate, logged as the
-  `cspr-mcp.insights` step). Demo: `cd agent && npx tsx src/cspr-mcp.ts`.
+  MCP (`mcp.testnet.cspr.cloud`, 82 tools) every cycle for balance + CSPR/USD rate
+  (`cspr-mcp.insights` step). Demo: `cd agent && npx tsx src/cspr-mcp.ts`.
+- **Official CSPR.trade DEX MCP** — the agent also *consumes* the DEX MCP
+  (`mcp.cspr.trade`, 23 tools, public/non-custodial) each cycle for a live
+  CSPR↔sCSPR quote (`trade-mcp.quote` step). Demo: `npx tsx src/trade-mcp.ts`.
+- **Public IPFS pin** — every reasoning blob is pinned to IPFS via Pinata; the agent
+  console links "verify blob on IPFS". Verified retrievable (e.g. `QmT5LeV4…`).
 - **MCP** — our own read-only server, all 4 tools decode live chain state.
 - **SpendGate + Compliance** — per-tx cap / daily limit / spent-today AND KYC status
   + allowlist read live from the contracts (dashboard + console + our MCP). No
@@ -124,13 +128,11 @@ To re-prove the reallocate from scratch on the live contracts:
   cspr.live. Completes the prized AI Agent Skills + MCP + x402 trio.
 - **Venice** — reasoning (`deepseek-v4-flash`).
 
-**Next, to deepen partner integration (ranked):**
-1. **CSPR.fans** registration — unlocks the community-vote auto-advance path.
-2. **CSPR.trade MCP** — have the agent consume the DEX MCP to execute swaps (we
-   already consume the official CSPR.cloud MCP for reads).
-3. **Public IPFS pin** — set `PINATA_JWT` so each reasoning blob is pinned to IPFS
-   (code is wired in `attest.ts`); today the blob is published locally to
-   `amanah/audit/<hash>.json` and integrity-checked by the MCP.
-4. **Live principal lock** — the invariant is enforced in-contract + unit-tested;
+**Next (all that's left):**
+1. **CSPR.fans** registration — unlocks the community-vote auto-advance path (user action).
+2. **CSPR.trade swap execution** — we consume the DEX MCP for read/quotes today;
+   `build_swap` + local signing would let the agent execute a real swap (the vault
+   holds synthetic RWA on testnet, so this is a mainnet-CSPR-leg extension).
+3. **Live principal lock** — the invariant is enforced in-contract + unit-tested;
    the live vault is seeded with principal = 0. Add a `lock_principal` entrypoint +
    redeploy to show a non-zero locked principal on the dashboard.

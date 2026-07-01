@@ -11,7 +11,7 @@ const Check = () => (
 );
 
 export default async function Agent() {
-  const { metrics, assets, guards, steps, reasoningHash, decision, cycleId, attestDeployHash } =
+  const { metrics, assets, guards, steps, reasoningHash, decision, cycleId, attestDeployHash, ipfsCid } =
     await getAgentConsole();
 
   const attestUrl = attestDeployHash
@@ -96,6 +96,17 @@ export default async function Agent() {
             <div style={{ padding: "16px 22px", borderTop: "1px solid var(--border2)", background: "#f7f5ef" }}>
               <div className="mono" style={{ fontSize: 11, color: "var(--faint)", marginBottom: 4 }}>REASONING HASH (blake2b)</div>
               <div className="mono" style={{ fontSize: 12.5, color: "var(--ink)", wordBreak: "break-all" }}>{reasoningHash}</div>
+              {ipfsCid && (
+                <a
+                  href={`https://gateway.pinata.cloud/ipfs/${ipfsCid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mono"
+                  style={{ display: "inline-block", marginTop: 8, fontSize: 11.5, color: "var(--blue)", textDecoration: "none", wordBreak: "break-all" }}
+                >
+                  verify blob on IPFS ↗ ({ipfsCid.slice(0, 8)}…)
+                </a>
+              )}
             </div>
           </div>
         </div>

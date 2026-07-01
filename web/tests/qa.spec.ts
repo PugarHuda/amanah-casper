@@ -45,6 +45,13 @@ test.describe("Amanah manual-click QA", () => {
     const ingest = await page.getByText(/^INGEST ·/).first().textContent();
     console.log("Ingest provenance:", ingest);
     expect(ingest).toMatch(/EIA|metalpriceapi|coingecko|treasury|avg_interest/i);
+    // If the reasoning blob was pinned to IPFS, the verify link is a real Pinata gateway URL.
+    const ipfs = page.getByRole("link", { name: /verify blob on IPFS/i });
+    if (await ipfs.count()) {
+      const href = await ipfs.getAttribute("href");
+      console.log("IPFS verify link:", href);
+      expect(href).toContain("/ipfs/");
+    }
   });
 
   test("agent console shows no stale fake numbers", async ({ page }) => {

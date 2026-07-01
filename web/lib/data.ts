@@ -69,7 +69,7 @@ function deployToTrail(d: RawDeploy): TrailRow {
 
 // Read the newest reasoning blob the agent published to amanah/audit/<hash>.json.
 // ponytail: demo-local read — assumes web runs alongside the agent (same repo).
-function latestReasoningBlob(): { hash: string; blob: AgentBlob } | null {
+function latestReasoningBlob(): { hash: string; blob: AgentBlob; ipfsCid: string | null } | null {
   try {
     const dir = resolve(process.cwd(), "../audit");
     const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
@@ -77,9 +77,18 @@ function latestReasoningBlob(): { hash: string; blob: AgentBlob } | null {
     const newest = files
       .map((f) => ({ f, t: statSync(resolve(dir, f)).mtimeMs }))
       .sort((a, b) => b.t - a.t)[0].f;
+    const hash = newest.replace(/\.json$/, "");
+    // Optional IPFS CID sidecar (written by attest.ts when PINATA_JWT is set).
+    let ipfsCid: string | null = null;
+    try {
+      ipfsCid = readFileSync(resolve(dir, `${hash}.cid`), "utf8").trim() || null;
+    } catch {
+      /* no CID sidecar — IPFS pin not enabled for this blob */
+    }
     return {
-      hash: newest.replace(/\.json$/, ""),
+      hash,
       blob: JSON.parse(readFileSync(resolve(dir, newest), "utf8")) as AgentBlob,
+      ipfsCid,
     };
   } catch {
     return null;
@@ -151,9 +160,10 @@ export async function getAgentConsole() {
       steps: mock.steps, reasoningHash: mock.reasoningHash, decision: mock.decision,
       cycleId: "REPRESENTATIVE CYCLE · CASPER-TEST",
       attestDeployHash: "",
+      ipfsCid: null as string | null,
     };
   }
-  const { hash, blob } = latest;
+  const { hash, blob, ipfsCid } = latest;
   const d = blob.decision ?? {};
   const p = blob.prices ?? {};
   // Defensive: older blobs stored riskScore on a 0..100 scale (schema says 0..1).
@@ -250,6 +260,7 @@ export async function getAgentConsole() {
     },
     cycleId: `CYCLE #${blob.cycle ?? "?"} · LIVE · ${blob.at?.slice(0, 10) ?? "CASPER-TEST"}`,
     attestDeployHash,
+    ipfsCid,
   };
 }
 
