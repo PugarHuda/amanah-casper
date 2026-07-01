@@ -105,6 +105,9 @@ To re-prove the reallocate from scratch on the live contracts:
 **Live now (partner tools, all real):**
 - **Casper L1** — Odra 2.8.1, 6 contracts, an on-chain tx every loop step.
 - **x402 Facilitator** — CEP-3009 `transfer_with_authorization`, settled on-chain.
+  **Two-sided**: Amanah *pays* for alpha (`GET /alpha`) AND *earns* by selling its
+  verified proof-of-reasoning (`GET /verified-reasoning`, payments to Amanah) — both
+  on the same rails in `signal-service`.
 - **CSPR.cloud REST** — audit trail + treasury decode + reputation + rates.
 - **CSPR.cloud Streaming API** — real-time contract-event feed on `/dashboard`
   (WebSocket → SSE relay at `/api/stream`; key stays server-side). Verified

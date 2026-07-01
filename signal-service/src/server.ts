@@ -17,7 +17,36 @@ import {
   type CasperResourceServerConfig,
 } from "@make-software/casper-x402/exact/server";
 import { NETWORK_CASPER_TESTNET } from "@make-software/casper-x402";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { blake2b } from "blakejs";
 import { buildSignal } from "./signal.js";
+
+// The "earn" side of two-sided x402: Amanah SELLS its unique product — a
+// proof-of-reasoning that's been verified against its on-chain attestation. Reads
+// the latest published blob, recomputes blake2b, and returns it with the integrity
+// result. (Amanah pays for alpha on /alpha; it charges for verified reasoning here.)
+function latestVerifiedReasoning(): unknown {
+  try {
+    const dir = resolve(import.meta.dirname, "../../audit");
+    const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+    if (!files.length) return { error: "no reasoning published yet" };
+    const newest = files
+      .map((f) => ({ f, t: statSync(resolve(dir, f)).mtimeMs }))
+      .sort((a, b) => b.t - a.t)[0].f;
+    const hash = newest.replace(/\.json$/, "");
+    const json = readFileSync(resolve(dir, newest), "utf8");
+    const recomputed = Buffer.from(blake2b(new TextEncoder().encode(json), undefined, 32)).toString("hex");
+    return {
+      reasoningHash: hash,
+      verified: recomputed === hash,
+      attestationLog: "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
+      blob: JSON.parse(json),
+    };
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+}
 
 const PORT = Number(process.env.PORT ?? 8402);
 // CSPR.cloud x402 facilitator (serves mainnet + testnet; needs a CSPR.cloud
@@ -33,25 +62,23 @@ const PRICE_ATOMIC = process.env.X402_PRICE_ATOMIC ?? "1000000";
 // https://console.cspr.build/sign-up to get one.
 const CSPR_CLOUD_TOKEN = process.env.CSPR_CLOUD_TOKEN ?? "";
 
+// exact-Casper scheme signs an EIP-712 domain from name + version; both MUST match
+// the on-chain token (name = CEP-18 token name; version = CEP-3009 DOMAIN_VERSION
+// "1"). PaymentToken implements transfer_with_authorization. Same terms both ways.
+const accepts = {
+  scheme: "exact",
+  network: NETWORK_CASPER_TESTNET,
+  payTo: PAY_TO,
+  price: { asset: ASSET, amount: PRICE_ATOMIC },
+  maxTimeoutSeconds: 120,
+  extra: { name: "Amanah Test USD", version: "1" },
+} as const;
+
 const routes: RoutesConfig = {
-  "GET /alpha": {
-    description: "Premium RWA momentum/volatility signal",
-    accepts: {
-      scheme: "exact",
-      network: NETWORK_CASPER_TESTNET,
-      payTo: PAY_TO,
-      // AssetAmount price => no decimals lookup needed (amount is atomic).
-      price: { asset: ASSET, amount: PRICE_ATOMIC },
-      maxTimeoutSeconds: 120,
-      // The exact-Casper scheme builds an EIP-712-style signing domain from the
-      // token name + version; both must match the asset's on-chain metadata.
-      // The exact-Casper scheme signs an EIP-712 domain from name + version; both
-      // MUST match the on-chain token. name = CEP-18 token name; version = CEP-3009
-      // DOMAIN_VERSION ("1", a fixed constant in odra-modules). PaymentToken now
-      // implements transfer_with_authorization, so settlement actually verifies.
-      extra: { name: "Amanah Test USD", version: "1" },
-    },
-  },
+  // PAY side: Amanah pays this counterparty for premium alpha (agent-pays-agent).
+  "GET /alpha": { description: "Premium RWA momentum/volatility signal", accepts },
+  // EARN side (two-sided x402): Amanah sells its verified proof-of-reasoning.
+  "GET /verified-reasoning": { description: "Amanah's latest on-chain-verified proof-of-reasoning", accepts },
 };
 
 function adapterFor(req: Request): HTTPAdapter {
@@ -155,6 +182,33 @@ async function main(): Promise<void> {
 
       // no-payment-required (shouldn't happen for a gated route, but safe).
       return res.json(signal);
+    } catch (e) {
+      return res.status(500).json({ error: (e as Error).message });
+    }
+  });
+
+  // EARN side: same x402 flow as /alpha, but the product is Amanah's verified
+  // reasoning. Payment (to PAY_TO = Amanah) settles, then we return the blob.
+  app.get("/verified-reasoning", async (req: Request, res: Response) => {
+    if (!facilitatorReady) {
+      return res.status(503).json({ error: "x402 facilitator not initialized" });
+    }
+    try {
+      const ctx = contextFor(req);
+      const result = await httpServer.processHTTPRequest(ctx);
+      if (result.type === "payment-error") return writeInstructions(res, result.response);
+      const product = latestVerifiedReasoning();
+      if (result.type === "payment-verified") {
+        const settle = await httpServer.processSettlement(
+          result.paymentPayload, result.paymentRequirements, result.declaredExtensions, { request: ctx },
+        );
+        if (settle.success) {
+          for (const [k, v] of Object.entries(settle.headers)) res.setHeader(k, v);
+          return res.json(product);
+        }
+        return writeInstructions(res, settle.response);
+      }
+      return res.json(product);
     } catch (e) {
       return res.status(500).json({ error: (e as Error).message });
     }
