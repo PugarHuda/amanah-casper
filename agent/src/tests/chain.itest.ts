@@ -11,7 +11,7 @@ import { dictAddr, decodeBlob, keyAccountBytes, decodeI64, decodeEnumByte } from
 
 const RPC = "https://node.testnet.casper.network/rpc";
 const VAULT_SEED = "468adcc6a52351bacd555b9b78756fae31397609fefe4327fbfaa0b564f83848";
-const REP_SEED = "65a90d00ef950ce780370b0b2bb054f93c7b8431534b1fc30808222d7b1e5bb7";
+const REP_SEED = "25c7c8b591a02d56217c1527f8bd8f911a78cb8f3b29c4a0e5e3e1ad433f1cd7"; // v2 (hardened)
 const COMP_SEED = "38fda18b4d7ba4fed90844f9e03c45f50a243b5e989a7e315dffc4ab38ebd07b";
 const AGENT = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f";
 

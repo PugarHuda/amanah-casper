@@ -61,7 +61,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | AttestationLog | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
 | SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
 | ComplianceRegistry (set by custodian) | `2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33` |
-| ReputationRegistry | `c2650647e7ddba168e52d0a57f6670b2953b821b8d3c36827cf675f3e548ca0b` |
+| ReputationRegistry | `ec5e35056239b351aa4dcfe362d0cfb30fe5bceba845a53efb41d11910b0f8dc` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`
@@ -79,7 +79,7 @@ vault locks **$800K of the $1M as principal** — the agent moves only the $200K
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
 | x402 settlement — `transfer_with_authorization` | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |
 | Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` |
-| Reputation — `record_payment` credits the x402 proof (anti-replay) | `c4c65c94f9482b22af691067657d0125c3cdd6658764eb56b09e8836015edc8c` |
+| Reputation — `record_payment` credits the x402 proof (anti-replay) | `de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711` |
 | Reallocate — through **custodian-owned** gates, vault v2 (principal $800K) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
 | **Autonomous reallocate — the LLM decided it** (Gold→CSPR, conf 0.85) then signed + executed it | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` |
 
@@ -98,7 +98,7 @@ in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry, PaymentToken. On-chain Ed25519 verification is the heart. 6/6 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment is caller-gated — you can't credit someone else), PaymentToken. On-chain Ed25519 verification is the heart. 8/8 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce, CEP-3009 settled on-chain: `GET /alpha` (the premium signal Amanah **pays** for) and `GET /verified-reasoning` (Amanah **earns** by selling its on-chain-verified proof-of-reasoning). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -165,7 +165,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 - **4 integration** (live casper-test): vault decodes to **$1M / $800K principal**,
   reputation ≥ 1, compliance Valid, and every published blob hashes to its filename.
 - **12 E2E** (Playwright manual-click): live data, real deep links, no stale fakes.
-- **7 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant.
+- **8 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant.
 
 `./scripts/test-all.ps1` runs the offline layers; `tsc --noEmit` is clean on all
 four TS packages.

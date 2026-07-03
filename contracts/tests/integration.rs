@@ -186,6 +186,7 @@ fn record_payment_rejects_replay() {
     let mut rep = ReputationRegistry::deploy(&env, NoArgs);
 
     let deploy_hash = [1u8; 32];
+    env.set_caller(payer); // the payer submits its own proof
     rep.record_payment(payer, deploy_hash);
     assert_eq!(rep.score_of(payer), 1);
 
@@ -193,4 +194,19 @@ fn record_payment_rejects_replay() {
     assert_eq!(err, Error::ReplayedProof.into());
     // Score unchanged after the rejected replay.
     assert_eq!(rep.score_of(payer), 1);
+}
+
+#[test]
+fn record_payment_rejects_crediting_someone_else() {
+    let env = odra_test::env();
+    let payer = env.get_account(1);
+    let attacker = env.get_account(2);
+    let mut rep = ReputationRegistry::deploy(&env, NoArgs);
+
+    // The attacker tries to credit the payer (or themselves) for a payment they
+    // didn't make — the caller-must-be-payer guard rejects it.
+    env.set_caller(attacker);
+    let err = rep.try_record_payment(payer, [7u8; 32]).unwrap_err();
+    assert_eq!(err, Error::NotAuthorized.into());
+    assert_eq!(rep.score_of(payer), 0);
 }

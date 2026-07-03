@@ -14,7 +14,11 @@ pub struct ReputationRegistry {
 #[odra::module]
 impl ReputationRegistry {
     /// Credit `payer` for a settled payment. Each `deploy_hash` is single-use.
+    /// Only the payer itself may submit the proof — you cannot credit someone else.
     pub fn record_payment(&mut self, payer: Address, deploy_hash: [u8; 32]) {
+        if self.env().caller() != payer {
+            self.env().revert(Error::NotAuthorized);
+        }
         if self.consumed_payment_proofs.get_or_default(&deploy_hash) {
             self.env().revert(Error::ReplayedProof);
         }

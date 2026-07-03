@@ -21,7 +21,7 @@ const CONTRACTS: Record<string, string> = {
   // vault v2 contract hash (custodian-separated deploy)
   "Reallocate · vault": process.env.VAULT_CONTRACT_HASH || "5b6c4094ec788c237a3a9f4152883040b0126310653446449c4c701520e62d1a",
   "Attestation · reasoning": process.env.ATTESTATION_CONTRACT_HASH || "c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003",
-  "Reputation · payment": process.env.REPUTATION_CONTRACT_HASH || "fb503979069fec873bcde40182bbe14578f159c18e4513606bb48de9ad15069e",
+  "Reputation · payment": process.env.REPUTATION_CONTRACT_HASH || "7c887d2111be7df9c73b72375d14446f0e71778adc788cfcff2dcac3c2a7dea7",
 };
 
 export async function GET(req: NextRequest): Promise<Response> {
