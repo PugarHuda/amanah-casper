@@ -25,9 +25,10 @@ The three on-chain steps of the loop, each a real transaction:
 | Reallocate v2 — through **custodian-owned** gates, $800K principal locked | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` | [view](https://testnet.cspr.live/deploy/e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149) |
 | **Autonomous reallocate — LLM-decided** (Gold→CSPR, conf 0.85) + attest `0746b729…` | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` | [view](https://testnet.cspr.live/deploy/9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a) |
 
-Supporting setup txs (made the reallocate possible): `add_allowlist`
-`b28aec831ae0161137c17e965a023f176f8be88239fb2e172e0e924f5c7214a4`, `set_status(Valid)`
-`2c96996c41cb15d953f8b2a715d1d1a3d18afbb0e492ddc5ac70b15bab0d0bf6`.
+Separation of powers: the **custodian** (a separate key,
+`0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`) deployed +
+owns SpendGate/Compliance, allowlisted the agent, and set its KYC — the agent can't
+authorize itself (`agent/src/migrate-custody.ts`).
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`.
 Six contract package hashes are in [`.env.deployed`](.env.deployed) / the README.
@@ -40,15 +41,16 @@ Six contract package hashes are in [`.env.deployed`](.env.deployed) / the README
 # A — the x402 premium-signal seller (the agent pays this)
 cd signal-service && npm install && npm run dev          # :8402, GET /alpha is x402-gated
 
-# B — read live treasury straight off the vault (no entrypoint)
+# B — read live treasury straight off the vault v2 (no entrypoint)
 cd agent && npm install && npx tsx src/read-vault.ts
-#   -> Gold 200000000000  TBond 450000000000  WTI 150000000000  CSPR 200000000000
-#      (the on-chain result of the reallocate proof above; total $1.00M, conserved)
+#   -> Gold 199000000000  TBond 450000000000  WTI 150000000000  CSPR 201000000000
+#      principal 800000000000  total 1000000000000  ($1.00M, $800K principal locked)
 
-# C — one full autonomous cycle (real x402 pay + attest on-chain)
+# C — one full autonomous cycle (enrich via MCP + real x402 pay + attest on-chain)
 cd agent && MAX_CYCLES=1 npm run dev
-#   logs: ingest (real prices) -> x402.settle (tx hash) -> reason (deepseek-v4-flash)
-#         -> attest (tx hash). Each reasoning blob is written to amanah/audit/<hash>.json.
+#   logs: ingest -> cspr-mcp.insights + trade-mcp.quote (official MCP servers) ->
+#         x402.settle -> reason (deepseek-v4-flash, cites the DEX price impact) ->
+#         attest (tx hash) + IPFS pin. The LLM may autonomously reallocate (see proof above).
 
 # D — query the agent like a judge would, over MCP
 cd mcp && npm install && npx tsx src/server.ts           # stdio MCP server
@@ -62,8 +64,9 @@ cd mcp && npm install && npx tsx src/server.ts           # stdio MCP server
 All four MCP tools are LIVE (decoded straight from chain). Quick check:
 `cd mcp && npx tsx src/smoke.ts` prints reputation=1, vault=$1M, attestation verified=true.
 
-To re-prove the reallocate from scratch on the live contracts:
-`cd agent && DRY_RUN=false npx tsx src/go-live.ts` (idempotent).
+To reproduce the whole custodian-separated deployment from scratch (fund a custodian,
+deploy the gates it owns, seed + reallocate): `cd agent && DRY_RUN=false npx tsx
+src/migrate-custody.ts` (resumable). A 30s read-only demo: `./scripts/demo.ps1`.
 
 ---
 

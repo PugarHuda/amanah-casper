@@ -12,9 +12,11 @@ ask "why did it rebalance?" and inspect the proof-of-reasoning trail.
 | `get_reputation` | `address` | Reputation score |
 | `get_audit_trail` | — | Recent reallocations / attestations / x402 settlements / escalations |
 
-Reads are behind typed functions in `src/chain.ts`, currently returning the same
-shapes the web mock uses. Each has a `ponytail:` marking where the real
-CSPR.cloud / contract-state query goes.
+**All four tools are live** (decoded straight from chain in `src/chain.ts`):
+`get_vault_state`/`get_reputation` read the Odra `state` dicts, `get_attestation`
+recomputes blake2b over the published blob and confirms it matches the on-chain hash,
+`get_audit_trail` lists real deploys via CSPR.cloud. Fill `.env` from `.env.example`
+(state seeds + CSPR.cloud key).
 
 ## Run
 
@@ -22,6 +24,8 @@ CSPR.cloud / contract-state query goes.
 npm install
 npm run dev        # stdio MCP server
 npm run typecheck
+npm test           # attestation round-trip + address validation
+npx tsx src/smoke.ts   # one-shot check of all 4 tools (reputation=1, vault=$1M, verified=true)
 ```
 
 Add to an MCP client with `mcp-client-config.example.json` (set `cwd` to this dir).

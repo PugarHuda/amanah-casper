@@ -116,7 +116,7 @@ npx tsx src/find-state-seeds.ts                  # rediscover state-dict seeds v
 | On-chain attestation (Ed25519 verified in-contract) | ✅ live | `a87e10c8…` |
 | x402 agent-pays-agent (CEP-3009 settled) | ✅ live | `391274dc…` |
 | Reallocate (SpendGate + Compliance gated) | ✅ live | `eeecb9d1…` |
-| Reputation (record_payment, score=1) | ✅ live | `c4c65c94…` |
+| Reputation (caller-gated record_payment, score=1) | ✅ live | `de899bef…` |
 | Treasury/holdings decoded from vault ($1M) | ✅ live | dashboard |
 | MCP: all 4 tools read live chain state | ✅ live | `src/smoke.ts` |
 | CSPR.click wallet on /connect (hosted SDK) | ✅ live | `/connect` |

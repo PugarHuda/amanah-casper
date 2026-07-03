@@ -22,9 +22,12 @@ Prices are real and attributed (US EIA, US Treasury, metalpriceapi, CoinGecko) �
 no invented numbers.
 
 **Status: live on casper-test.** All six contracts are deployed and the off-chain
-loop runs end-to-end against the live node. Four on-chain steps are verified with
-public proof hashes: **attestation**, **x402 settlement**, **reallocate** (allowlist
-+ compliance gated), and **reputation** (`record_payment`). Partner integrations are
+loop runs end-to-end against the live node. Every step is verified with public proof
+hashes — including an **autonomous reallocate the LLM itself decided and executed**,
+plus **attestation**, **x402 settlement**, **reputation** (caller-gated
+`record_payment`), and a **custodian-separated** vault with an **$800K locked
+principal** (the agent can't touch principal, raise its own limits, or clear its own
+KYC — a separate custodian key holds those powers). Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
 contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
 servers** each cycle and **reasons over their data** — **CSPR.cloud MCP** (82 tools:
@@ -41,11 +44,13 @@ See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
 ## Cycle (every `CYCLE_MS`, default 60s — all steps real, no mock)
 
 ```
-ingest live RWA prices  →  pay premium signal via x402 (CEP-3009 settle, real tx)
-  →  LLM: risk score + decision + reasoning steps
+ingest live RWA prices  →  enrich via the official CSPR.cloud + CSPR.trade MCP servers
+  →  pay premium signal via x402 (CEP-3009 settle, real tx)
+  →  LLM reasons over all of it: risk score + decision + reasoning steps
   →  blake2b256(reasoning) + Ed25519 sign  →  AttestationLog.attest (verifies sig ON-CHAIN)
-  →  SpendGate.check + ComplianceRegistry.assert_valid
-  →  RwaVault.reallocate (yield only, principal locked)  →  ReputationRegistry.record_payment
+       + publish blob to IPFS  →  ReputationRegistry.record_payment (caller-gated)
+  →  SpendGate.check + ComplianceRegistry.assert_valid (custodian-owned gates)
+  →  RwaVault.reallocate (yield only, $800K principal locked)
 ```
 
 Real on-chain transactions per cycle (x402 settle, attest, and reallocate when a
@@ -90,9 +95,11 @@ gold yield into CSPR at confidence 0.85, signed that reasoning, attested it, and
 executed the move through the custodian-owned gates — no scripted decision. The
 attestation (`0746b729…`) and its published reasoning are checkable on-chain + IPFS.
 
-The reallocate moved Gold $250K→$200K and T-bond $400K→$450K on-chain (verify via
-`agent/src/read-vault.ts`); the agent was allowlisted in SpendGate and marked Valid
-in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
+Setup was done by the **custodian** (a separate key), not the agent itself:
+`agent/src/migrate-custody.ts` deployed the custodian-owned SpendGate + Compliance,
+allowlisted the agent, set its KYC, deployed the vault with the $800K principal, and
+seeded $1M. The autonomous reallocate then moved Gold $200K→$199K / CSPR $200K→$201K —
+verify the live vault any time with `agent/src/read-vault.ts`.
 
 ## Monorepo
 
@@ -110,7 +117,7 @@ in ComplianceRegistry first (`agent/src/go-live.ts`, also on-chain).
 
 ```bash
 # 1. contracts → wasm  (Linux/WSL: rustup nightly + wasm32 + `cargo install cargo-odra`)
-cd contracts && cargo odra build && cargo odra test    # 6/6 tests green
+cd contracts && cargo odra build && cargo odra test    # 8/8 tests green
 #    cargo-odra's wasm-opt step needs binaryen >=121; if it errors, the per-contract
 #    wasm is already written — lower bulk-memory ops yourself before deploy:
 #    npx -p binaryen@130 wasm-opt --enable-bulk-memory --enable-sign-ext \
@@ -156,7 +163,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**48 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**49 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **25 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

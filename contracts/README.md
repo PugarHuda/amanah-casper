@@ -11,7 +11,7 @@ Casper. Built with [Odra](https://odra.dev) 2.8 (`casper-test` target).
 | `AttestationLog` | Proof-of-reasoning: stores agent decisions only after on-chain Ed25519 signature verification of the reasoning hash. |
 | `SpendGate` | Per-tx cap, rolling daily limit, allowlist, expiry, and an instant `revoke()` kill switch. |
 | `ComplianceRegistry` | KYC/AML status per address (`Pending`/`Valid`/`Revoked`). Upgradable. |
-| `ReputationRegistry` | Signed reputation score with anti-replay on payment proof (deploy hash). |
+| `ReputationRegistry` | Reputation score with anti-replay + **caller-gated** `record_payment` (caller must be the payer — you can't credit someone else). |
 | `PaymentToken` | CEP-18 fungible token (thin `SubModule<odra_modules Cep18>` wrapper), deployed as the x402 payment asset. |
 
 ## PaymentToken (x402 CEP-18)
@@ -42,7 +42,7 @@ asset must be a contract defined in this crate. Its **package hash becomes
 ## Build
 
 ```bash
-# Compile all five contracts to one wasm each (writes wasm/ via cargo-odra).
+# Compile all six contracts to one wasm each (writes wasm/ via cargo-odra).
 # Needs a Linux/WSL toolchain (nightly-2026-01-01 + wasm32-unknown-unknown).
 cargo odra build
 
@@ -61,7 +61,7 @@ Notes (cargo-odra 0.1.7):
 
 One-command deploy automation lives in `../scripts/` — see
 [`scripts/README.md`](../scripts/README.md): `keygen.{sh,ps1}` then
-`deploy.{sh,ps1}` build the keypair, deploy all 5 contracts in dependency order,
+`deploy.{sh,ps1}` build the keypair, deploy all 6 contracts in dependency order,
 and write the package hashes to `amanah/.env.deployed`. The manual form is below.
 
 Use `casper-client` **5.0.0** (CLI surface changed vs 2.x). Wasm files land in

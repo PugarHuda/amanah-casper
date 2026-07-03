@@ -1,46 +1,44 @@
 # Amanah — web
 
-Next.js (App Router) + TypeScript front-end for the Amanah autonomous RWA treasury agent.
+Next.js 15 (App Router) + React 19 + TypeScript front-end for the Amanah autonomous
+RWA treasury agent. Everything user-facing reads live on-chain state — no mock data.
 
 ## Run
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
-npm run build    # production build
+npm run dev                      # http://localhost:3000
+npm run build && npm run start   # production
+npm run test:unit                # formatter unit tests (node:test)
+npm run test:e2e                 # Playwright manual-click E2E (server on :3100)
 ```
 
 ## Routes
 
-`/` Landing · `/connect` Sign-in · `/agent` Agent console · `/dashboard` Audit dashboard · `/writing` Blog
+`/` Landing · `/connect` CSPR.click wallet · `/agent` Agent console · `/dashboard` Audit dashboard.
+"Read the spec" in the nav links to the GitHub README.
 
-## Mock ↔ live data switch
+## Live data (all real, env-gated)
 
-All screen data flows through `lib/data.ts` (async functions). It is **env-gated**:
+All screen data flows through `lib/data.ts`. With the env vars set (copy
+`.env.example` → `.env.local`) every surface reads live chain state:
 
-- **No env set → mock** (`lib/mock.ts`). The app runs fully on realistic mock data, so
-  nothing breaks before contracts are deployed.
-- **Live** when `CSPR_CLOUD_API_KEY` *and* `NEXT_PUBLIC_VAULT_HASH` are set: reads go through
-  `lib/cspr.ts`, a thin CSPR.cloud testnet REST client (`fetch` only, no SDK). Any failed/empty
-  read falls back to the mock for that field, so a partial config degrades gracefully.
-
-Copy `.env.example` → `.env.local` and fill in the values to go live.
-
-### What's live vs still mock
-
-| Data | Source when live |
+| Surface | Source |
 |---|---|
-| Audit-trail rows (dashboard) | **Live** — `GET /deploys` filtered by our package hashes, mapped to rows |
-| Treasury total + per-asset holdings | **Live** — decoded from RwaVault's Odra `state` dictionary (`getVaultState` in `lib/cspr.ts`), gated on `VAULT_STATE_SEED` |
-| CSPR price/rate | **Live** — `GET /rates/{currency_id}/latest` (helper in `lib/cspr.ts`) |
-| Banner copy + agent-console metrics/step stream | Mock — cosmetic; the proof-of-reasoning stream should become an SSE/poll feed off the live cycle. Marked `// ponytail:`. |
+| Treasury total + per-asset holdings + **$800K locked principal** | RwaVault v2 Odra `state` dict (`getVaultState`, gated on `VAULT_STATE_SEED`) |
+| Guardrail limits (per-tx cap / daily / spent) | SpendGate `state` dict (`SPENDGATE_STATE_SEED`) |
+| Compliance status + agent allowlisted | ComplianceRegistry + SpendGate (`COMPLIANCE_STATE_SEED`) |
+| Reputation score | ReputationRegistry `state` dict (`REPUTATION_STATE_SEED`) |
+| Audit trail (dashboard) | CSPR.cloud `GET /deploys` per package hash, deep-linked to cspr.live |
+| Live contract-event feed (dashboard) | CSPR.cloud **Streaming API** via the SSE relay at `/api/stream` (key stays server-side) |
+| Agent console (reasoning steps, decision, prices) | the latest published reasoning blob — local `audit/` in dev, **public IPFS (Pinata)** in prod |
 
-Endpoints verified against `docs.cspr.cloud`: base `https://api.testnet.cspr.cloud`,
-`authorization: <key>` header, `/accounts/{pk}/deploys`, `/deploys`, `/rates/{id}/latest`.
-The `/contracts/{hash}` GET and exact deploy field names are written idiomatically and flagged
-with `// ponytail: verify CSPR.cloud endpoint` until confirmed against a live response.
+If a chain read is unavailable, the UI shows `—` or a **"representative"** label —
+never a fabricated number dressed as live. See `../TESTING.md` and `../DEPLOY_WEB.md`.
 
 ## Wallet
 
-`/connect` stubs the CSPR.click wallet + email magic-link actions. The SDK plug-in point is
-marked `// ponytail:` in `app/connect/page.tsx`.
+`/connect` uses the **official CSPR.click hosted SDK** (`lib/useCsprClick.ts`) —
+`signIn()` opens the real modal (Casper Wallet / Ledger / MetaMask Snap / Google+Apple).
+`csprclick-template` app-id works on localhost; set `NEXT_PUBLIC_CSPR_CLICK_APP_ID`
+for a deployed domain.
