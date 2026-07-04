@@ -12,8 +12,10 @@
 
 import { blake2b } from "blakejs";
 
-const BASE = process.env.CSPR_CLOUD_BASE || "https://api.testnet.cspr.cloud";
-const KEY = process.env.CSPR_CLOUD_API_KEY || "";
+const BASE = (process.env.CSPR_CLOUD_BASE || "https://api.testnet.cspr.cloud").trim();
+// trim(): guard against a stray newline/space (e.g. from an env-var pipe) that
+// would be an "invalid header character" when sent as the authorization header.
+const KEY = (process.env.CSPR_CLOUD_API_KEY || "").trim();
 
 export const cloudConfigured = () => !!KEY;
 

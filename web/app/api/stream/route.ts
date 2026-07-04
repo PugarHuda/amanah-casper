@@ -13,7 +13,9 @@ import WebSocket from "ws";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const KEY = process.env.CSPR_CLOUD_API_KEY || "";
+// trim(): a stray newline/space from an env-var pipe would be an "invalid header
+// character" when set as the WebSocket authorization header (500s the endpoint).
+const KEY = (process.env.CSPR_CLOUD_API_KEY || "").trim();
 const STREAM_BASE = process.env.CSPR_CLOUD_STREAM_BASE || "wss://streaming.testnet.cspr.cloud";
 
 // Our deployed contract HASHES (not package hashes — the stream filters by contract_hash).
@@ -49,9 +51,17 @@ export async function GET(req: NextRequest): Promise<Response> {
       send({ type: "ready", contracts: Object.keys(CONTRACTS) });
 
       for (const [label, hash] of Object.entries(CONTRACTS)) {
-        const ws = new WebSocket(`${STREAM_BASE}/contract-events?contract_hash=${hash}`, {
-          headers: { authorization: KEY },
-        });
+        // Guard construction: a bad auth header (or serverless WS limit) must not
+        // 500 the whole SSE endpoint — degrade that one contract to a warn instead.
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(`${STREAM_BASE}/contract-events?contract_hash=${hash}`, {
+            headers: { authorization: KEY },
+          });
+        } catch (e) {
+          send({ type: "warn", label, message: (e as Error).message });
+          continue;
+        }
         ws.on("message", (raw: Buffer) => {
           const txt = raw.toString();
           if (txt === "Ping") return; // keepalive from the server
