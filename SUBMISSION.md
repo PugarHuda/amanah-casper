@@ -17,10 +17,18 @@ does the vault reallocate — yield only, principal untouchable, through gates a
 custodian key controls. We proved it end-to-end: **the LLM autonomously decided a
 Gold→CSPR rebalance at 0.85 confidence and executed it on-chain.**
 
+**Separation of duties for AI:** an **independent auditor agent** (its own custodian
+key) grades every decision and attests an APPROVE/VETO verdict **on-chain to a second
+log** — the reallocate only fires if it approves. Proven both ways: the auditor
+**vetoed** a flawed move and blocked it, and **approved** a sound one that then executed.
+
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
 |---|---|
 | **Autonomous reallocate — the LLM decided it** (Gold→CSPR, conf 0.85) | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` |
+| **Auditor VETO** — 2nd agent (custodian key) blocked a flawed move, on-chain | `987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11` |
+| **Auditor APPROVE** (grade 0.9) → reallocate executed | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` |
+| Reallocate executed after the auditor approved (Gold→TBond) | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
 | x402 settlement — CEP-3009 transfer_with_authorization | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |
 | Custodian-separated reallocate ($800K principal locked) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
@@ -43,7 +51,7 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-52 automated tests: 28 unit/regression + 4 live-testnet integration + 12 Playwright
+55 automated tests: 31 unit/regression + 4 live-testnet integration + 12 Playwright
 E2E + 7 OdraVM contract tests. See TESTING.md.
 
 ## What to look at

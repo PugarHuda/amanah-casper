@@ -26,6 +26,10 @@ export const config = {
   attestationLogHash: opt("ATTESTATION_LOG_HASH", ""),
   rwaVaultHash: opt("RWA_VAULT_HASH", ""),
   reputationRegistryHash: opt("REPUTATION_REGISTRY_HASH", ""),
+  // Second AttestationLog, registered to the custodian key — the independent
+  // auditor agent attests its grade of the primary decision here (two keys, two logs).
+  auditorLogHash: opt("AUDITOR_LOG_HASH", ""),
+  custodianKeyPath: opt("CUSTODIAN_KEY_PEM", "./secret/custodian_key.pem"),
   paymentMotes: num("CASPER_PAYMENT_MOTES", 5_000_000_000),
 
   // x402 premium signal

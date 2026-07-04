@@ -16,6 +16,7 @@ import {
 import { recordPayment } from "./reputation.js";
 import { getAgentInsights } from "./cspr-mcp.js";
 import { getDexQuote } from "./trade-mcp.js";
+import { auditDecision, attestAudit } from "./audit.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -94,7 +95,24 @@ async function runCycle(cycle: number): Promise<void> {
     console.log(`  ⛓  reputation deploy: ${repHash}`);
   }
 
-  // 6. GUARDRAIL / CONFIDENCE
+  // 6. AUDIT — an INDEPENDENT second agent (custodian key) grades the decision and
+  // attests its verdict on-chain to a separate AuditorLog. Separation of duties: the
+  // agent that decides is not the agent that approves. A veto blocks the reallocate.
+  const verdict = await auditDecision(cycle, prices, premiumSignal, marketContext, decision);
+  let auditProof: string | undefined;
+  if (config.auditorLogHash) {
+    try {
+      const custodianKey = loadPrivateKey(config.custodianKeyPath);
+      const a = await attestAudit(rpc, custodianKey, attestation.reasoningHash, verdict);
+      auditProof = a.deployHash;
+      console.log(`  ⛓  audit attest (custodian): ${a.deployHash}`);
+    } catch (e) {
+      log(cycle, "audit.attest.error", { message: (e as Error).message });
+    }
+  }
+  log(cycle, "audit", { approved: verdict.approved, grade: verdict.grade, concerns: verdict.concerns, deployHash: auditProof });
+
+  // 7. GUARDRAIL / CONFIDENCE / AUDITOR
   if (shouldEscalate(decision)) {
     await escalateToHuman(decision, attestation.reasoningHash);
     log(cycle, "escalate", { confidence: decision.confidence });
@@ -104,8 +122,13 @@ async function runCycle(cycle: number): Promise<void> {
     log(cycle, "hold", { reason: "no reallocation this cycle" });
     return;
   }
+  if (!verdict.approved) {
+    await escalateToHuman(decision, attestation.reasoningHash);
+    log(cycle, "auditor-veto", { grade: verdict.grade, concerns: verdict.concerns });
+    return; // the auditor blocked the move — no reallocate
+  }
 
-  // 7. EXECUTE — RwaVault.reallocate (SpendGate + Compliance gated on-chain).
+  // 8. EXECUTE — RwaVault.reallocate (SpendGate + Compliance gated on-chain).
   const execHash = await executeReallocation(
     rpc,
     key,

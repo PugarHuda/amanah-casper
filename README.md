@@ -25,13 +25,22 @@ spending passes SpendGate + ComplianceRegistry, and each decision proves itself.
 Prices are real and attributed (US EIA, US Treasury, metalpriceapi, CoinGecko) —
 no invented numbers.
 
-**Status: live on casper-test.** All six contracts are deployed and the off-chain
+**Status: live on casper-test.** All contracts are deployed and the off-chain
 loop runs end-to-end against the live node. Every step is verified with public proof
 hashes — including an **autonomous reallocate the LLM itself decided and executed**,
 plus **attestation**, **x402 settlement**, **reputation** (caller-gated
 `record_payment`), and a **custodian-separated** vault with an **$800K locked
 principal** (the agent can't touch principal, raise its own limits, or clear its own
-KYC — a separate custodian key holds those powers). Partner integrations are
+KYC — a separate custodian key holds those powers).
+
+**Separation of duties for AI — the agent that decides is not the agent that
+approves.** An **independent auditor agent** (its own custodian key) reviews every
+decision and attests an APPROVE/VETO verdict **on-chain to a second AttestationLog**,
+and the reallocate only executes if it approves. This is proven **both ways** on
+casper-test: the auditor **vetoed** a flawed Gold→CSPR move (it caught reasoning that
+leaned on unstated priors) and **blocked** the reallocate, and separately **approved**
+a sound Gold→TBond move that then executed — two independent on-chain signatures from
+two keys per cycle, neither able to forge the other's. Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
 contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
 servers** each cycle and **reasons over their data** — **CSPR.cloud MCP** (82 tools:
@@ -53,8 +62,10 @@ ingest live RWA prices  →  enrich via the official CSPR.cloud + CSPR.trade MCP
   →  LLM reasons over all of it: risk score + decision + reasoning steps
   →  blake2b256(reasoning) + Ed25519 sign  →  AttestationLog.attest (verifies sig ON-CHAIN)
        + publish blob to IPFS  →  ReputationRegistry.record_payment (caller-gated)
+  →  INDEPENDENT AUDITOR agent (custodian key) grades the decision, attests APPROVE/VETO
+       on-chain to a second AuditorLog  →  a VETO blocks the reallocate
   →  SpendGate.check + ComplianceRegistry.assert_valid (custodian-owned gates)
-  →  RwaVault.reallocate (yield only, $800K principal locked)
+  →  RwaVault.reallocate (yield only, $800K principal locked) — only if the auditor approved
 ```
 
 Real on-chain transactions per cycle (x402 settle, attest, and reallocate when a
@@ -67,7 +78,8 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | Contract | Package hash |
 |---|---|
 | RwaVault (v2, principal-locked $800K) | `c638780d65eec79d57115900664da1ddb242d1f313015b2de36567c105b1f479` |
-| AttestationLog | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
+| AttestationLog (agent's reasoning) | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
+| AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
 | SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
 | ComplianceRegistry (set by custodian) | `2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33` |
 | ReputationRegistry | `ec5e35056239b351aa4dcfe362d0cfb30fe5bceba845a53efb41d11910b0f8dc` |
@@ -91,6 +103,9 @@ vault locks **$800K of the $1M as principal** — the agent moves only the $200K
 | Reputation — `record_payment` credits the x402 proof (anti-replay) | `de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711` |
 | Reallocate — through **custodian-owned** gates, vault v2 (principal $800K) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
 | **Autonomous reallocate — the LLM decided it** (Gold→CSPR, conf 0.85) then signed + executed it | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` |
+| **Auditor VETO** — 2nd agent (custodian key) blocked a flawed move, attested on-chain | `987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11` |
+| **Auditor APPROVE** — 2nd agent OK'd a sound Gold→TBond move (grade 0.9) | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` |
+| Reallocate executed **after** the auditor approved | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -167,9 +182,9 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**52 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**55 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **28 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **31 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
   `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the web
   formatters, MCP attestation round-trip. Every fixed bug has a regression test.
