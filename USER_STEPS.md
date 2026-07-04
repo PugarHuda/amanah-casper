@@ -63,16 +63,12 @@ The agent consumes both hosted MCP servers every cycle: CSPR.cloud MCP
 (`mcp.cspr.trade`, public, a live CSPR↔sCSPR quote). `npx tsx src/cspr-mcp.ts` and
 `npx tsx src/trade-mcp.ts` demo each.
 
-### 7. CSPR.click production app-id — ⏳ the only code item left
-The wallet works now on localhost with `csprclick-template`. For a deployed domain,
-create your own app-id and I'll wire it:
-1. console.cspr.build → **"CSPR.click keys"** section → **Create key**.
-2. Fill: **Name** `amanah`; **Domains** = the live deploy URL
-   `amanah-casper-rwa.vercel.app` (a real FQDN, e.g.
-   `amanah.vercel.app` — the domain field won't take bare `localhost`); **Network**
-   `Casper`; **Connected CSPR.cloud key** `amanah`; toggle ON **REST API +
-   Streaming API + RPC node** (we use all three).
-3. Send me the app-id → I set `NEXT_PUBLIC_CSPR_CLICK_APP_ID` in `web/.env.local`.
+### 7. CSPR.click production app-id — ✅ DONE
+A production CSPR.click key (`amanah`, app-id `7535146b-9cf2-41ee-82da-5948c9b9`,
+domain `amanah-casper-rwa.vercel.app`, REST+Streaming+RPC on) is created and wired
+into `NEXT_PUBLIC_CSPR_CLICK_APP_ID` (web + Vercel). Verified on prod: `/connect`
+shows "Continue with CSPR.click" and the SDK initializes (Playwright, no console
+errors) — the wallet modal (Casper Wallet / Ledger / social) works on the live URL.
 
 ---
 
