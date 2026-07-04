@@ -1,8 +1,10 @@
 # Deploy the web dashboard to a public URL (Vercel)
 
-**✅ Deployed and live: https://web-hudas-projects-a8e7f558.vercel.app** (Next.js 16,
+**✅ Deployed and live: https://amanah-casper-rwa.vercel.app** (Next.js 16,
 all env vars set, Vercel SSO/Deployment-Protection disabled so it's publicly viewable).
-Redeploy after code changes with `cd web && npx vercel --prod`.
+Redeploy after code changes: `cd web && npx vercel --prod`, then re-point the clean
+alias at the new deployment: `npx vercel alias set <new-deployment-url> amanah-casper-rwa.vercel.app`
+(the auto stable URL `web-hudas-projects-a8e7f558.vercel.app` follows production on its own).
 
 The steps below are how it was set up (and how to redeploy / deploy your own).
 

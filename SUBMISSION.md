@@ -26,7 +26,7 @@ Gold→CSPR rebalance at 0.85 confidence and executed it on-chain.**
 | Custodian-separated reallocate ($800K principal locked) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
 | Reputation — record_payment (anti-replay) | `de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711` |
 
-Live dashboard: https://web-hudas-projects-a8e7f558.vercel.app
+Live dashboard: https://amanah-casper-rwa.vercel.app
 Repo (public): https://github.com/PugarHuda/amanah-casper
 
 ## Partner tools used (all genuinely integrated)

@@ -1,6 +1,6 @@
 # Amanah — Autonomous Compliant RWA Treasury Agent
 
-**🔗 Live dashboard:** https://web-hudas-projects-a8e7f558.vercel.app — treasury,
+**🔗 Live dashboard:** https://amanah-casper-rwa.vercel.app — treasury,
 audit trail, guardrails, compliance, live event feed, and the agent console all read
 live from casper-test (+ IPFS). Repo is public.
 
