@@ -52,7 +52,7 @@ installable **AI Agent Skill** · Venice (reasoning).
 
 ## Testing
 55 automated tests: 31 unit/regression + 4 live-testnet integration + 12 Playwright
-E2E + 7 OdraVM contract tests. See TESTING.md.
+E2E + 8 OdraVM contract tests. See TESTING.md.
 
 ## What to look at
 - `USE_CASE.md` — the real-world case + separation-of-powers.
