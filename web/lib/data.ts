@@ -433,6 +433,10 @@ export async function getDashboard() {
     }
   }
 
+  // The independent auditor's latest verdict — surfaced on the main dashboard so the
+  // two-agent separation of duties is visible where judges land first.
+  const audit = await latestAuditVerdict();
+
   return {
     treasuryId: treasuryLive ? treasuryId : "REPRESENTATIVE · CASPER-TEST",
     totalTreasury,
@@ -440,6 +444,7 @@ export async function getDashboard() {
     holdings,
     trail,
     compliance,
+    audit,
     trailLive,
     treasuryLive,
     vaultHash: VAULT(),

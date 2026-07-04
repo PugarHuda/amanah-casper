@@ -6,7 +6,7 @@ import { getDashboard } from "@/lib/data";
 export const revalidate = 30;
 
 export default async function Dashboard() {
-  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, trailLive, vaultHash } = await getDashboard();
+  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, audit, trailLive, vaultHash } = await getDashboard();
 
   const explorerBase = "https://testnet.cspr.live";
   const accountUrl = `${explorerBase}/account/0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`;
@@ -95,6 +95,15 @@ export default async function Dashboard() {
                     {compliance.zkVerified ? "Proven ✓" : "Unproven"}
                   </div>
                   <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>Schnorr NIZK · on-chain · secret never sent</div>
+                </div>
+              )}
+              {audit && (
+                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${audit.approved ? "#dcefe2" : "#f0d9d9"}`, borderRadius: 16, background: audit.approved ? "#f4fbf6" : "#fbf4f4" }}>
+                  <div style={{ fontSize: 13, color: audit.approved ? "#5b8a6a" : "#a05555", fontWeight: 600 }}>Independent auditor</div>
+                  <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: audit.approved ? "var(--green-deep)" : "var(--red, #c0392b)" }}>
+                    {audit.approved ? "Approved ✓" : "Vetoed ⛔"}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>2nd agent · separate key · grade {audit.grade}{audit.approved ? "" : " · reputation slashed"}</div>
                 </div>
               )}
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>

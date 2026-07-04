@@ -159,7 +159,8 @@ test.describe("Amanah manual-click QA", () => {
     await expect(page.getByRole("button", { name: /CSPR\.click/i })).toBeVisible();
     const appLine = await page.getByText(/CSPR\.click app:/i).innerText();
     console.log("Connect:", appLine);
-    expect(appLine).toContain("csprclick-template");
+    // The app-id renders — the demo template on localhost, or a real app-id (prod).
+    expect(appLine).toMatch(/csprclick-template|[0-9a-f]{8}-[0-9a-f]{4}/);
   });
 
   test("nav links work; 'Read the spec' is an honest external doc link", async ({ page }) => {
