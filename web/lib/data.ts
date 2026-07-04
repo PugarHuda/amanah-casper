@@ -72,7 +72,9 @@ function deployToTrail(d: RawDeploy): TrailRow {
 function latestReasoningBlob(): { hash: string; blob: AgentBlob; ipfsCid: string | null } | null {
   try {
     const dir = resolve(process.cwd(), "../audit");
-    const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+    // Reasoning blobs are <hash>.json; exclude the auditor's <hash>.audit.json
+    // verdict blobs (different shape) so they can't be mistaken for the latest cycle.
+    const files = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.endsWith(".audit.json"));
     if (!files.length) return null;
     const newest = files
       .map((f) => ({ f, t: statSync(resolve(dir, f)).mtimeMs }))

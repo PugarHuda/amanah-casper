@@ -38,3 +38,25 @@ export async function recordPayment(
   });
   return deployHash;
 }
+
+/** Slash the agent's reputation. Called by the CUSTODIAN (the registry authority)
+ *  when the auditor VETOes a decision — "skin in the game": a bad move visibly costs
+ *  the agent on-chain. `outcomeRef` links to the on-chain veto that justified it. */
+export async function slashAgent(
+  rpc: RpcClient,
+  custodianKey: PrivateKey,
+  agentAccountHashPrefixed: string,
+  points: number,
+  outcomeRefHex: string,
+): Promise<string> {
+  const args = Args.fromMap({
+    addr: CLValue.newCLKey(Key.newKey(agentAccountHashPrefixed)),
+    delta: CLValue.newCLInt64(-Math.abs(points)),
+    _outcome_ref: CLValue.newCLByteArray(hexToBytes(outcomeRefHex)),
+  });
+  const { deployHash } = await callEntryPoint({
+    rpc, key: custodianKey, contractHash: config.reputationRegistryHash,
+    entryPoint: "adjust", args, chainName: config.chainName, paymentMotes: config.paymentMotes,
+  });
+  return deployHash;
+}

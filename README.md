@@ -40,7 +40,10 @@ and the reallocate only executes if it approves. This is proven **both ways** on
 casper-test: the auditor **vetoed** a flawed Gold→CSPR move (it caught reasoning that
 leaned on unstated priors) and **blocked** the reallocate, and separately **approved**
 a sound Gold→TBond move that then executed — two independent on-chain signatures from
-two keys per cycle, neither able to forge the other's. Partner integrations are
+two keys per cycle, neither able to forge the other's. **Skin in the game:** a veto
+also **slashes the agent's on-chain reputation** — `ReputationRegistry.adjust` is gated
+to the custodian, so the agent can't inflate its own score and a griefer can't nuke
+it; reputation reflects the agent's real audit track record (settlements up, vetoes down). Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
 contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
 servers** each cycle and **reasons over their data** — **CSPR.cloud MCP** (82 tools:
@@ -82,7 +85,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
 | SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
 | ComplianceRegistry (set by custodian) | `2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33` |
-| ReputationRegistry | `ec5e35056239b351aa4dcfe362d0cfb30fe5bceba845a53efb41d11910b0f8dc` |
+| ReputationRegistry (v3, `adjust` gated to custodian) | `8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`
@@ -106,6 +109,7 @@ vault locks **$800K of the $1M as principal** — the agent moves only the $200K
 | **Auditor VETO** — 2nd agent (custodian key) blocked a flawed move, attested on-chain | `987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11` |
 | **Auditor APPROVE** — 2nd agent OK'd a sound Gold→TBond move (grade 0.9) | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` |
 | Reallocate executed **after** the auditor approved | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
+| **Reputation slash** — auditor veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -124,7 +128,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment is caller-gated — you can't credit someone else), PaymentToken. On-chain Ed25519 verification is the heart. 8/8 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment is caller-gated — you can't credit someone else; `adjust`/slash is gated to the custodian authority), PaymentToken. On-chain Ed25519 verification is the heart. 9/9 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce, CEP-3009 settled on-chain: `GET /alpha` (the premium signal Amanah **pays** for) and `GET /verified-reasoning` (Amanah **earns** by selling its on-chain-verified proof-of-reasoning). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -182,7 +186,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**55 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**56 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **31 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

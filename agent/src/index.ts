@@ -13,7 +13,7 @@ import {
   shouldEscalate,
   escalateToHuman,
 } from "./execute.js";
-import { recordPayment } from "./reputation.js";
+import { recordPayment, slashAgent } from "./reputation.js";
 import { getAgentInsights } from "./cspr-mcp.js";
 import { getDexQuote } from "./trade-mcp.js";
 import { auditDecision, attestAudit } from "./audit.js";
@@ -123,8 +123,20 @@ async function runCycle(cycle: number): Promise<void> {
     return;
   }
   if (!verdict.approved) {
+    // Skin in the game: the custodian (registry authority) slashes the agent's
+    // reputation for a vetoed move, linked to the on-chain veto that justified it.
+    let slashHash: string | undefined;
+    if (config.reputationRegistryHash && auditProof) {
+      try {
+        const custodianKey = loadPrivateKey(config.custodianKeyPath);
+        slashHash = await slashAgent(rpc, custodianKey, key.publicKey.accountHash().toPrefixedString(), 1, auditProof);
+        console.log(`  ⛓  reputation slash (custodian): ${slashHash}`);
+      } catch (e) {
+        log(cycle, "slash.error", { message: (e as Error).message });
+      }
+    }
     await escalateToHuman(decision, attestation.reasoningHash);
-    log(cycle, "auditor-veto", { grade: verdict.grade, concerns: verdict.concerns });
+    log(cycle, "auditor-veto", { grade: verdict.grade, concerns: verdict.concerns, slashHash });
     return; // the auditor blocked the move — no reallocate
   }
 

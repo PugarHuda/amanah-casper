@@ -9,10 +9,18 @@ pub struct ReputationRegistry {
     // spare; widen to a {sign:bool, mag:U256} odra_type only if it can overflow.
     score: Mapping<Address, i64>,
     consumed_payment_proofs: Mapping<[u8; 32], bool>,
+    // The only account allowed to `adjust` (slash/reward) a score — the custodian.
+    // Without this, anyone could inflate their own reputation or grief another's.
+    authority: Var<Address>,
 }
 
 #[odra::module]
 impl ReputationRegistry {
+    /// `authority` is the account permitted to slash/reward scores (the custodian).
+    pub fn init(&mut self, authority: Address) {
+        self.authority.set(authority);
+    }
+
     /// Credit `payer` for a settled payment. Each `deploy_hash` is single-use.
     /// Only the payer itself may submit the proof — you cannot credit someone else.
     pub fn record_payment(&mut self, payer: Address, deploy_hash: [u8; 32]) {
@@ -27,9 +35,14 @@ impl ReputationRegistry {
         self.score.set(&payer, s + 1);
     }
 
-    /// Adjust a score by a signed delta. `outcome_ref` links to the off-chain
-    /// outcome that justified the adjustment (kept in the deploy/audit trail).
+    /// Slash or reward a score by a signed delta. Gated to the authority (custodian)
+    /// so the agent can't inflate itself and a griefer can't nuke it. The auditor
+    /// (custodian) calls this with a negative delta when it VETOes a decision.
+    /// `outcome_ref` links to the on-chain veto/outcome that justified it.
     pub fn adjust(&mut self, addr: Address, delta: i64, _outcome_ref: [u8; 32]) {
+        if self.env().caller() != self.authority.get_or_revert_with(Error::AddressNotSet) {
+            self.env().revert(Error::NotAuthorized);
+        }
         let s = self.score.get_or_default(&addr);
         self.score.set(&addr, s + delta);
     }

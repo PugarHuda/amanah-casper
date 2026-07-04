@@ -90,19 +90,44 @@ async function csprSpot(notes: string[]): Promise<number | null> {
   }
 }
 
+// CSPR cross-check — Coinpaprika, no key. A second independent feed so we can
+// distrust a single source: a large divergence flags stale/manipulated data.
+async function csprSpot2(notes: string[]): Promise<number | null> {
+  try {
+    const data = await getJson("https://api.coinpaprika.com/v1/tickers/cspr-casper-network");
+    const usd = data?.quotes?.USD?.price;
+    if (usd == null) throw new Error("no price");
+    notes.push("cspr-xcheck: coinpaprika cspr-casper");
+    return Number(usd);
+  } catch (e) {
+    notes.push(`cspr-xcheck: FAILED (${(e as Error).message})`);
+    return null;
+  }
+}
+
 export async function ingest(): Promise<PriceSnapshot> {
   const notes: string[] = [];
-  const [tbondYieldPct, wtiUsd, goldUsd, csprUsd] = await Promise.all([
+  const [tbondYieldPct, wtiUsd, goldUsd, csprUsd, csprUsd2] = await Promise.all([
     treasuryYield(notes),
     wtiSpot(notes),
     goldSpot(notes),
     csprSpot(notes),
+    csprSpot2(notes),
   ]);
+  // Divergence between the two independent CSPR feeds — a data-trust signal.
+  const divergencePct =
+    csprUsd != null && csprUsd2 != null && csprUsd + csprUsd2 > 0
+      ? (Math.abs(csprUsd - csprUsd2) / ((csprUsd + csprUsd2) / 2)) * 100
+      : null;
+  if (divergencePct != null) {
+    notes.push(`cspr-xcheck: two-source divergence ${divergencePct.toFixed(2)}%${divergencePct > 5 ? " ⚠ HIGH — treat CSPR price with caution" : ""}`);
+  }
   return {
     tbondYieldPct,
     wtiUsd,
     goldUsd,
     csprUsd,
+    csprCrossCheck: { source2Usd: csprUsd2, divergencePct },
     notes,
     at: new Date().toISOString(),
   };

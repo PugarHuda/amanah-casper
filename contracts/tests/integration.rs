@@ -3,7 +3,7 @@ use amanah_contracts::attestation_log::{AttestationLog, AttestationLogInitArgs};
 use amanah_contracts::common::{AssetId, Error, Status};
 use amanah_contracts::compliance_registry::ComplianceRegistry;
 use amanah_contracts::payment_token::{PaymentToken, PaymentTokenInitArgs};
-use amanah_contracts::reputation_registry::ReputationRegistry;
+use amanah_contracts::reputation_registry::{ReputationRegistry, ReputationRegistryInitArgs};
 use amanah_contracts::rwa_vault::{RwaVault, RwaVaultHostRef, RwaVaultInitArgs};
 use amanah_contracts::spend_gate::{SpendGate, SpendGateInitArgs};
 use odra::casper_types::{bytesrepr::Bytes, U256, U512};
@@ -183,7 +183,8 @@ fn payment_token_mints_to_deployer_and_transfers() {
 fn record_payment_rejects_replay() {
     let env = odra_test::env();
     let payer = env.get_account(1);
-    let mut rep = ReputationRegistry::deploy(&env, NoArgs);
+    let custodian = env.get_account(0);
+    let mut rep = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: custodian });
 
     let deploy_hash = [1u8; 32];
     env.set_caller(payer); // the payer submits its own proof
@@ -201,7 +202,8 @@ fn record_payment_rejects_crediting_someone_else() {
     let env = odra_test::env();
     let payer = env.get_account(1);
     let attacker = env.get_account(2);
-    let mut rep = ReputationRegistry::deploy(&env, NoArgs);
+    let custodian = env.get_account(0);
+    let mut rep = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: custodian });
 
     // The attacker tries to credit the payer (or themselves) for a payment they
     // didn't make — the caller-must-be-payer guard rejects it.
@@ -209,4 +211,26 @@ fn record_payment_rejects_crediting_someone_else() {
     let err = rep.try_record_payment(payer, [7u8; 32]).unwrap_err();
     assert_eq!(err, Error::NotAuthorized.into());
     assert_eq!(rep.score_of(payer), 0);
+}
+
+#[test]
+fn adjust_is_gated_to_the_authority() {
+    let env = odra_test::env();
+    let custodian = env.get_account(0);
+    let agent = env.get_account(1);
+    let griefer = env.get_account(2);
+    let mut rep = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: custodian });
+
+    // A griefer cannot touch anyone's score.
+    env.set_caller(griefer);
+    let err = rep.try_adjust(agent, -5, [9u8; 32]).unwrap_err();
+    assert_eq!(err, Error::NotAuthorized.into());
+    assert_eq!(rep.score_of(agent), 0);
+
+    // The custodian (auditor) can slash and reward.
+    env.set_caller(custodian);
+    rep.adjust(agent, 3, [1u8; 32]);
+    assert_eq!(rep.score_of(agent), 3);
+    rep.adjust(agent, -1, [2u8; 32]); // a VETO slash
+    assert_eq!(rep.score_of(agent), 2);
 }

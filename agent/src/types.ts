@@ -23,8 +23,11 @@ export interface PriceSnapshot {
   wtiUsd: number | null;
   /** Gold spot, USD/oz. */
   goldUsd: number | null;
-  /** CSPR spot, USD. */
+  /** CSPR spot, USD (primary: CoinGecko). */
   csprUsd: number | null;
+  /** Cross-validation of CSPR against a second independent source (Coinpaprika).
+   *  divergencePct is |a-b|/mean*100 — a data-trust signal; null if either is down. */
+  csprCrossCheck: { source2Usd: number | null; divergencePct: number | null };
   /** Per-source notes (errors, "needs KEY", endpoints used). */
   notes: string[];
   at: string; // ISO timestamp
