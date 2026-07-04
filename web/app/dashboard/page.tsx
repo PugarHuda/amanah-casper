@@ -88,6 +88,15 @@ export default async function Dashboard() {
                   {compliance.allowlisted ? "Yes ✓" : "No"}
                 </div>
               </div>
+              {compliance.zkVerified !== null && (
+                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+                  <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>KYC (zero-knowledge)</div>
+                  <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.zkVerified ? "var(--green-deep)" : "var(--ink)" }}>
+                    {compliance.zkVerified ? "Proven ✓" : "Unproven"}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>Schnorr NIZK · on-chain · secret never sent</div>
+                </div>
+              )}
               <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Per-tx cap</div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>{compliance.txCap}</div>

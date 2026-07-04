@@ -257,6 +257,26 @@ export async function getComplianceState(
   }
 }
 
+// --- ZkKycVerifier: live zero-knowledge KYC status --------------------------
+// zk_verified: Mapping<Address,bool> is field 3 (struct order authority=1,
+// credentials=2, zk_verified=3; Odra 1-indexes, reserves 0). Key = Key::Account.
+const ZK_SEED = (process.env.ZK_KYC_STATE_SEED || "").trim();
+export const zkReadable = () => !!ZK_SEED;
+
+/** Live ZK-KYC verification flag for an account-hash (hex). true once the agent has
+ *  proven knowledge of its KYC credential on-chain. null if unreadable / not proven. */
+export async function getZkVerified(accountHashHex: string): Promise<boolean | null> {
+  if (!ZK_SEED || accountHashHex.length !== 64) return null;
+  try {
+    const srh = await stateRootHash();
+    const key = [0x00, ...Array.from(Buffer.from(accountHashHex, "hex"))];
+    const byte = await readByte(srh, ZK_SEED, 3, key);
+    return byte == null ? null : byte === 1;
+  } catch {
+    return null;
+  }
+}
+
 // --- ReputationRegistry score (Mapping<Address,i64>, field index 1) ----------
 // score key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes. i64 parsed
 // comes back as an 8-byte little-endian array on Casper 2.0. Needs REPUTATION_STATE_SEED.

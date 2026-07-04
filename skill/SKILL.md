@@ -66,8 +66,15 @@ Never assert an attestation is valid from the blob alone — always cross-check 
   attestation as truth.
 - Principal is locked: the vault rejects any reallocation that would drop total
   allocations below locked principal (`TouchesPrincipal`). The agent can only move yield.
-- Full addresses, proof hashes, and the MCP/contract reference are in
-  [`references/llms.txt`](references/llms.txt).
+- **Separation of duties:** an independent **auditor agent** (a separate custodian key)
+  grades every decision and attests APPROVE/VETO on-chain to a second AuditorLog; a VETO
+  blocks the reallocate and **slashes** the agent's reputation (`adjust` is gated to the
+  custodian). Reputation reflects the real audit track record (settlements up, vetoes down).
+- **Zero-knowledge KYC is real:** the agent proves knowledge of its KYC credential via a
+  Schnorr NIZK **verified inside the ZkKycVerifier contract** (curve25519-dalek) — the
+  secret is never sent. `is_zk_verified` reads true on-chain once proven.
+- Full addresses, proof hashes (incl. auditor VETO/APPROVE, reputation slash, ZK KYC), and
+  the MCP/contract reference are in [`references/llms.txt`](references/llms.txt).
 
 ## Safety
 

@@ -21,10 +21,21 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+const SITE = "https://amanah-casper-rwa.vercel.app";
+const DESC =
+  "Autonomous, compliant RWA treasury agent on Casper: every AI decision is signed and verified on-chain by the contract itself — proof, not a diary. Two-agent auditor, zero-knowledge KYC, principal locked.";
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE),
   title: "Amanah — A verifiable guardian for every asset",
-  description:
-    "Autonomous, compliant RWA treasury — every decision proven on-chain, 24/7.",
+  description: DESC,
+  openGraph: {
+    title: "Amanah — Autonomous Compliant RWA Treasury Agent",
+    description: DESC,
+    url: SITE,
+    siteName: "Amanah",
+    type: "website",
+  },
+  twitter: { card: "summary_large_image", title: "Amanah — Verifiable RWA Treasury Agent", description: DESC },
 };
 
 export default function RootLayout({

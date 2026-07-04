@@ -19,6 +19,8 @@ import {
   spendGateReadable,
   getComplianceState,
   complianceReadable,
+  getZkVerified,
+  zkReadable,
   shortHash,
   relTime,
   type RawDeploy,
@@ -360,6 +362,7 @@ export async function getDashboard() {
   let compliance = {
     dailyUsed: "—", dailyLimit: "—", txCap: "—",
     vaultStatus: "—", allowlisted: false,
+    zkVerified: null as boolean | null,
   };
   // Track what's actually live so the UI never labels representative data "live".
   let trailLive = false;
@@ -385,6 +388,10 @@ export async function getDashboard() {
       compliance.vaultStatus = cs.status;
       compliance.allowlisted = cs.allowlisted;
     }
+  }
+  if (zkReadable()) {
+    // Live zero-knowledge KYC flag from the ZkKycVerifier contract.
+    compliance.zkVerified = await getZkVerified(AGENT_ACCOUNT_HASH);
   }
 
   if (vaultReadable()) {

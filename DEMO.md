@@ -14,7 +14,7 @@ ON-CHAIN** before recording it, runs guardrail + compliance checks, then
 
 ## 1. Verifiable proof (paste into testnet.cspr.live)
 
-The three on-chain steps of the loop, each a real transaction:
+The on-chain steps of the loop, each a real transaction (attest → audit → guardrails → reallocate):
 
 | Step | Hash | Link |
 |---|---|---|
@@ -24,6 +24,10 @@ The three on-chain steps of the loop, each a real transaction:
 | Reputation — `record_payment` credits the x402 proof (anti-replay) | `de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711` | [view](https://testnet.cspr.live/deploy/de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711) |
 | Reallocate v2 — through **custodian-owned** gates, $800K principal locked | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` | [view](https://testnet.cspr.live/deploy/e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149) |
 | **Autonomous reallocate — LLM-decided** (Gold→CSPR, conf 0.85) + attest `0746b729…` | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` | [view](https://testnet.cspr.live/deploy/9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a) |
+| **Auditor VETO** — 2nd agent (custodian key) blocked a flawed move on-chain | `987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11` | [view](https://testnet.cspr.live/deploy/987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11) |
+| **Auditor APPROVE** (grade 0.9) → reallocate executed `204b3c9c…` | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` | [view](https://testnet.cspr.live/deploy/93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e) |
+| **Reputation slash** — a veto docked the agent's score (custodian-gated) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` | [view](https://testnet.cspr.live/deploy/a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc) |
+| **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` | [view](https://testnet.cspr.live/deploy/da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4) |
 
 Separation of powers: the **custodian** (a separate key,
 `0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`) deployed +

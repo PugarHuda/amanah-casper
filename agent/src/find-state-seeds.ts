@@ -17,6 +17,7 @@ const PACKAGES = {
   AttestationLog: process.env.ATTESTATION_LOG_HASH ?? "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
   SpendGate: process.env.SPEND_GATE_HASH ?? "fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc",
   ComplianceRegistry: process.env.COMPLIANCE_HASH ?? "2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33",
+  ZkKycVerifier: process.env.ZK_KYC_HASH ?? "e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f",
 };
 
 async function rpc(method: string, params: unknown): Promise<any> {
