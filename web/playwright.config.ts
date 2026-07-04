@@ -6,6 +6,10 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
+  // The pages read live testnet state over the public RPC node; under parallel
+  // load a single read can transiently time out (the product degrades to "—", the
+  // test then fails). Retry twice so transient RPC flakes don't fail the suite.
+  retries: 2,
   reporter: [["list"]],
   use: {
     baseURL: process.env.QA_BASE || "http://localhost:3100",
