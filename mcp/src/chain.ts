@@ -79,8 +79,13 @@ async function rpc(method: string, params: unknown): Promise<{ result?: any; err
   return (await res.json()) as { result?: any; error?: any };
 }
 
-async function readBig(index: number, mappingKey: number[] = []): Promise<bigint> {
-  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+// Fetch the state-root-hash once per request; pass it to every field read (it
+// changes per block, so re-fetching per read is waste).
+async function stateRootHash(): Promise<string> {
+  return (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash ?? "";
+}
+
+async function readBig(srh: string, index: number, mappingKey: number[] = []): Promise<bigint> {
   if (!srh) return 0n;
   const r = await rpc("state_get_dictionary_item", {
     state_root_hash: srh,
@@ -134,8 +139,7 @@ function sgDictAddr(index: number): string {
   const itemKey = hex(blake2b(new Uint8Array([...be32(index)]), undefined, 32));
   return hex(blake2b(Buffer.concat([Buffer.from(SPENDGATE_SEED, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
 }
-async function sgReadBig(index: number): Promise<bigint> {
-  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+async function sgReadBig(srh: string, index: number): Promise<bigint> {
   if (!srh) return 0n;
   const r = await rpc("state_get_dictionary_item", {
     state_root_hash: srh,
@@ -149,12 +153,12 @@ async function sgReadBig(index: number): Promise<bigint> {
   return v;
 }
 
-async function liveGuards(): Promise<string[]> {
+async function liveGuards(srh: string): Promise<string[]> {
   if (!SPENDGATE_SEED) {
     return ["Cap (set SPENDGATE_STATE_SEED)", "Principal locked", "Compliance: Valid"];
   }
   try {
-    const [cap, daily, spent] = await Promise.all([sgReadBig(2), sgReadBig(3), sgReadBig(4)]);
+    const [cap, daily, spent] = await Promise.all([sgReadBig(srh, 2), sgReadBig(srh, 3), sgReadBig(srh, 4)]);
     return [`Cap ${usd(cap)} / tx`, `Daily limit ${usd(daily)}`, `Spent ${usd(spent)} today`, "Principal locked", "Compliance: Valid"];
   } catch {
     return ["Cap (read failed)", "Principal locked", "Compliance: Valid"];
@@ -162,7 +166,8 @@ async function liveGuards(): Promise<string[]> {
 }
 
 export async function getVaultState(): Promise<VaultState> {
-  const guards = await liveGuards();
+  const srh = await stateRootHash();
+  const guards = await liveGuards(srh);
   if (!STATE_SEED) {
     return {
       treasuryId: "TREASURY · CASPER-TEST (set VAULT_STATE_SEED for live reads)",
@@ -172,15 +177,15 @@ export async function getVaultState(): Promise<VaultState> {
       guards,
     };
   }
+  // One SRH, all allocation reads in parallel.
+  const amounts = await Promise.all(ASSET_ORDER.map((_, i) => readBig(srh, 1, [i])));
   let total = 0n;
-  const holdings = [];
-  for (let i = 0; i < ASSET_ORDER.length; i++) {
-    const v = await readBig(1, [i]); // allocations[AssetId(i)]
-    total += v;
-    const view = ASSET_VIEW[ASSET_ORDER[i]];
-    holdings.push({ name: view.name, sub: view.sub, value: usd(v), change: "" });
-  }
-  const principal = await readBig(2);
+  const holdings = ASSET_ORDER.map((a, i) => {
+    total += amounts[i];
+    const view = ASSET_VIEW[a];
+    return { name: view.name, sub: view.sub, value: usd(amounts[i]), change: "" };
+  });
+  const principal = await readBig(srh, 2);
   return {
     treasuryId: `TREASURY ${PKG.vault.slice(0, 4)}…${PKG.vault.slice(-4)} · CASPER-TEST`,
     totalTreasury: usd(total),

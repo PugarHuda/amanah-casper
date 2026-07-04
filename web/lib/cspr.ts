@@ -128,8 +128,14 @@ async function rpc(method: string, params: unknown): Promise<{ result?: any; err
   return res.json();
 }
 
-async function readBig(index: number, mappingKey: number[] = []): Promise<bigint> {
-  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+// Fetch the state-root-hash once, then pass it to every field read in a request —
+// the SRH changes per block, so re-fetching it for each of ~12 dashboard reads is
+// pure waste. "" signals the node was unreachable.
+async function stateRootHash(): Promise<string> {
+  return (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash ?? "";
+}
+
+async function readBig(srh: string, index: number, mappingKey: number[] = []): Promise<bigint> {
   if (!srh) return 0n;
   const r = await rpc("state_get_dictionary_item", {
     state_root_hash: srh,
@@ -151,14 +157,14 @@ export async function getVaultState(): Promise<{
 } | null> {
   if (!STATE_SEED) return null;
   try {
-    const holdings = {} as Record<VaultAsset, bigint>;
-    let total = 0n;
-    for (let i = 0; i < ASSET_ORDER.length; i++) {
-      const v = await readBig(1, [i]); // allocations[AssetId(i)]
-      holdings[ASSET_ORDER[i]] = v;
-      total += v;
-    }
-    const principal = await readBig(2);
+    const srh = await stateRootHash();
+    // One SRH, all reads in parallel.
+    const [g, t, w, c, principal] = await Promise.all([
+      readBig(srh, 1, [0]), readBig(srh, 1, [1]), readBig(srh, 1, [2]), readBig(srh, 1, [3]),
+      readBig(srh, 2),
+    ]);
+    const holdings = { Gold: g, TBond: t, WTI: w, CSPR: c } as Record<VaultAsset, bigint>;
+    const total = g + t + w + c;
     return { holdings, principal, total };
   } catch {
     return null;
@@ -177,8 +183,7 @@ function sgDictAddr(index: number): string {
   return hex(blake2b(Buffer.concat([seed, Buffer.from(itemKey, "utf8")]), undefined, 32));
 }
 
-async function sgReadBig(index: number): Promise<bigint> {
-  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+async function sgReadBig(srh: string, index: number): Promise<bigint> {
   if (!srh) return 0n;
   const r = await rpc("state_get_dictionary_item", {
     state_root_hash: srh,
@@ -196,7 +201,8 @@ async function sgReadBig(index: number): Promise<bigint> {
 export async function getSpendGateState(): Promise<{ maxPerTx: bigint; dailyLimit: bigint; spentToday: bigint } | null> {
   if (!SPENDGATE_SEED) return null;
   try {
-    const [maxPerTx, dailyLimit, spentToday] = await Promise.all([sgReadBig(2), sgReadBig(3), sgReadBig(4)]);
+    const srh = await stateRootHash();
+    const [maxPerTx, dailyLimit, spentToday] = await Promise.all([sgReadBig(srh, 2), sgReadBig(srh, 3), sgReadBig(srh, 4)]);
     return { maxPerTx, dailyLimit, spentToday };
   } catch {
     return null;
@@ -212,8 +218,7 @@ export const complianceReadable = () => !!COMPLIANCE_SEED && !!SPENDGATE_SEED;
 
 const STATUS_LABEL = ["Pending", "Valid", "Revoked"] as const;
 
-async function readByte(seed: string, index: number, mappingKey: number[]): Promise<number | null> {
-  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+async function readByte(srh: string, seed: string, index: number, mappingKey: number[]): Promise<number | null> {
   if (!srh) return null;
   const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
   const dictAddr = hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
@@ -236,9 +241,10 @@ export async function getComplianceState(
   if (!COMPLIANCE_SEED || !SPENDGATE_SEED || accountHashHex.length !== 64) return null;
   try {
     const key = [0x00, ...Array.from(Buffer.from(accountHashHex, "hex"))];
+    const srh = await stateRootHash();
     const [statusByte, allowByte] = await Promise.all([
-      readByte(COMPLIANCE_SEED, 1, key),
-      readByte(SPENDGATE_SEED, 7, key),
+      readByte(srh, COMPLIANCE_SEED, 1, key),
+      readByte(srh, SPENDGATE_SEED, 7, key),
     ]);
     return {
       status: STATUS_LABEL[statusByte ?? 0] ?? "Pending",
