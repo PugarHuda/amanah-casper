@@ -167,9 +167,9 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**49 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**52 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **25 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **28 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
   `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the web
   formatters, MCP attestation round-trip. Every fixed bug has a regression test.
