@@ -131,6 +131,17 @@ export async function attestAudit(
     mkdirSync(dir, { recursive: true });
     writeFileSync(resolve(dir, `${hashHex}.audit.json`), json);
   } catch { /* non-fatal */ }
+  // Pin to public IPFS (tag "amanah-audit") so the deployed dashboard can show the
+  // auditor's verdict without the local repo — same pattern as the reasoning blob.
+  if (config.pinataJwt) {
+    try {
+      await fetch("https://api.pinata.cloud/pinning/pinJSONToIPFS", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${config.pinataJwt}` },
+        body: JSON.stringify({ pinataContent: blob, pinataMetadata: { name: "amanah-audit", keyvalues: { hash: hashHex } } }),
+      });
+    } catch { /* non-fatal */ }
+  }
 
   const signature = custodianKey.signAndAddAlgorithmBytes(hash);
   const decisionStr = `${verdict.approved ? "APPROVE" : "VETO"} grade ${verdict.grade}`;

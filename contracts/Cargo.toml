@@ -10,6 +10,9 @@ odra = { version = "2.8.1", default-features = false }
 # eip712 feature is required by CEP-3009 (casper-eip-712); it's in odra-modules'
 # default set, enabled explicitly here since we set default-features = false.
 odra-modules = { version = "2.8.1", default-features = false, features = ["eip712"] }
+# Real ZK KYC: on-chain Schnorr NIZK verification over ed25519 (no_std/WASM).
+curve25519-dalek = { version = "4", default-features = false, features = ["alloc"] }
+blake2 = { version = "0.10", default-features = false }
 
 [dev-dependencies]
 odra-test = "2.8.1"

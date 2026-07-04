@@ -6,6 +6,7 @@ use amanah_contracts::payment_token::{PaymentToken, PaymentTokenInitArgs};
 use amanah_contracts::reputation_registry::{ReputationRegistry, ReputationRegistryInitArgs};
 use amanah_contracts::rwa_vault::{RwaVault, RwaVaultHostRef, RwaVaultInitArgs};
 use amanah_contracts::spend_gate::{SpendGate, SpendGateInitArgs};
+use amanah_contracts::zk_kyc::{ZkKycVerifier, ZkKycVerifierInitArgs};
 use odra::casper_types::{bytesrepr::Bytes, U256, U512};
 use odra::host::{Deployer, HostRef, NoArgs};
 
@@ -233,4 +234,60 @@ fn adjust_is_gated_to_the_authority() {
     assert_eq!(rep.score_of(agent), 3);
     rep.adjust(agent, -1, [2u8; 32]); // a VETO slash
     assert_eq!(rep.score_of(agent), 2);
+}
+
+fn hx32(s: &str) -> [u8; 32] {
+    let mut o = [0u8; 32];
+    for i in 0..32 {
+        o[i] = u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap();
+    }
+    o
+}
+
+#[test]
+fn zk_kyc_proof_verifies_and_rejects_tamper() {
+    // Golden vector produced by the TS prover (agent/src/zk.ts). This test passing
+    // proves the TS(noble) prover and Rust(dalek) on-chain verifier agree byte-for-byte.
+    let env = odra_test::env();
+    let issuer = env.get_account(0);
+    let agent = env.get_account(1);
+    let mut zk = ZkKycVerifier::deploy(&env, ZkKycVerifierInitArgs { authority: issuer });
+
+    let y = hx32("dcb4190c3ba4c1b345296bf28bfaab9b6bc27efeac366f83e7829a7cdc10f960");
+    let t = hx32("8c1ed8e1d1641f0da24f41ca8b242abe9218ef5fea9fd05943f743a472668c55");
+    let s = hx32("1732fc7096eee473bcd35feb944886a0b8626368d76251f32c684298ffff0107");
+    let ctx = Bytes::from(
+        hx32("9d1a3c5e7f0b2d4a6c8e0f1a3b5d7f9012345678abcdef00fedcba9876543210").to_vec(),
+    );
+
+    env.set_caller(issuer);
+    zk.register_credential(agent, y);
+    assert!(!zk.is_zk_verified(agent));
+
+    // Valid proof -> verified. The secret x was NEVER transmitted (zero-knowledge).
+    zk.prove_kyc(agent, t, s, ctx.clone());
+    assert!(zk.is_zk_verified(agent));
+
+    // Tampered response scalar -> the Schnorr equation fails -> reject.
+    let mut s_bad = s;
+    s_bad[0] ^= 1;
+    zk.register_credential(agent, y); // reset the flag for a clean negative check
+    let err = zk.try_prove_kyc(agent, t, s_bad, ctx).unwrap_err();
+    assert_eq!(err, Error::InvalidAttestation.into());
+    assert!(!zk.is_zk_verified(agent));
+}
+
+#[test]
+fn zk_kyc_register_is_gated_to_issuer() {
+    let env = odra_test::env();
+    let issuer = env.get_account(0);
+    let attacker = env.get_account(2);
+    let agent = env.get_account(1);
+    let mut zk = ZkKycVerifier::deploy(&env, ZkKycVerifierInitArgs { authority: issuer });
+
+    env.set_caller(attacker);
+    let err = zk
+        .try_register_credential(agent, [7u8; 32])
+        .unwrap_err();
+    assert_eq!(err, Error::NotAuthorized.into());
 }

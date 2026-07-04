@@ -25,3 +25,7 @@ fqn = "amanah_contracts::reputation_registry::ReputationRegistry"
 # intermediate builder wasm (no `call` export). init(symbol,name,decimals,initial_supply).
 [[contracts]]
 fqn = "amanah_contracts::payment_token::PaymentToken"
+
+# ZkKycVerifier: on-chain Schnorr NIZK verification (real ZK KYC).
+[[contracts]]
+fqn = "amanah_contracts::zk_kyc::ZkKycVerifier"

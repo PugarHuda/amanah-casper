@@ -25,3 +25,5 @@ Thumbs.db
 .env.repv2
 .env.auditor
 .env.repv3
+.env.zk
+agent/secret/zk_kyc_secret.hex

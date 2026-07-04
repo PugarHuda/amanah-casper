@@ -10,3 +10,4 @@ pub mod payment_token;
 pub mod reputation_registry;
 pub mod rwa_vault;
 pub mod spend_gate;
+pub mod zk_kyc;

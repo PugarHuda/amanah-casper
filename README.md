@@ -87,6 +87,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | ComplianceRegistry (set by custodian) | `2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33` |
 | ReputationRegistry (v3, `adjust` gated to custodian) | `8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
+| ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | `e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`
 Custodian account (owns the gates, separate key): `0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`
@@ -110,6 +111,7 @@ vault locks **$800K of the $1M as principal** — the agent moves only the $200K
 | **Auditor APPROVE** — 2nd agent OK'd a sound Gold→TBond move (grade 0.9) | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` |
 | Reallocate executed **after** the auditor approved | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
 | **Reputation slash** — auditor veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
+| **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN in the WASM VM (secret x never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -128,7 +130,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment is caller-gated — you can't credit someone else; `adjust`/slash is gated to the custodian authority), PaymentToken. On-chain Ed25519 verification is the heart. 9/9 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment is caller-gated — you can't credit someone else; `adjust`/slash is gated to the custodian authority), PaymentToken. On-chain Ed25519 verification is the heart. 11/11 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce, CEP-3009 settled on-chain: `GET /alpha` (the premium signal Amanah **pays** for) and `GET /verified-reasoning` (Amanah **earns** by selling its on-chain-verified proof-of-reasoning). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -140,7 +142,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 ```bash
 # 1. contracts → wasm  (Linux/WSL: rustup nightly + wasm32 + `cargo install cargo-odra`)
-cd contracts && cargo odra build && cargo odra test    # 8/8 tests green
+cd contracts && cargo odra build && cargo odra test    # 11/11 tests green
 #    cargo-odra's wasm-opt step needs binaryen >=121; if it errors, the per-contract
 #    wasm is already written — lower bulk-memory ops yourself before deploy:
 #    npx -p binaryen@130 wasm-opt --enable-bulk-memory --enable-sign-ext \
@@ -186,7 +188,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**56 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**66 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **31 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
@@ -195,7 +197,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 - **4 integration** (live casper-test): vault decodes to **$1M / $800K principal**,
   reputation ≥ 1, compliance Valid, and every published blob hashes to its filename.
 - **12 E2E** (Playwright manual-click): live data, real deep links, no stale fakes.
-- **8 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant.
+- **11 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant.
 
 `./scripts/test-all.ps1` runs the offline layers; `tsc --noEmit` is clean on all
 four TS packages.

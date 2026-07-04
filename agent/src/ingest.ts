@@ -105,6 +105,13 @@ async function csprSpot2(notes: string[]): Promise<number | null> {
   }
 }
 
+/** Percent divergence between two price feeds: |a-b|/mean*100. null if either is
+ *  missing or the mean is non-positive (a data-trust signal for cross-validation). */
+export function divergencePct(a: number | null, b: number | null): number | null {
+  if (a == null || b == null || a + b <= 0) return null;
+  return (Math.abs(a - b) / ((a + b) / 2)) * 100;
+}
+
 export async function ingest(): Promise<PriceSnapshot> {
   const notes: string[] = [];
   const [tbondYieldPct, wtiUsd, goldUsd, csprUsd, csprUsd2] = await Promise.all([
@@ -115,19 +122,16 @@ export async function ingest(): Promise<PriceSnapshot> {
     csprSpot2(notes),
   ]);
   // Divergence between the two independent CSPR feeds — a data-trust signal.
-  const divergencePct =
-    csprUsd != null && csprUsd2 != null && csprUsd + csprUsd2 > 0
-      ? (Math.abs(csprUsd - csprUsd2) / ((csprUsd + csprUsd2) / 2)) * 100
-      : null;
-  if (divergencePct != null) {
-    notes.push(`cspr-xcheck: two-source divergence ${divergencePct.toFixed(2)}%${divergencePct > 5 ? " ⚠ HIGH — treat CSPR price with caution" : ""}`);
+  const divergence = divergencePct(csprUsd, csprUsd2);
+  if (divergence != null) {
+    notes.push(`cspr-xcheck: two-source divergence ${divergence.toFixed(2)}%${divergence > 5 ? " ⚠ HIGH — treat CSPR price with caution" : ""}`);
   }
   return {
     tbondYieldPct,
     wtiUsd,
     goldUsd,
     csprUsd,
-    csprCrossCheck: { source2Usd: csprUsd2, divergencePct },
+    csprCrossCheck: { source2Usd: csprUsd2, divergencePct: divergence },
     notes,
     at: new Date().toISOString(),
   };

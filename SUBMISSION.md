@@ -26,6 +26,11 @@ the score reflects its real audit track record — skin in the game. Prices are
 **cross-validated** across two independent feeds (CoinGecko + Coinpaprika) with a
 divergence signal, so a single stale/manipulated source is caught, not trusted.
 
+**Zero-knowledge KYC (real, on-chain):** the agent proves it holds its KYC credential
+via a **Schnorr NIZK verified inside the contract** (curve25519-dalek) — the secret is
+never transmitted. Not a stored flag, not a toy: a genuine 256-bit zero-knowledge proof
+verified in the Casper WASM VM.
+
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
 |---|---|
@@ -34,6 +39,7 @@ divergence signal, so a single stale/manipulated source is caught, not trusted.
 | **Auditor APPROVE** (grade 0.9) → reallocate executed | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` |
 | Reallocate executed after the auditor approved (Gold→TBond) | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
 | **Reputation slash** — a veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
+| **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
 | x402 settlement — CEP-3009 transfer_with_authorization | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |
 | Custodian-separated reallocate ($800K principal locked) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
@@ -43,7 +49,7 @@ Live dashboard: https://amanah-casper-rwa.vercel.app
 Repo (public): https://github.com/PugarHuda/amanah-casper
 
 ## Partner tools used (all genuinely integrated)
-Casper L1 (Odra, 6 contracts) · x402 / CEP-3009 (two-sided: pays *and* earns) ·
+Casper L1 (Odra, 8 contracts) · x402 / CEP-3009 (two-sided: pays *and* earns) ·
 CSPR.cloud REST + **Streaming API** + hosted **MCP server (consumed)** · **CSPR.trade
 DEX MCP (consumed)** · CSPR.click wallet · IPFS/Pinata · our own MCP server · an
 installable **AI Agent Skill** · Venice (reasoning).
@@ -56,8 +62,8 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-56 automated tests: 31 unit/regression + 4 live-testnet integration + 12 Playwright
-E2E + 9 OdraVM contract tests. See TESTING.md.
+66 automated tests: 39 unit/regression + 4 live-testnet integration + 12 Playwright
+E2E + 11 OdraVM contract tests. See TESTING.md.
 
 ## What to look at
 - `USE_CASE.md` — the real-world case + separation-of-powers.

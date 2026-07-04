@@ -42,7 +42,7 @@ asset must be a contract defined in this crate. Its **package hash becomes
 ## Build
 
 ```bash
-# Compile all six contracts to one wasm each (writes wasm/ via cargo-odra).
+# Compile all eight contracts to one wasm each (writes wasm/ via cargo-odra).
 # Needs a Linux/WSL toolchain (nightly-2026-01-01 + wasm32-unknown-unknown).
 cargo odra build
 
@@ -61,7 +61,7 @@ Notes (cargo-odra 0.1.7):
 
 One-command deploy automation lives in `../scripts/` — see
 [`scripts/README.md`](../scripts/README.md): `keygen.{sh,ps1}` then
-`deploy.{sh,ps1}` build the keypair, deploy all 6 contracts in dependency order,
+`deploy.{sh,ps1}` build the keypair, deploy all 8 contracts in dependency order,
 and write the package hashes to `amanah/.env.deployed`. The manual form is below.
 
 Use `casper-client` **5.0.0** (CLI surface changed vs 2.x). Wasm files land in

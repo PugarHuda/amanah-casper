@@ -45,5 +45,5 @@ replay, payment-token mint+transfer, and the **principal invariant**
 
 ## Totals
 
-31 unit/regression + 4 integration + 12 E2E + 9 contract = **56 automated tests**,
+39 unit/regression + 4 integration + 12 E2E + 11 contract = **66 automated tests**,
 plus `tsc --noEmit` across all four TS packages.

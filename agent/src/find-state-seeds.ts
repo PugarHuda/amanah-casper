@@ -13,7 +13,7 @@ const RPC = process.env.CASPER_RPC_URL ?? "https://node.testnet.casper.network/r
 const PACKAGES = {
   // v2 custodian-separated deploy (see .env.deployed)
   RwaVault: process.env.RWA_VAULT_HASH ?? "c638780d65eec79d57115900664da1ddb242d1f313015b2de36567c105b1f479",
-  ReputationRegistry: process.env.REPUTATION_REGISTRY_HASH ?? "ec5e35056239b351aa4dcfe362d0cfb30fe5bceba845a53efb41d11910b0f8dc",
+  ReputationRegistry: process.env.REPUTATION_REGISTRY_HASH ?? "8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b",
   AttestationLog: process.env.ATTESTATION_LOG_HASH ?? "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
   SpendGate: process.env.SPEND_GATE_HASH ?? "fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc",
   ComplianceRegistry: process.env.COMPLIANCE_HASH ?? "2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33",

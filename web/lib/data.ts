@@ -124,6 +124,48 @@ async function latestBlobFromPinata(): Promise<{ hash: string; blob: AgentBlob; 
   }
 }
 
+export type AuditVerdict = { approved: boolean; grade: number; concerns: string[]; reviewedHash: string } | null;
+
+function verdictFrom(blob: { verdict?: { approved?: boolean; grade?: number; concerns?: string[] }; reviewedReasoningHash?: string }): AuditVerdict {
+  return {
+    approved: !!blob.verdict?.approved,
+    grade: typeof blob.verdict?.grade === "number" ? blob.verdict.grade : 0,
+    concerns: Array.isArray(blob.verdict?.concerns) ? blob.verdict!.concerns! : [],
+    reviewedHash: blob.reviewedReasoningHash ?? "",
+  };
+}
+
+// The independent auditor's latest APPROVE/VETO verdict — local audit/*.audit.json
+// (dev) or the newest "amanah-audit" IPFS pin (prod). null if none yet.
+async function latestAuditVerdict(): Promise<AuditVerdict> {
+  try {
+    const dir = resolve(process.cwd(), "../audit");
+    const files = readdirSync(dir).filter((f) => f.endsWith(".audit.json"));
+    if (files.length) {
+      const newest = files.map((f) => ({ f, t: statSync(resolve(dir, f)).mtimeMs })).sort((a, b) => b.t - a.t)[0].f;
+      return verdictFrom(JSON.parse(readFileSync(resolve(dir, newest), "utf8")));
+    }
+  } catch { /* no local dir — try IPFS */ }
+  const jwt = process.env.PINATA_JWT;
+  if (!jwt) return null;
+  try {
+    const list = await fetch(
+      "https://api.pinata.cloud/data/pinList?status=pinned&metadata[name]=amanah-audit&pageLimit=1&sortBy=date_pinned&sortOrder=DESC",
+      { headers: { authorization: `Bearer ${jwt}` }, next: { revalidate: 15 } },
+    );
+    if (!list.ok) return null;
+    const data = (await list.json()) as { rows?: { ipfs_pin_hash: string }[] };
+    const row = data.rows?.[0];
+    if (!row) return null;
+    const gw = process.env.PINATA_GATEWAY || "https://gateway.pinata.cloud";
+    const res = await fetch(`${gw}/ipfs/${row.ipfs_pin_hash}`, { next: { revalidate: 15 } });
+    if (!res.ok) return null;
+    return verdictFrom(await res.json());
+  } catch {
+    return null;
+  }
+}
+
 type AgentBlob = {
   cycle?: number;
   pubkey?: string;
@@ -199,13 +241,14 @@ export async function getAgentConsole() {
   // Defensive: older blobs stored riskScore on a 0..100 scale (schema says 0..1).
   const risk = d.riskScore != null ? (d.riskScore > 1 ? d.riskScore / 100 : d.riskScore) : null;
 
-  // Parallel: latest attest deploy hash, attest count, vault state, reputation, spend gate.
-  const [deploys, attestCount, vault, repScore, spendGate] = await Promise.all([
+  // Parallel: latest attest deploy hash, attest count, vault state, reputation, spend gate, auditor verdict.
+  const [deploys, attestCount, vault, repScore, spendGate, audit] = await Promise.all([
     live() ? getContractDeploys([ATTESTATION()], 1) : Promise.resolve([]),
     live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
     vaultReadable() ? getVaultState() : Promise.resolve(null),
     reputationReadable() ? getReputationScore(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
     spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
+    latestAuditVerdict(),
   ]);
   const attestDeploy = deploys[0];
   const attestDeployHash = attestDeploy?.deploy_hash ?? "";
@@ -273,6 +316,17 @@ export async function getAgentConsole() {
       tag: attestDeployHash ? `ATTEST · ${shortHash(attestDeployHash)} ✓` : "ATTEST · on-chain ✓",
       tagColor: "var(--green)",
     },
+    // The independent auditor (a second key) grades the decision on-chain; a VETO
+    // blocks the reallocate and slashes reputation. Surfaced so the two-agent
+    // separation of duties is visible, not just on-chain.
+    ...(audit ? [{
+      n: String((d.reasoningSteps?.slice(0, 4).length ?? 0) + 4).padStart(2, "0"),
+      text: audit.approved
+        ? `Independent auditor APPROVED the decision (grade ${audit.grade}). Reallocate allowed.`
+        : `Independent auditor VETOED — reallocate blocked, reputation slashed.${audit.concerns[0] ? " " + audit.concerns[0] : ""}`,
+      tag: audit.approved ? "AUDITOR · APPROVE ✓" : "AUDITOR · VETO ⛔",
+      tagColor: audit.approved ? "var(--green)" : "var(--red)",
+    }] : []),
   ];
 
   return {
