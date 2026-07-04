@@ -1,7 +1,10 @@
 # Deploy the web dashboard to a public URL (Vercel)
 
-The web app isn't hosted yet — it runs locally. To give judges a live link, deploy
-the `web/` folder to Vercel (free). One-time, ~3 minutes.
+**✅ Deployed and live: https://web-hudas-projects-a8e7f558.vercel.app** (Next.js 16,
+all env vars set, Vercel SSO/Deployment-Protection disabled so it's publicly viewable).
+Redeploy after code changes with `cd web && npx vercel --prod`.
+
+The steps below are how it was set up (and how to redeploy / deploy your own).
 
 ## Steps
 

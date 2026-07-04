@@ -1,5 +1,9 @@
 # Amanah — Autonomous Compliant RWA Treasury Agent
 
+**🔗 Live dashboard:** https://web-hudas-projects-a8e7f558.vercel.app — treasury,
+audit trail, guardrails, compliance, live event feed, and the agent console all read
+live from casper-test (+ IPFS). Repo is public.
+
 > Casper Agentic Buildathon 2026. **Amanah** (fiduciary trust). An autonomous AI
 > agent manages a tokenized RWA treasury (gold, US T-bond, oil, CSPR) on **Casper
 > testnet**: it ingests live RWA prices, pays for a premium signal via **x402**,

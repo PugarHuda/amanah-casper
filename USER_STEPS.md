@@ -67,7 +67,8 @@ The agent consumes both hosted MCP servers every cycle: CSPR.cloud MCP
 The wallet works now on localhost with `csprclick-template`. For a deployed domain,
 create your own app-id and I'll wire it:
 1. console.cspr.build → **"CSPR.click keys"** section → **Create key**.
-2. Fill: **Name** `amanah`; **Domains** = your deploy URL (a real FQDN, e.g.
+2. Fill: **Name** `amanah`; **Domains** = the live deploy URL
+   `web-hudas-projects-a8e7f558.vercel.app` (a real FQDN, e.g.
    `amanah.vercel.app` — the domain field won't take bare `localhost`); **Network**
    `Casper`; **Connected CSPR.cloud key** `amanah`; toggle ON **REST API +
    Streaming API + RPC node** (we use all three).
@@ -112,6 +113,7 @@ npx tsx src/find-state-seeds.ts                  # rediscover state-dict seeds v
 
 | Thing | Status | Proof |
 |---|---|---|
+| **Public live dashboard** (Vercel) | ✅ live | https://web-hudas-projects-a8e7f558.vercel.app |
 | 6 Odra contracts on testnet | ✅ live | `.env.deployed` |
 | On-chain attestation (Ed25519 verified in-contract) | ✅ live | `a87e10c8…` |
 | x402 agent-pays-agent (CEP-3009 settled) | ✅ live | `391274dc…` |
