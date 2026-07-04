@@ -74,7 +74,7 @@ export default function Connect() {
               <>
                 <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
                   {wallets.map((w) => (
-                    <div key={w.name} className="wallet-row" onClick={() => ready && onRow(w.action)} style={{ opacity: ready ? 1 : 0.55, cursor: ready ? "pointer" : "wait" }}>
+                    <div key={w.name} className="wallet-row" onClick={() => ready && onRow(w.action)} style={{ opacity: ready ? 1 : 0.55, cursor: ready ? "pointer" : error ? "not-allowed" : "wait" }}>
                       <svg width="22" height="22" viewBox="0 0 22 22">{w.icon}</svg>
                       <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: "var(--ink2)" }}>{w.name}</span>
                       <Chevron />
@@ -92,8 +92,8 @@ export default function Connect() {
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", letterSpacing: "0.2px", marginBottom: 9 }}>
                   Sign in with email or social (Google / Apple)
                 </div>
-                <button onClick={() => ready && signIn()} className="btn-primary" style={{ width: "100%", height: 54, fontSize: 15, opacity: ready ? 1 : 0.55, cursor: ready ? "pointer" : "wait" }}>
-                  {ready ? "Continue with CSPR.click" : "Loading CSPR.click…"}
+                <button onClick={() => ready && signIn()} className="btn-primary" style={{ width: "100%", height: 54, fontSize: 15, opacity: ready ? 1 : 0.55, cursor: ready ? "pointer" : error ? "not-allowed" : "wait" }}>
+                  {ready ? "Continue with CSPR.click" : error ? "CSPR.click unavailable on this domain" : "Loading CSPR.click…"}
                 </button>
               </>
             )}

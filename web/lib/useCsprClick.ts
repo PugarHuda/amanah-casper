@@ -43,9 +43,12 @@ export function useCsprClick() {
           : null,
       );
 
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     const wire = () => {
       const sdk = window.csprclick;
       if (!sdk) return;
+      if (timer) clearTimeout(timer);
       sdk.on("csprclick:signed_in", setFrom);
       sdk.on("csprclick:switched_account", setFrom);
       sdk.on("csprclick:signed_out", () => setAccount(null));
@@ -56,6 +59,19 @@ export function useCsprClick() {
         .then((a: any) => a?.public_key && setAccount({ public_key: a.public_key, provider: a.provider }))
         .catch(() => {});
     };
+
+    // The demo template app-id only initializes on localhost; on a real domain the
+    // SDK never creates window.csprclick / fires csprclick:loaded. Don't spin
+    // forever — surface a clear reason after a few seconds.
+    timer = setTimeout(() => {
+      if (!window.csprclick) {
+        setError(
+          APP_ID === "csprclick-template"
+            ? "CSPR.click didn't initialize — the demo template app-id only works on localhost. Create your own app-id at console.cspr.build (add this domain) and set NEXT_PUBLIC_CSPR_CLICK_APP_ID."
+            : "CSPR.click didn't initialize for this app-id — check the app-id and that this domain is allowlisted in console.cspr.build.",
+        );
+      }
+    }, 9000);
 
     // The hosted script reads these globals on load and builds window.csprclick.
     window.clickSDKOptions = {
