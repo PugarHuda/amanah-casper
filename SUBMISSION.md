@@ -43,6 +43,7 @@ verified in the Casper WASM VM.
 | **Verified identity** — `set_url` on MAKE's Account Info contract → "Amanah" on cspr.live | `ce60f0e4ddf288b208c33075793f2093c022255538226cc62c629561039db364` |
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
 | x402 settlement — CEP-3009 transfer_with_authorization | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |
+| **x402 agent-pays-*another*-agent** — Amanah → the custodian (distinct payee, not self) | `785ceb256649f9d61bd31e3ddd863d7861d2f991d600355377d2d64e3ccf0766` |
 | Custodian-separated reallocate ($800K principal locked) | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` |
 | Reputation — record_payment (anti-replay) | `de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711` |
 
@@ -59,8 +60,11 @@ installable **AI Agent Skill** · Venice (reasoning).
 ## Prized stack (AI Agent Skills + MCP + x402) — all three, wired together
 - **MCP**: our read-only server (4 live tools) + the agent *consumes* the official
   CSPR.cloud (82 tools) and CSPR.trade (23 tools) servers, feeding their data into the LLM.
-- **x402**: agent-pays-agent for premium alpha, settled on-chain; and Amanah *earns*
-  by selling its verified reasoning on the same rails.
+- **x402**: genuine agent-pays-*another*-agent — Amanah pays a **distinct** signal
+  provider (the custodian account) for premium alpha, settled on-chain via CEP-3009
+  (`X402_ALPHA_PAY_TO`, proof `785ceb25`). The **earn** side is live and two-sided:
+  `/verified-reasoning` sells Amanah's proof-of-reasoning and settles to **Amanah's own
+  account** — a buyer paying it credits Amanah (routing verified; distinct payTo per route).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing

@@ -29,7 +29,9 @@ import { buildSignal } from "./signal.js";
 function latestVerifiedReasoning(): unknown {
   try {
     const dir = resolve(import.meta.dirname, "../../audit");
-    const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+    // Reasoning blobs are <hash>.json; exclude the auditor's <hash>.audit.json verdict
+    // blobs (they'd hash to the wrong filename and read as unverified).
+    const files = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.endsWith(".audit.json"));
     if (!files.length) return { error: "no reasoning published yet" };
     const newest = files
       .map((f) => ({ f, t: statSync(resolve(dir, f)).mtimeMs }))
@@ -74,11 +76,20 @@ const accepts = {
   extra: { name: "Amanah Test USD", version: "1" },
 } as const;
 
+// Genuinely two-sided: the two routes settle to DIFFERENT accounts. /alpha is sold
+// by a distinct signal provider (set X402_ALPHA_PAY_TO to that account — NOT Amanah —
+// so paying it is real agent-pays-*another*-agent). /verified-reasoning is Amanah's
+// own product, so it settles to Amanah (X402_PAY_TO = the agent account) — that's the
+// EARN side. If X402_ALPHA_PAY_TO is unset it falls back to PAY_TO (self, demo-only).
+const ALPHA_PAY_TO = process.env.X402_ALPHA_PAY_TO ?? PAY_TO;
+const alphaAccepts = { ...accepts, payTo: ALPHA_PAY_TO } as const;
+const earnAccepts = accepts; // payTo = PAY_TO = Amanah (the agent earns)
+
 const routes: RoutesConfig = {
-  // PAY side: Amanah pays this counterparty for premium alpha (agent-pays-agent).
-  "GET /alpha": { description: "Premium RWA momentum/volatility signal", accepts },
-  // EARN side (two-sided x402): Amanah sells its verified proof-of-reasoning.
-  "GET /verified-reasoning": { description: "Amanah's latest on-chain-verified proof-of-reasoning", accepts },
+  // PAY side: Amanah pays a separate signal provider for premium alpha (agent-pays-agent).
+  "GET /alpha": { description: "Premium RWA momentum/volatility signal", accepts: alphaAccepts },
+  // EARN side (two-sided x402): Amanah SELLS its verified proof-of-reasoning; buyers pay Amanah.
+  "GET /verified-reasoning": { description: "Amanah's latest on-chain-verified proof-of-reasoning", accepts: earnAccepts },
 };
 
 function adapterFor(req: Request): HTTPAdapter {
