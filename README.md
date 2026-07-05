@@ -130,7 +130,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 11/11 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 12/12 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce, CEP-3009 settled on-chain: `GET /alpha` (the premium signal Amanah **pays** for) and `GET /verified-reasoning` (Amanah **earns** by selling its on-chain-verified proof-of-reasoning). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -142,7 +142,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 ```bash
 # 1. contracts → wasm  (Linux/WSL: rustup nightly + wasm32 + `cargo install cargo-odra`)
-cd contracts && cargo odra build && cargo odra test    # 11/11 tests green
+cd contracts && cargo odra build && cargo odra test    # 12/12 tests green
 #    cargo-odra's wasm-opt step needs binaryen >=121; if it errors, the per-contract
 #    wasm is already written — lower bulk-memory ops yourself before deploy:
 #    npx -p binaryen@130 wasm-opt --enable-bulk-memory --enable-sign-ext \
@@ -188,7 +188,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**66 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**67 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **39 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

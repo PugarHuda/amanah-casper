@@ -35,17 +35,18 @@ Clicks every page and asserts: live treasury $1M + **$800K principal**, live Spe
 cap, reputation, the real-data provenance line, the IPFS verify link, the CSPR.click
 modal opens, every cspr.live link is a real deep link, and **no stale fake numbers**.
 
-## 4. Smart contracts (OdraVM) — 11 tests
+## 4. Smart contracts (OdraVM) — 12 tests
 
 `cd contracts && cargo odra test` (Linux/WSL: rustup nightly + `cargo install
 cargo-odra`; dev-dep pin `indexmap = { version="=1.9.3", features=["std"] }`).
 Covers: reallocate cap/compliance/success, attest verify + tamper, reputation
-replay + caller-gate + **authority-gated `adjust`/slash**, payment-token mint+transfer,
+replay + caller-gate + **authority-gated `adjust`/slash**, **owner-gated compliance
+`set_status`/`revoke`**, payment-token mint+transfer,
 the **principal invariant** (`reallocate_rejected_when_it_would_touch_principal`), and
 **real ZK KYC** — `zk_kyc_proof_verifies_and_rejects_tamper` (the on-chain Schnorr NIZK
 verifier vs a TS-generated golden vector) + issuer-gated credential registration.
 
 ## Totals
 
-39 unit/regression + 4 integration + 12 E2E + 11 contract = **66 automated tests**,
+39 unit/regression + 4 integration + 12 E2E + 12 contract = **67 automated tests**,
 plus `tsc --noEmit` across all four TS packages.
