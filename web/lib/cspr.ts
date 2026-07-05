@@ -244,8 +244,10 @@ export async function getComplianceState(
   try {
     const key = [0x00, ...Array.from(Buffer.from(accountHashHex, "hex"))];
     const srh = await stateRootHash();
+    // ComplianceRegistry v3 struct order: owner=1, status=2, identity_hash=3 (Odra
+    // 1-indexes by declaration order; adding owner shifted status from 1 to 2).
     const [statusByte, allowByte] = await Promise.all([
-      readByte(srh, COMPLIANCE_SEED, 1, key),
+      readByte(srh, COMPLIANCE_SEED, 2, key),
       readByte(srh, SPENDGATE_SEED, 7, key),
     ]);
     return {

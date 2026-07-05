@@ -80,11 +80,11 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 
 | Contract | Package hash |
 |---|---|
-| RwaVault (v2, principal-locked $800K) | `c638780d65eec79d57115900664da1ddb242d1f313015b2de36567c105b1f479` |
+| RwaVault (v3, principal-locked $800K, owner-gated compliance) | `497cf5ba192570db43d3ee960d0ccf4d1393f20a3805cad97da97f33a95e1733` |
 | AttestationLog (agent's reasoning) | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
 | AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
 | SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
-| ComplianceRegistry (set by custodian) | `2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33` |
+| ComplianceRegistry (v3, `set_status`/`revoke` owner-gated to custodian) | `93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5` |
 | ReputationRegistry (v3, `adjust` gated to custodian) | `8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | `e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f` |
@@ -93,9 +93,11 @@ Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fd
 Custodian account (owns the gates, separate key): `0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`
 
 **Separation of powers is real:** the **custodian** (a different key) deploys and
-**owns** SpendGate, allowlists the agent, and sets the agent's compliance status;
-the **agent** can only reallocate yield through those custodian-owned gates. The
-vault locks **$800K of the $1M as principal** — the agent moves only the $200K yield.
+**owns** SpendGate *and* ComplianceRegistry — both `set_status`/`revoke` and the spend
+limits/allowlist are **owner-gated to the custodian** (no one else can mark an account
+KYC-Valid, revoke it, or raise a limit). The **agent** can only reallocate yield through
+those custodian-owned gates. The vault locks **$800K of the $1M as principal** — the
+agent moves only the $200K yield.
 
 **Verifiable proof transactions** (paste into [testnet.cspr.live](https://testnet.cspr.live)):
 
@@ -112,6 +114,7 @@ vault locks **$800K of the $1M as principal** — the agent moves only the $200K
 | Reallocate executed **after** the auditor approved | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
 | **Reputation slash** — auditor veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN in the WASM VM (secret x never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
+| Reallocate through the **owner-gated** compliance v3 (custodian-only KYC) | `33905a576154aacf42872414e1f647a5f9d024bf469a941b532b61f72702323b` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme

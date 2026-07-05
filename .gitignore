@@ -28,3 +28,4 @@ Thumbs.db
 .env.zk
 agent/secret/zk_kyc_secret.hex
 .env.accountinfo
+.env.compliance
