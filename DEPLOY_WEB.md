@@ -30,7 +30,8 @@ Copy the values from `web/.env.local` (all server-side; safe as Vercel env vars)
 | `NEXT_PUBLIC_X402_HASH` | x402 settlements in the trail |
 | `VAULT_STATE_SEED`, `SPENDGATE_STATE_SEED`, `COMPLIANCE_STATE_SEED`, `REPUTATION_STATE_SEED` | live treasury / guardrail / compliance / reputation reads |
 | `CASPER_RPC_URL` | `https://node.testnet.casper.network/rpc` |
-| `NEXT_PUBLIC_CSPR_CLICK_APP_ID` | your CSPR.click app-id (or leave `csprclick-template`) |
+| `NEXT_PUBLIC_CSPR_CLICK_APP_ID` | production CSPR.click app-id (`7535146b…`, wired + verified live) |
+| `ZK_KYC_STATE_SEED` | ZkKycVerifier state seed — live "KYC proven in zero-knowledge" on the dashboard |
 | `PINATA_JWT` | **makes the agent console live in prod** — fetches the latest reasoning blob from public IPFS (same JWT as `agent/.env`) |
 
 Redeploy after setting them: `npx vercel --prod`.

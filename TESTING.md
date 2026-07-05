@@ -5,13 +5,13 @@ integration tests against live testnet, browser E2E, and on-chain contract tests
 
 Run the offline layers in one go: `./scripts/test-all.ps1`.
 
-## 1. Unit + regression (offline, fast) — 25 tests
+## 1. Unit + regression (offline, fast) — 39 tests
 
 Pure logic, no network. `node:test` via `tsx` (no test framework dependency).
 
 | Package | Cmd | Covers |
 |---|---|---|
-| `agent` | `npm test` | codec (dict-address derivation w/ golden vectors, U256/U512 blob decode, **i64 array decode**, enum/Key::Account bytes, hex round-trip); `normalize` (**riskScore 0..100→0..1 regression**, non-rebalance zeroes amount); `extractJson` (fenced / `<think>` / prose / garbage); `ASSET_INDEX` |
+| `agent` | `npm test` | codec (dict-address derivation w/ golden vectors, U256/U512 blob decode, **i64 array decode**, enum/Key::Account bytes, hex round-trip); `normalize` (**riskScore 0..100→0..1 regression**, non-rebalance zeroes amount); `extractJson` (fenced / `<think>` / prose / garbage); `ASSET_INDEX`; `shouldEscalate` (autonomous-vs-human safety gate); auditor `parseVerdict` (fail-closed to VETO); **ZK KYC** Schnorr NIZK (completeness / soundness / replay-binding / TS↔Rust golden vector); cross-validation `divergencePct` |
 | `web` | `npm run test:unit` | `fmtUsd`, `shortHash`, `relTime`, `dataSources` (real-provider extraction) |
 | `mcp` | `npm test` | `get_attestation` blob hash round-trip (proof-not-a-diary), unknown-hash path, `get_reputation` address validation |
 | `signal-service` | `npm test` | `buildSignal` shape + tilt clamp |
@@ -35,13 +35,15 @@ Clicks every page and asserts: live treasury $1M + **$800K principal**, live Spe
 cap, reputation, the real-data provenance line, the IPFS verify link, the CSPR.click
 modal opens, every cspr.live link is a real deep link, and **no stale fake numbers**.
 
-## 4. Smart contracts (OdraVM) — 7 tests
+## 4. Smart contracts (OdraVM) — 11 tests
 
 `cd contracts && cargo odra test` (Linux/WSL: rustup nightly + `cargo install
 cargo-odra`; dev-dep pin `indexmap = { version="=1.9.3", features=["std"] }`).
 Covers: reallocate cap/compliance/success, attest verify + tamper, reputation
-replay, payment-token mint+transfer, and the **principal invariant**
-(`reallocate_rejected_when_it_would_touch_principal`).
+replay + caller-gate + **authority-gated `adjust`/slash**, payment-token mint+transfer,
+the **principal invariant** (`reallocate_rejected_when_it_would_touch_principal`), and
+**real ZK KYC** — `zk_kyc_proof_verifies_and_rejects_tamper` (the on-chain Schnorr NIZK
+verifier vs a TS-generated golden vector) + issuer-gated credential registration.
 
 ## Totals
 

@@ -4,7 +4,6 @@
     "description": "Autonomous, compliant RWA treasury agent on Casper. Proof, not a diary: every AI decision is Ed25519-signed and verified on-chain by the contract itself; an independent auditor agent grades each move (APPROVE/VETO) on-chain; KYC is proven in zero-knowledge; principal is locked and spending is custodian-gated.",
     "type": ["dapp"],
     "website": "https://amanah-casper-rwa.vercel.app",
-    "email": "hudapugar@gmail.com",
     "branding": {
       "logo": {
         "svg": "https://amanah-casper-rwa.vercel.app/icon.svg"

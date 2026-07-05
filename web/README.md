@@ -40,5 +40,6 @@ never a fabricated number dressed as live. See `../TESTING.md` and `../DEPLOY_WE
 
 `/connect` uses the **official CSPR.click hosted SDK** (`lib/useCsprClick.ts`) —
 `signIn()` opens the real modal (Casper Wallet / Ledger / MetaMask Snap / Google+Apple).
-`csprclick-template` app-id works on localhost; set `NEXT_PUBLIC_CSPR_CLICK_APP_ID`
-for a deployed domain.
+A **production app-id** (`NEXT_PUBLIC_CSPR_CLICK_APP_ID` = `7535146b…`, domain
+`amanah-casper-rwa.vercel.app`) is wired and verified live on prod; it falls back to
+`csprclick-template` if the env var is unset (localhost dev).

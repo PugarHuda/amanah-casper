@@ -33,6 +33,8 @@ const AGENT_ACCOUNT_HASH = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f831
 const VAULT = () => process.env.NEXT_PUBLIC_VAULT_HASH || "";
 const ATTESTATION = () => process.env.NEXT_PUBLIC_ATTESTATION_HASH || "";
 const REPUTATION = () => process.env.NEXT_PUBLIC_REPUTATION_HASH || "";
+const AUDITOR = () => process.env.NEXT_PUBLIC_AUDITOR_HASH || "ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89";
+const ZK = () => process.env.NEXT_PUBLIC_ZK_KYC_HASH || "e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f";
 // X402 PaymentToken package hash — baked as default since it's a known deployed contract.
 const X402 = () =>
   process.env.NEXT_PUBLIC_X402_HASH ||
@@ -56,6 +58,10 @@ function deployToTrail(d: RawDeploy): TrailRow {
     icon = "★"; kind = "Reputation · payment credited"; bg = "#f3efe6";
   } else if (pkg && pkg === VAULT().toLowerCase()) {
     icon = "⇄"; kind = "Reallocate · yield move"; bg = "#e6eefc";
+  } else if (pkg && pkg === AUDITOR().toLowerCase()) {
+    icon = "⚖"; kind = "Auditor · verdict (APPROVE/VETO)"; bg = "#f3efe6";
+  } else if (pkg && pkg === ZK().toLowerCase()) {
+    icon = "🔒"; kind = "ZK KYC · zero-knowledge proof"; bg = "#e6f6ec";
   }
   return {
     icon,
@@ -370,7 +376,7 @@ export async function getDashboard() {
 
   if (live()) {
     // Include x402 payment deploys alongside vault/attestation/reputation.
-    const deploys = await getContractDeploys([VAULT(), ATTESTATION(), X402(), REPUTATION()], 8);
+    const deploys = await getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10);
     if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }
   }
 

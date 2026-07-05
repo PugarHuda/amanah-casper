@@ -130,7 +130,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | RwaVault, **AttestationLog** (proof-of-reasoning), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment is caller-gated — you can't credit someone else; `adjust`/slash is gated to the custodian authority), PaymentToken. On-chain Ed25519 verification is the heart. 11/11 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 11/11 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce, CEP-3009 settled on-chain: `GET /alpha` (the premium signal Amanah **pays** for) and `GET /verified-reasoning` (Amanah **earns** by selling its on-chain-verified proof-of-reasoning). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -190,10 +190,12 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 **66 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **31 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **39 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
-  `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the web
-  formatters, MCP attestation round-trip. Every fixed bug has a regression test.
+  `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the
+  escalation safety gate, the auditor verdict parser, **the ZK-KYC Schnorr NIZK**
+  (soundness + TS↔Rust golden vector), price cross-validation, the web formatters, MCP
+  attestation round-trip. Every fixed bug has a regression test.
 - **4 integration** (live casper-test): vault decodes to **$1M / $800K principal**,
   reputation ≥ 1, compliance Valid, and every published blob hashes to its filename.
 - **12 E2E** (Playwright manual-click): live data, real deep links, no stale fakes.
@@ -223,6 +225,6 @@ in-contract, unit-tested, AND live — the deployed vault v2 locks $800K princip
 blobs are published to `audit/<hash>.json` and integrity-checked by the MCP, and
 pinned to **public IPFS** (Pinata) — the agent console links "verify blob on IPFS"
 so anyone can fetch the exact reasoning and recompute the attested hash without the
-repo; the `/connect` wallet uses the `csprclick-template` app id until you set your
-own (`NEXT_PUBLIC_CSPR_CLICK_APP_ID`). All such seams are marked `// ponytail:` in the
-source. Run the manual-click QA with `cd web && npm run test:e2e`.
+repo; the `/connect` wallet uses a **production CSPR.click app-id** (`7535146b…`, domain
+`amanah-casper-rwa.vercel.app`) — verified live on prod. All such seams are marked
+`// ponytail:` in the source. Run the manual-click QA with `cd web && npm run test:e2e`.
