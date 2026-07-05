@@ -42,8 +42,10 @@ only on the jury seeing you.
 
 ### 4. Rotate the exposed API keys
 These keys are in chat transcripts and reused across `.env` files — rotate them:
-- **CSPR.cloud** token `019f04a5-…` → regenerate at console.cspr.build, update
-  `agent/.env`, `signal-service/.env`, `web/.env.local`, `mcp/.env`.
+- **CSPR.cloud** token — the earlier key that leaked in transcripts should be
+  **revoked** at console.cspr.build. (The current `amanah` key is already rotated;
+  it lives only in gitignored `.env` files, never committed.) If you rotate again,
+  update `agent/.env`, `signal-service/.env`, `web/.env.local`, `mcp/.env`.
 - **Venice** key in `agent/.env` → regenerate at venice.ai.
 - The agent's private key `agent/secret/agent_key.pem` is gitignored, but **never
   put it in a zip/share**. It controls the testnet account holding ~15k CSPR.
