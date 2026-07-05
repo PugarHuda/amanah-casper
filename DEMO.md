@@ -76,21 +76,51 @@ src/migrate-custody.ts` (resumable). A 30s read-only demo: `./scripts/demo.ps1`.
 
 ## 3. Video script (~2.5 min, screen-recording)
 
-1. **Hook (15s)** — "Most 'AI agents' ask you to trust a log file. Amanah proves
-   every decision on-chain." Show the landing page.
-2. **The loop (45s)** — run `MAX_CYCLES=1 npm run dev`. Narrate each line as it
-   prints: real prices in, x402 payment settled (copy the tx hash), LLM decision,
-   signed + attested. Switch to cspr.live, paste the attest hash → show SUCCESS.
-3. **The differentiator (30s)** — open the AttestationLog contract; explain the
-   Ed25519 signature is verified *inside* the contract (`attestation_log.rs`), so a
-   forged reasoning hash reverts. This is the "proof, not a diary" claim, on-chain.
-4. **Guardrails + reallocate (30s)** — paste the reallocate hash on cspr.live; run
-   `read-vault.ts` to show Gold/T-bond actually moved. Note SpendGate cap +
-   Compliance gate + the principal invariant (unit-tested).
-5. **Ask-the-agent (20s)** — over MCP, `get_attestation <hash>` returns the actual
-   reasoning and confirms the hash matches. `get_vault_state` shows live holdings.
-6. **Close (10s)** — RWA + DeFi + autonomous agent, fully on Casper testnet, x402 +
-   MCP + Odra. Repo + proof hashes on screen.
+Record at 1080p. Have two things open: the **live dashboard**
+(https://amanah-casper-rwa.vercel.app) and a terminal in `agent/`. Keep
+**testnet.cspr.live** in a third tab to paste hashes. Read the **bold** lines aloud.
+
+**0:00–0:15 · Hook** — *(landing page)*
+> "Most 'AI agents' managing money ask you to trust a log file. **Amanah proves every
+> decision on-chain — and a second, independent agent has to approve it before a single
+> token moves.**" Click **"See it live"** → the dashboard.
+
+**0:15–0:55 · The live dashboard (breadth, fast)** — *(scroll the dashboard)*
+> "A real tokenized treasury on Casper testnet — **$1,000,000, with $800,000 principal
+> locked** by a vault invariant. The agent can only ever move the yield." Point at the
+> compliance row: **"KYC proven in zero-knowledge. An independent auditor's verdict.
+> Guardrail limits. All read live from chain — nothing hardcoded."** Point at the live
+> event feed: **"contract events streaming in over CSPR.cloud."**
+
+**0:55–1:30 · Proof, not a diary + the two-agent check** — *(agent console → cspr.live)*
+> Open **/agent**: "The agent signs its reasoning and the **contract verifies that
+> Ed25519 signature *inside the contract* before recording it** — forge the hash and it
+> reverts." Point at the **AUDITOR** step: **"A second agent, with its own key, graded
+> this decision on-chain. Here it VETOED a flawed move — and the reallocate was blocked,
+> and the agent's reputation was slashed."** Paste the auditor VETO hash `987a3700…` on
+> cspr.live → **SUCCESS**. "Two independent signatures, two keys, every cycle. Neither
+> can forge the other."
+
+**1:30–1:55 · Real zero-knowledge KYC** — *(dashboard ZK card → cspr.live)*
+> Point at **"KYC (zero-knowledge) · Proven ✓"**: **"The agent proved it holds its KYC
+> credential with a Schnorr zero-knowledge proof — verified *inside* a Casper contract,
+> in the WASM VM. The secret is never sent. Not a flag — real 256-bit ZK."** Paste
+> `da738fc1…` on cspr.live → SUCCESS.
+
+**1:55–2:20 · It's live and autonomous** — *(terminal)*
+> Run `MAX_CYCLES=1 npm run dev`. Narrate: **"Live prices in → it pays another agent
+> for a signal via x402 → reasons → signs + attests on-chain → the auditor grades it →
+> and only then, if approved, it reallocates."** Copy the attest hash → paste on
+> cspr.live → SUCCESS.
+
+**2:20–2:30 · Close** — *(README / proof table)*
+> **"Autonomous, compliant, and provable — on Casper. x402, MCP, Odra, CSPR.cloud,
+> CSPR.click, zero-knowledge, a verified on-chain identity. Every claim is a public tx
+> hash."** Show the repo URL + the proof table.
+
+Fallback if a live cycle is slow on camera: skip 1:55–2:20 and instead paste the
+**autonomous reallocate** hash `9e266b05…` (the LLM-decided Gold→CSPR move) — the whole
+thesis in one transaction.
 
 ---
 
@@ -121,8 +151,13 @@ src/migrate-custody.ts` (resumable). A 30s read-only demo: `./scripts/demo.ps1`.
   end-to-end: an `Attested` event hit the feed within seconds of a cycle. CLI:
   `cd agent && npx tsx src/stream.ts`.
 - **CSPR.click** — official hosted wallet SDK on `/connect` (Casper Wallet / Ledger
-  / MetaMask Snap / Google+Apple social login). `csprclick-template` on localhost;
-  set `NEXT_PUBLIC_CSPR_CLICK_APP_ID` for a deployed domain.
+  / MetaMask Snap / Google+Apple social login). A **production app-id** (`7535146b…`,
+  domain `amanah-casper-rwa.vercel.app`) is wired and verified live — the modal opens
+  on the deployed URL, not just localhost.
+- **Casper Account Info** (MAKE) — the agent registered its identity via `set_url` on
+  the account-info contract, pointing at our domain's
+  `/.well-known/casper/account-info.casper-test.json` (which lists the agent pubkey).
+  Once MAKE's indexer crawls it, the account shows as **verified "Amanah"** on cspr.live.
 - **Official CSPR.cloud MCP server** — the agent *consumes* the partner's hosted
   MCP (`mcp.testnet.cspr.cloud`, 82 tools) every cycle for balance + CSPR/USD rate
   (`cspr-mcp.insights` step). Demo: `cd agent && npx tsx src/cspr-mcp.ts`.

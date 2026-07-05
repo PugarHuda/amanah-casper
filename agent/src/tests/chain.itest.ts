@@ -55,7 +55,9 @@ test("compliance status for the agent is Valid (1) — set by the custodian", as
 test("every published reasoning blob hashes to its filename (proof-not-a-diary)", () => {
   const dir = resolve(import.meta.dirname, "../../../audit");
   let files: string[] = [];
-  try { files = readdirSync(dir).filter((f) => f.endsWith(".json")); } catch { /* no dir */ }
+  // Reasoning blobs are <hash>.json; exclude the auditor's <hash>.audit.json verdict
+  // blobs (their filename parses to <hash>.audit, and they're a different blob type).
+  try { files = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.endsWith(".audit.json")); } catch { /* no dir */ }
   if (!files.length) return; // nothing published in this checkout — skip
   for (const f of files) {
     const json = readFileSync(resolve(dir, f), "utf8");

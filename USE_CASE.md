@@ -83,11 +83,20 @@ allowlist itself, or clear its own KYC. Revoking the agent is the custodian call
 `SpendGate.revoke()`; the agent cannot stop it. That's real custody separation, live
 on casper-test.
 
+There is a second, stronger control on top of custody: **segregation of duties
+(maker–checker)**. The agent that *decides* is not the agent that *approves*. An
+**independent auditor agent** — its own key — reviews every decision and attests an
+APPROVE/VETO verdict **on-chain**; a veto blocks the reallocate *and* slashes the
+agent's on-chain reputation. So a fiduciary can point to two independent cryptographic
+signatures per decision, and a reputation that visibly bleeds when the agent is wrong —
+the exact controls an auditor or regulator expects, made structural rather than promised.
+
 ## Honest scope
 
 This is a testnet demonstrator. The assets are synthetic test tokens modeling real
-instruments, and KYC is a status flag rather than a full identity stack. But the
-core guarantees are now genuinely live, not just tested: **custody is separated**
-(custodian-owned gates, above) and the vault **locks $800K of its $1M as principal**
-on-chain (the agent moves only the $200K yield). Productionizing is wiring real
-tokenized-RWA contracts and a real registrar behind these same gates.
+instruments. But the core guarantees are now genuinely live, not just tested:
+**custody is separated** (custodian-owned gates, above), an **independent auditor**
+grades every move on-chain, **KYC is proven in zero-knowledge** (a real Schnorr NIZK
+verified inside a contract — not a bare status flag), and the vault **locks $800K of
+its $1M as principal** on-chain (the agent moves only the $200K yield). Productionizing
+is wiring real tokenized-RWA contracts and a real KYC issuer behind these same gates.
