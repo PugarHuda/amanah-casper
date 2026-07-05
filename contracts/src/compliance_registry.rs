@@ -4,16 +4,23 @@ use odra::prelude::*;
 
 #[odra::module(errors = Error)]
 pub struct ComplianceRegistry {
+    // The registrar (custodian) — only it may set/revoke KYC status. Set at init to
+    // the deployer, exactly like SpendGate. Without this, anyone could mark any
+    // account Valid (bypass KYC) or Revoked (grief) — breaking the custody story.
+    owner: Var<Address>,
     status: Mapping<Address, Status>,
     identity_hash: Mapping<Address, [u8; 32]>,
 }
 
 #[odra::module]
 impl ComplianceRegistry {
-    // ponytail: no admin gate on set_status/revoke per spec ("minimal"). In
-    // production these MUST be owner-restricted like SpendGate. Add an owner Var
-    // + assert when wiring a real registrar.
+    pub fn init(&mut self) {
+        self.owner.set(self.env().caller());
+    }
+
+    /// Registrar-only: set an address's KYC status.
     pub fn set_status(&mut self, addr: Address, status: Status, identity_hash: [u8; 32]) {
+        self.assert_owner();
         self.status.set(&addr, status);
         self.identity_hash.set(&addr, identity_hash);
     }
@@ -25,10 +32,18 @@ impl ComplianceRegistry {
         }
     }
 
+    /// Registrar-only: revoke an address's KYC (sets `Revoked`).
     pub fn revoke(&mut self, addr: Address, _reason_code: u32) {
         // ponytail: reason_code is accepted for the audit trail but not stored;
         // emit/persist it if regulators need on-chain reason history.
+        self.assert_owner();
         self.status.set(&addr, Status::Revoked);
+    }
+
+    fn assert_owner(&self) {
+        if self.env().caller() != self.owner.get_or_revert_with(Error::AddressNotSet) {
+            self.env().revert(Error::NotAuthorized);
+        }
     }
 
     pub fn status_of(&self, addr: Address) -> Status {

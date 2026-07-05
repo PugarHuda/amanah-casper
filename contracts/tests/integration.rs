@@ -291,3 +291,24 @@ fn zk_kyc_register_is_gated_to_issuer() {
         .unwrap_err();
     assert_eq!(err, Error::NotAuthorized.into());
 }
+
+#[test]
+fn compliance_set_status_is_gated_to_owner() {
+    let env = odra_test::env();
+    let owner = env.get_account(0);
+    let attacker = env.get_account(2);
+    let agent = env.get_account(1);
+    let mut c = ComplianceRegistry::deploy(&env, NoArgs); // owner = deployer (account 0)
+
+    // A non-owner cannot mark anyone Valid (KYC bypass) or Revoked (grief).
+    env.set_caller(attacker);
+    let err = c.try_set_status(agent, Status::Valid, [0u8; 32]).unwrap_err();
+    assert_eq!(err, Error::NotAuthorized.into());
+    let err2 = c.try_revoke(agent, 0).unwrap_err();
+    assert_eq!(err2, Error::NotAuthorized.into());
+
+    // The owner (registrar/custodian) can.
+    env.set_caller(owner);
+    c.set_status(agent, Status::Valid, [0u8; 32]);
+    assert!(matches!(c.status_of(agent), Status::Valid));
+}
