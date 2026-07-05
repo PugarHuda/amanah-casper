@@ -21,10 +21,10 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 
 | Contract | Package hash | Contract hash |
 |----------|--------------|---------------|
-| RwaVault (v2, custodian-separated, principal $800K) | c638780d65eec79d57115900664da1ddb242d1f313015b2de36567c105b1f479 | 5b6c4094ec788c237a3a9f4152883040b0126310653446449c4c701520e62d1a |
+| RwaVault (v3, custodian-separated, principal $800K, owner-gated compliance) | 497cf5ba192570db43d3ee960d0ccf4d1393f20a3805cad97da97f33a95e1733 | 0b040c2a521a2701685936637c9e0300c2809970482aaf248c4d45055db7eda6 |
 | AttestationLog | 365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532 | c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003 |
 | SpendGate (owned by custodian) | fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc | 9d4b6438f40cab8737b8a0f6ecf80fdcd80383b762380148610a1dc9fc65d7bc |
-| ComplianceRegistry (set by custodian) | 2c6b0e176e713ac6f46ac0855f11871145b7c1df13cb609bfa5efa0601fdeb33 | 0186d6482ed0295518192e7b8e9eec3ae4d4c45e1ee2557766286233d5995fd7 |
+| ComplianceRegistry (v3, set_status/revoke owner-gated to custodian) | 93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5 | e5838f96bb7e010cd952d00e780e948e532b6d59dee3cdb6fe29e10fa598e863 |
 | ReputationRegistry (v3, adjust gated to custodian) | 8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b | 04a4234daf84cc2250c72382db63033be30483699c8760d5dfab5d4e3fe6911f |
 | AuditorLog (auditor's APPROVE/VETO, custodian key) | ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89 | 439c39829d9093016167a83e6bcfcb5f7dcff908e854f35c9b2fec58b504d85a |
 | PaymentToken (CEP-18+CEP-3009) | d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79 | — |
@@ -60,14 +60,14 @@ Odra stores each Var/Mapping field in the contract's "state" dictionary:
 - i64 parsed comes back as an 8-byte little-endian array; enum (Status/AssetId) as a 1-byte variant
 - Mapping<Address,_> key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes
 
-State-dict seeds (uref addr, hex): vault 468adcc6a52351bacd555b9b78756fae31397609fefe4327fbfaa0b564f83848,
+State-dict seeds (uref addr, hex): vault a7a32c1d234f2578636250b18d76639dbfb373690e549be4ea54b4610a024ebf,
 reputation 26577c163e5c6815a586f71fd361d4b51353337626a448993b4f9749bce410a1,
 attestation 739ed994a635834f536dee0f3af7a7ce5341d91ef6952a548aed7a3de0b0594a,
 spendgate f83499ae46a8ef20e7d6415b3f4d4dc7e45b6c9d0fa17336960dc889e28cf6c3,
-compliance 38fda18b4d7ba4fed90844f9e03c45f50a243b5e989a7e315dffc4ab38ebd07b.
+compliance 7fafb35c455edeecabdb92714a410ea43ce3c3bc3a8dcc68f55468b98320bcbc.
 RwaVault fields: allocations=1 (key=1-byte AssetId Gold0/TBond1/WTI2/CSPR3), principal_locked=2.
 SpendGate fields: max_per_tx=2, daily_limit=3, spent_today=4 (U512, 6-dp USD), allowlist=7.
-ReputationRegistry: score=1 (Mapping<Address,i64>). ComplianceRegistry: status=1 (0=Pending,1=Valid,2=Revoked).
+ReputationRegistry: score=1 (Mapping<Address,i64>). ComplianceRegistry v3 fields: owner=1, status=2 (Mapping<Address,Status>, 0=Pending,1=Valid,2=Revoked), identity_hash=3.
 
 ## The cycle (what the agent does each CYCLE_MS)
 

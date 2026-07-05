@@ -10,9 +10,9 @@ import { blake2b } from "blakejs";
 import { dictAddr, decodeBlob, keyAccountBytes, decodeI64, decodeEnumByte } from "../lib/codec.js";
 
 const RPC = "https://node.testnet.casper.network/rpc";
-const VAULT_SEED = "468adcc6a52351bacd555b9b78756fae31397609fefe4327fbfaa0b564f83848";
+const VAULT_SEED = "a7a32c1d234f2578636250b18d76639dbfb373690e549be4ea54b4610a024ebf";
 const REP_SEED = "25c7c8b591a02d56217c1527f8bd8f911a78cb8f3b29c4a0e5e3e1ad433f1cd7"; // v2 (hardened)
-const COMP_SEED = "38fda18b4d7ba4fed90844f9e03c45f50a243b5e989a7e315dffc4ab38ebd07b";
+const COMP_SEED = "7fafb35c455edeecabdb92714a410ea43ce3c3bc3a8dcc68f55468b98320bcbc";
 const AGENT = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f";
 
 async function rpc(method: string, params: unknown): Promise<any> {
@@ -33,7 +33,7 @@ async function readDict(seed: string, index: number, key: number[] = []): Promis
   return r.result?.stored_value?.CLValue?.parsed ?? (r.error ? null : []);
 }
 
-test("vault v2 decodes to $1,000,000 total with $800,000 locked principal", async () => {
+test("vault v3 decodes to $1,000,000 total with $800,000 locked principal", async () => {
   let total = 0n;
   for (let i = 0; i < 4; i++) total += decodeBlob(await readDict(VAULT_SEED, 1, [i]));
   const principal = decodeBlob(await readDict(VAULT_SEED, 2));
@@ -48,7 +48,8 @@ test("reputation score for the agent reads >= 1 (record_payment credited)", asyn
 });
 
 test("compliance status for the agent is Valid (1) — set by the custodian", async () => {
-  const status = decodeEnumByte(await readDict(COMP_SEED, 1, keyAccountBytes(AGENT)));
+  // v3 struct order: owner=1, status=2, identity=3 (adding owner shifted status to 2).
+  const status = decodeEnumByte(await readDict(COMP_SEED, 2, keyAccountBytes(AGENT)));
   assert.equal(status, 1, "Status::Valid");
 });
 

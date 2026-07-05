@@ -16,7 +16,7 @@ const RPC = config.rpcUrl;
 // RwaVault v2 (c638780d…, custodian-separated) "state" dict seed uref address.
 const STATE_SEED =
   process.env.VAULT_STATE_SEED ??
-  "468adcc6a52351bacd555b9b78756fae31397609fefe4327fbfaa0b564f83848";
+  "a7a32c1d234f2578636250b18d76639dbfb373690e549be4ea54b4610a024ebf";
 
 const ALLOCATIONS_INDEX = 1;
 const PRINCIPAL_INDEX = 2;
