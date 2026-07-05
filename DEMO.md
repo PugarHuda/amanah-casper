@@ -20,7 +20,8 @@ The on-chain steps of the loop, each a real transaction (attest → audit → gu
 |---|---|---|
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` | [view](https://testnet.cspr.live/deploy/a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8) |
 | x402 settlement — `transfer_with_authorization` (CEP-3009) | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` | [view](https://testnet.cspr.live/deploy/391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398) |
-| **x402 agent-pays-*another*-agent** — Amanah → custodian (distinct payee) | `785ceb256649f9d61bd31e3ddd863d7861d2f991d600355377d2d64e3ccf0766` | [view](https://testnet.cspr.live/deploy/785ceb256649f9d61bd31e3ddd863d7861d2f991d600355377d2d64e3ccf0766) |
+| **x402 PAY** — Amanah → custodian (agent-pays-another-agent) | `785ceb256649f9d61bd31e3ddd863d7861d2f991d600355377d2d64e3ccf0766` | [view](https://testnet.cspr.live/deploy/785ceb256649f9d61bd31e3ddd863d7861d2f991d600355377d2d64e3ccf0766) |
+| **x402 EARN** — a buyer paid Amanah for verified reasoning | `cf48c91df6240231461e0b75a06c93852569d13257a2ad9aa1239773ba8a1b4c` | [view](https://testnet.cspr.live/deploy/cf48c91df6240231461e0b75a06c93852569d13257a2ad9aa1239773ba8a1b4c) |
 | Reallocate — $50K yield Gold→T-bond (SpendGate + Compliance gated) | `eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0` | [view](https://testnet.cspr.live/deploy/eeecb9d136a622d07ab41b641272439919d37d14689e7392feee56bb195ac8a0) |
 | Reputation — `record_payment` credits the x402 proof (anti-replay) | `de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711` | [view](https://testnet.cspr.live/deploy/de899bef804a0cce3f0e77b9db08e8f4226e097245098ea7bbca0eb469b90711) |
 | Reallocate v2 — through **custodian-owned** gates, $800K principal locked | `e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149` | [view](https://testnet.cspr.live/deploy/e81b4abc0c96b73d2c3d65e4800b2c208e106c78fc0ab57e552fa82c1c6f7149) |
@@ -147,7 +148,9 @@ thesis in one transaction.
   provider* — the custodian account — for alpha (`GET /alpha`, `X402_ALPHA_PAY_TO`;
   agent-pays-*another*-agent, proof `785ceb25`), AND the *earn* side `GET
   /verified-reasoning` sells Amanah's proof-of-reasoning and settles to **Amanah's own
-  account** (a buyer paying it credits Amanah). Both on the same rails in `signal-service`.
+  account** — a buyer (the custodian) paid it, crediting Amanah (proof `cf48c91d`).
+  Both directions proven on-chain with distinct parties. `src/buy-verified-reasoning.ts`
+  runs the earn demo.
 - **CSPR.cloud REST** — audit trail + treasury decode + reputation + rates.
 - **CSPR.cloud Streaming API** — real-time contract-event feed on `/dashboard`
   (WebSocket → SSE relay at `/api/stream`; key stays server-side). Verified
