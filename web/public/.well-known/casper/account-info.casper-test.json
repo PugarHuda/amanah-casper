@@ -1,0 +1,24 @@
+{
+  "owner": {
+    "name": "Amanah",
+    "description": "Autonomous, compliant RWA treasury agent on Casper. Proof, not a diary: every AI decision is Ed25519-signed and verified on-chain by the contract itself; an independent auditor agent grades each move (APPROVE/VETO) on-chain; KYC is proven in zero-knowledge; principal is locked and spending is custodian-gated.",
+    "type": ["dapp"],
+    "website": "https://amanah-casper-rwa.vercel.app",
+    "email": "hudapugar@gmail.com",
+    "branding": {
+      "logo": {
+        "svg": "https://amanah-casper-rwa.vercel.app/icon.svg"
+      }
+    },
+    "resources": {
+      "code_of_conduct_url": "https://github.com/PugarHuda/amanah-casper"
+    },
+    "social": {
+      "github": "PugarHuda/amanah-casper"
+    }
+  },
+  "affiliated_accounts": [
+    { "public_key": "0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa" },
+    { "public_key": "0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197" }
+  ]
+}
