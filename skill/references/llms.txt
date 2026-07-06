@@ -21,7 +21,7 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 
 | Contract | Package hash | Contract hash |
 |----------|--------------|---------------|
-| RwaVault (v3, custodian-separated, principal $800K, owner-gated compliance) | bf841fa2797021732c2206891ec9586c8a5803237f3213f09fb47a1f72d6e00c | 3bccd542ed5d1d9cfc65401f35ac1492d34abc3cfcb4f51afb5b856e88a9e1f8 |
+| RwaVault (v4, circuit breakers: reputation floor + dead-man's switch; principal $800K) | bf841fa2797021732c2206891ec9586c8a5803237f3213f09fb47a1f72d6e00c | 3bccd542ed5d1d9cfc65401f35ac1492d34abc3cfcb4f51afb5b856e88a9e1f8 |
 | AttestationLog | 365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532 | c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003 |
 | SpendGate (owned by custodian) | fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc | 9d4b6438f40cab8737b8a0f6ecf80fdcd80383b762380148610a1dc9fc65d7bc |
 | ComplianceRegistry (v3, set_status/revoke owner-gated to custodian) | 93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5 | e5838f96bb7e010cd952d00e780e948e532b6d59dee3cdb6fe29e10fa598e863 |
@@ -29,6 +29,8 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 | AuditorLog (auditor's APPROVE/VETO, custodian key) | ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89 | 439c39829d9093016167a83e6bcfcb5f7dcff908e854f35c9b2fec58b504d85a |
 | PaymentToken (CEP-18+CEP-3009) | d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79 | — |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f | — |
+| AuditorQuorum (K-of-N independent auditors, signed on-chain votes) | 0a877c50b90076b14199fb5fcb88ff0f1316db722e3d738e76d37864ff0bd6cd | — |
+| ZkReserves (ZK proof-of-reserves: Pedersen+Schnorr, hides the split) | 5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a | fca6a030b00a… |
 
 ## Verifiable proof transactions (open on testnet.cspr.live/deploy/<hash>)
 
@@ -40,6 +42,10 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 - Auditor APPROVE (grade 0.9) -> reallocate executed: 93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e
 - Reputation slash (custodian docked score on veto): a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc
 - Zero-knowledge KYC (Schnorr NIZK verified ON-CHAIN, secret never sent): da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4
+- Circuit breaker BLOCKED reallocate (agent below reputation floor): d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336
+- Circuit breaker RESUMED (reputation recovered): 57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8
+- Auditor quorum 2-of-3 signed APPROVE votes: 78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559 + 3e7b1af5e29cc460a26dc3b9bd5d7e1035e521d815a5544a07b649f545cd3880
+- ZK proof-of-reserves verified ON-CHAIN (hidden split, sum >= principal): 5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793
 
 ## Amanah MCP server (stdio) — tool I/O
 
@@ -64,7 +70,10 @@ State-dict seeds (uref addr, hex): vault 637f1a616b7139e7a4c1bc1a275219bc9b41ae1
 reputation 26577c163e5c6815a586f71fd361d4b51353337626a448993b4f9749bce410a1,
 attestation 739ed994a635834f536dee0f3af7a7ce5341d91ef6952a548aed7a3de0b0594a,
 spendgate f83499ae46a8ef20e7d6415b3f4d4dc7e45b6c9d0fa17336960dc889e28cf6c3,
-compliance 7fafb35c455edeecabdb92714a410ea43ce3c3bc3a8dcc68f55468b98320bcbc.
+compliance 7fafb35c455edeecabdb92714a410ea43ce3c3bc3a8dcc68f55468b98320bcbc,
+zk-reserves 4fa08858505d78271ee58c8e640ec5e0827176492a3f8c70845c5cfab76c8b1b.
+RwaVault v4 extra fields: reputation=6, min_reputation=7 (i64), custodian=8, last_heartbeat=9 (u64), frozen=10 (bool).
+ZkReserves fields: solvent=1 (bool), last_total=2 (u64). AuditorQuorum: threshold Var + approvals/voted Mappings.
 RwaVault fields: allocations=1 (key=1-byte AssetId Gold0/TBond1/WTI2/CSPR3), principal_locked=2.
 SpendGate fields: max_per_tx=2, daily_limit=3, spent_today=4 (U512, 6-dp USD), allowlist=7.
 ReputationRegistry: score=1 (Mapping<Address,i64>). ComplianceRegistry v3 fields: owner=1, status=2 (Mapping<Address,Status>, 0=Pending,1=Valid,2=Revoked), identity_hash=3.

@@ -142,7 +142,7 @@ thesis in one transaction.
 ## 5. Integration & roadmap (honest status)
 
 **Live now (partner tools, all real):**
-- **Casper L1** — Odra 2.8.1, 8 contracts, an on-chain tx every loop step.
+- **Casper L1** — Odra 2.8.1, 10 contracts, an on-chain tx every loop step.
 - **x402 Facilitator** — CEP-3009 `transfer_with_authorization`, settled on-chain.
   **Genuinely two-sided (distinct payee per route)**: Amanah *pays a separate signal
   provider* — the custodian account — for alpha (`GET /alpha`, `X402_ALPHA_PAY_TO`;
