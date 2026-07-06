@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import { useCsprClick } from "@/lib/useCsprClick";
 import { WALLET_KEYS } from "@make-software/csprclick-core-types";
@@ -20,6 +22,19 @@ const wallets: { name: string; action: "signIn" | string; icon: React.ReactNode 
 
 export default function Connect() {
   const { account, ready, error, appId, signIn, connect, signOut } = useCsprClick();
+  const router = useRouter();
+  const redirected = useRef(false);
+
+  // Once a wallet is connected, go straight to the dashboard (what the user came for).
+  // Guarded so it fires once; router.prefetch warms the route for an instant transition.
+  useEffect(() => {
+    router.prefetch("/dashboard");
+    if (account && !redirected.current) {
+      redirected.current = true;
+      const t = setTimeout(() => router.push("/dashboard"), 700);
+      return () => clearTimeout(t);
+    }
+  }, [account, router]);
 
   const onRow = (action: string) => {
     if (action === "signIn") signIn();
@@ -50,13 +65,20 @@ export default function Connect() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ width: 9, height: 9, borderRadius: "50%", background: "var(--green-deep)" }} />
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--green-deep)" }}>
-                    Connected via {account.provider}
+                    Connected via {account.provider} · entering dashboard…
                   </span>
                 </div>
                 <div className="mono" style={{ marginTop: 10, fontSize: 13, color: "var(--ink)", wordBreak: "break-all" }}>
                   {account.public_key}
                 </div>
-                <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="btn-primary"
+                  style={{ marginTop: 16, width: "100%", height: 50, fontSize: 15, cursor: "pointer" }}
+                >
+                  Enter dashboard →
+                </button>
+                <div style={{ marginTop: 12, display: "flex", gap: 10 }}>
                   <a
                     href={`https://testnet.cspr.live/account/${account.public_key}`}
                     target="_blank"
