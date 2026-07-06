@@ -73,8 +73,10 @@ ingest live RWA prices  →  enrich via the official CSPR.cloud + CSPR.trade MCP
        + publish blob to IPFS  →  ReputationRegistry.record_payment (caller-gated)
   →  INDEPENDENT AUDITOR agent (custodian key) grades the decision, attests APPROVE/VETO
        on-chain to a second AuditorLog  →  a VETO blocks the reallocate
+       (K-of-N: AuditorQuorum requires ≥threshold independent signed votes — proven 2-of-3)
   →  SpendGate.check + ComplianceRegistry.assert_valid (custodian-owned gates)
-  →  RwaVault.reallocate (yield only, $800K principal locked) — only if the auditor approved
+  →  RwaVault.reallocate (yield only, $800K principal locked) — only if approved AND the
+       agent is above its reputation floor and the vault isn't frozen (circuit breakers)
 ```
 
 Real on-chain transactions per cycle (x402 settle, attest, and reallocate when a

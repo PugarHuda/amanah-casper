@@ -1,7 +1,7 @@
 {
   "owner": {
     "name": "Amanah",
-    "description": "Autonomous, compliant RWA treasury agent on Casper. Proof, not a diary: every AI decision is Ed25519-signed and verified on-chain by the contract itself; an independent auditor agent grades each move (APPROVE/VETO) on-chain; KYC is proven in zero-knowledge; principal is locked and spending is custodian-gated.",
+    "description": "Autonomous, compliant RWA treasury agent on Casper. Proof, not a diary: every AI decision is Ed25519-signed and verified on-chain by the contract itself; a K-of-N quorum of independent auditor agents must approve each move (APPROVE/VETO) on-chain; KYC and proof-of-reserves are zero-knowledge; on-chain circuit breakers bench a misbehaving or silent agent; principal is locked and spending is custodian-gated.",
     "type": ["dapp"],
     "website": "https://amanah-casper-rwa.vercel.app",
     "branding": {
