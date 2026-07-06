@@ -8,6 +8,7 @@ use amanah_contracts::reputation_registry::{ReputationRegistry, ReputationRegist
 use amanah_contracts::rwa_vault::{RwaVault, RwaVaultHostRef, RwaVaultInitArgs};
 use amanah_contracts::spend_gate::{SpendGate, SpendGateInitArgs};
 use amanah_contracts::zk_kyc::{ZkKycVerifier, ZkKycVerifierInitArgs};
+use amanah_contracts::zk_reserves::ZkReserves;
 use odra::casper_types::{bytesrepr::Bytes, U256, U512};
 use odra::host::{Deployer, HostRef, NoArgs};
 
@@ -430,4 +431,36 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
     // A signature over a DIFFERENT hash doesn't verify (s2 signs `hash`, not `other`).
     let other = [6u8; 32];
     assert_eq!(q.try_vote(other, true, s2, pk2).unwrap_err(), Error::InvalidAttestation.into());
+}
+
+#[test]
+fn zk_reserves_hides_split_and_proves_the_sum() {
+    // Golden vector from the TS prover (agent/src/zk-reserves.ts): 4 hidden allocations
+    // (250k/400k/150k/200k) whose Pedersen commitments prove they sum to $1M — the
+    // individual splits never appear. TS(noble) ≡ Rust(dalek) for Pedersen + Schnorr.
+    let env = odra_test::env();
+    let mut zk = ZkReserves::deploy(&env, NoArgs);
+
+    let commitments = vec![
+        hx32("f128d7c372acc38dd1843869bc44c78df0dad576e8c447e777ac019d6103bbc9"),
+        hx32("cdf43d9d4659ad667d5faa5576a68981634064f8443b7e6b2836cd2673801a7e"),
+        hx32("913b855648cf17f27cca8e246fcda1e3979ced6890e0783f0f90f547201c61fc"),
+        hx32("ab44c99775ed99d5d9414aff75496967cc324fc8dca952d19dc0010afb902237"),
+    ];
+    let total: u64 = 1_000_000_000_000;
+    let proof_t = hx32("9585b650eb4ec57858c21c188021b5d98b7a1cf066fa81cb4cb22bfbc37f70b2");
+    let s = hx32("c18ef792d5f2c1a6e6c2bc30bf4ece1b8328413646a2a0f8640178b097ab6a08");
+
+    // Valid proof, total >= floor -> solvency recorded (split stays hidden).
+    zk.prove_reserves(commitments.clone(), total, proof_t, s, 800_000_000_000);
+    assert!(zk.is_solvent());
+    assert_eq!(zk.last_total(), total);
+
+    // Claiming a different total breaks the Schnorr equation.
+    let err = zk.try_prove_reserves(commitments.clone(), total + 1, proof_t, s, 800_000_000_000).unwrap_err();
+    assert_eq!(err, Error::InvalidAttestation.into());
+
+    // A valid proof but under the required backing -> insolvent.
+    let err2 = zk.try_prove_reserves(commitments, total, proof_t, s, 2_000_000_000_000).unwrap_err();
+    assert_eq!(err2, Error::NotCompliant.into());
 }

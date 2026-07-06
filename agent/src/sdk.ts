@@ -20,5 +20,6 @@ export const {
   CLValue,
   CLTypeUInt8,
   CLTypePublicKey,
+  CLTypeByteArray,
   Key,
 } = csp;

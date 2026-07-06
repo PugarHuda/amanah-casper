@@ -34,3 +34,4 @@ agent/secret/zk_kyc_secret.hex
 .env.quorum
 agent/secret/auditor2_key.pem
 agent/secret/auditor3_key.pem
+.env.zkreserves

@@ -95,6 +95,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | ReputationRegistry (v3, `adjust` gated to custodian) | `8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | `e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f` |
+| ZkReserves (on-chain ZK proof-of-reserves — Pedersen+Schnorr, hides the split) | `5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`
 Custodian account (owns the gates, separate key): `0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`
@@ -125,6 +126,7 @@ agent moves only the $200K yield.
 | **Circuit breaker** — reallocate BLOCKED, agent below the reputation floor (`BelowReputationFloor`) | `d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336` |
 | **Circuit breaker released** — trading resumed after the agent earned back reputation | `57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8` |
 | **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain (vote 1 / vote 2) | `78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559` |
+| **ZK proof-of-reserves** — hidden allocations proven to sum ≥ principal, split hidden | `5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -143,7 +145,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 15/15 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 16/16 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce (distinct payee per route), both directions proven on-chain: `GET /alpha` (Amanah **pays a separate provider** — the custodian — proof `785ceb25`) and `GET /verified-reasoning` (the **earn** side — a buyer paid Amanah, proof `cf48c91d`). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -201,9 +203,9 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**74 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**79 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **43 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **47 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
   `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the
   escalation safety gate, the auditor verdict parser, **the ZK-KYC Schnorr NIZK**
