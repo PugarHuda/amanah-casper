@@ -273,6 +273,21 @@ export async function getVaultFrozen(): Promise<boolean | null> {
   }
 }
 
+// --- ZkReserves: live ZK proof-of-reserves solvency (Var field 1) -----------
+const RESERVES_SEED = (process.env.ZK_RESERVES_STATE_SEED || "").trim();
+/** Live solvency flag from the ZkReserves contract (solvent = Var field 1, a bool).
+ *  True once a valid ZK proof-of-reserves was verified on-chain. */
+export async function getReservesSolvent(): Promise<boolean | null> {
+  if (!RESERVES_SEED) return null;
+  try {
+    const srh = await stateRootHash();
+    const byte = await readByte(srh, RESERVES_SEED, 1, []); // solvent: Var<bool>, no mapping key
+    return byte == null ? false : byte === 1;
+  } catch {
+    return null;
+  }
+}
+
 // --- ZkKycVerifier: live zero-knowledge KYC status --------------------------
 // zk_verified: Mapping<Address,bool> is field 3 (struct order authority=1,
 // credentials=2, zk_verified=3; Odra 1-indexes, reserves 0). Key = Key::Account.

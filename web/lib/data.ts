@@ -22,6 +22,7 @@ import {
   getZkVerified,
   zkReadable,
   getVaultFrozen,
+  getReservesSolvent,
   shortHash,
   relTime,
   type RawDeploy,
@@ -371,6 +372,7 @@ export async function getDashboard() {
     vaultStatus: "—", allowlisted: false,
     zkVerified: null as boolean | null,
     circuitBreaker: null as boolean | null, // vault frozen? (dead-man's switch)
+    reservesSolvent: null as boolean | null, // ZK proof-of-reserves verified on-chain?
   };
   // Track what's actually live so the UI never labels representative data "live".
   let trailLive = false;
@@ -405,6 +407,8 @@ export async function getDashboard() {
     // Live dead-man's-switch state from the vault (circuit breaker).
     compliance.circuitBreaker = await getVaultFrozen();
   }
+  // Live ZK proof-of-reserves solvency flag (null if the reserves seed is unset).
+  compliance.reservesSolvent = await getReservesSolvent();
 
   if (vaultReadable()) {
     const vault = await getVaultState();

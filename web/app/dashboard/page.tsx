@@ -106,6 +106,22 @@ export default async function Dashboard() {
                   <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>reputation floor + dead-man&apos;s switch · on-chain</div>
                 </div>
               )}
+              {compliance.reservesSolvent !== null && (
+                <a href={`${explorerBase}/deploy/5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793`} target="_blank" rel="noopener noreferrer"
+                  style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6", textDecoration: "none" }}>
+                  <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>ZK proof-of-reserves</div>
+                  <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.reservesSolvent ? "var(--green-deep)" : "var(--ink)" }}>
+                    {compliance.reservesSolvent ? "Solvent ✓" : "Unproven"}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>hidden split · sum ≥ principal · Pedersen+Schnorr ↗</div>
+                </a>
+              )}
+              <a href={`${explorerBase}/deploy/78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559`} target="_blank" rel="noopener noreferrer"
+                style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6", textDecoration: "none" }}>
+                <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Auditor quorum</div>
+                <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>2-of-3 ✓</div>
+                <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>K-of-N independent signed votes · on-chain ↗</div>
+              </a>
               {audit && (
                 <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${audit.approved ? "#dcefe2" : "#f0d9d9"}`, borderRadius: 16, background: audit.approved ? "#f4fbf6" : "#fbf4f4" }}>
                   <div style={{ fontSize: 13, color: audit.approved ? "#5b8a6a" : "#a05555", fontWeight: 600 }}>Independent auditor</div>
