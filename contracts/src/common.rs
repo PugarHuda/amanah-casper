@@ -67,6 +67,12 @@ pub enum Error {
     InsufficientAllocation = 11,
     /// A required dependency address was never configured.
     AddressNotSet = 12,
+    /// The vault is frozen (dead-man's switch tripped — the agent went silent).
+    Frozen = 13,
+    /// The agent's on-chain reputation is below the floor — trading rights suspended.
+    BelowReputationFloor = 14,
+    /// `freeze_if_stale` was called but the agent is not actually stale yet.
+    NotStale = 15,
 }
 
 /// Widen a `U256` into a `U512` losslessly via big-endian bytes.

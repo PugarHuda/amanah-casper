@@ -43,7 +43,13 @@ a sound Gold→TBond move that then executed — two independent on-chain signat
 two keys per cycle, neither able to forge the other's. **Skin in the game:** a veto
 also **slashes the agent's on-chain reputation** — `ReputationRegistry.adjust` is gated
 to the custodian, so the agent can't inflate its own score and a griefer can't nuke
-it; reputation reflects the agent's real audit track record (settlements up, vetoes down). Partner integrations are
+it; reputation reflects the agent's real audit track record (settlements up, vetoes down).
+**On-chain circuit breakers close the loop:** the vault refuses to reallocate when the
+agent's reputation drops below a floor (`BelowReputationFloor`) — enough vetoed decisions
+**auto-bench the agent on-chain** until it earns trust back — and a **dead-man's switch**
+lets anyone freeze the vault if the agent goes silent, so a rogue or dead agent can't keep
+trading in the dark (only the custodian can unfreeze). Proven live: a reallocate blocked
+below the floor, then resumed once the agent's reputation recovered. Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
 contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
 servers** each cycle and **reasons over their data** — **CSPR.cloud MCP** (82 tools:
@@ -80,7 +86,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 
 | Contract | Package hash |
 |---|---|
-| RwaVault (v3, principal-locked $800K, owner-gated compliance) | `497cf5ba192570db43d3ee960d0ccf4d1393f20a3805cad97da97f33a95e1733` |
+| RwaVault (v4 — principal-locked $800K + on-chain circuit breakers) | `bf841fa2797021732c2206891ec9586c8a5803237f3213f09fb47a1f72d6e00c` |
 | AttestationLog (agent's reasoning) | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
 | AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
 | SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
@@ -115,6 +121,8 @@ agent moves only the $200K yield.
 | **Reputation slash** — auditor veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN in the WASM VM (secret x never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
 | Reallocate through the **owner-gated** compliance v3 (custodian-only KYC) | `33905a576154aacf42872414e1f647a5f9d024bf469a941b532b61f72702323b` |
+| **Circuit breaker** — reallocate BLOCKED, agent below the reputation floor (`BelowReputationFloor`) | `d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336` |
+| **Circuit breaker released** — trading resumed after the agent earned back reputation | `57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -133,7 +141,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 12/12 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 14/14 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce (distinct payee per route), both directions proven on-chain: `GET /alpha` (Amanah **pays a separate provider** — the custodian — proof `785ceb25`) and `GET /verified-reasoning` (the **earn** side — a buyer paid Amanah, proof `cf48c91d`). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -191,7 +199,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**71 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**73 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **43 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

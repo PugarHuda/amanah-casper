@@ -2,6 +2,7 @@
 //! rebalance yield while a hard principal invariant is enforced on every move.
 use crate::common::{u256_to_u512, AssetId, Error, ALL_ASSETS};
 use crate::compliance_registry::ComplianceRegistryContractRef;
+use crate::reputation_registry::ReputationRegistryContractRef;
 use crate::spend_gate::SpendGateContractRef;
 use odra::casper_types::{U256, U512};
 use odra::prelude::*;
@@ -16,13 +17,26 @@ pub struct Reallocated {
     pub block_time: u64,
 }
 
-#[odra::module(events = [Reallocated], errors = Error)]
+#[odra::event]
+pub struct VaultFrozen {
+    pub by: Address,
+    pub last_heartbeat: u64,
+    pub block_time: u64,
+}
+
+#[odra::module(events = [Reallocated, VaultFrozen], errors = Error)]
 pub struct RwaVault {
     allocations: Mapping<AssetId, U256>,
     principal_locked: Var<U512>,
     agent: Var<Address>,
     spend_gate: Var<Address>,
     compliance: Var<Address>,
+    // v4: on-chain circuit breakers.
+    reputation: Var<Address>,      // ReputationRegistry — trading requires a min score
+    min_reputation: Var<i64>,      // floor; below it the agent is auto-benched
+    custodian: Var<Address>,       // may unfreeze after a dead-man's-switch trip
+    last_heartbeat: Var<u64>,      // last time the agent proved liveness (ms)
+    frozen: Var<bool>,             // dead-man's switch state
 }
 
 #[odra::module]
@@ -33,11 +47,53 @@ impl RwaVault {
         spend_gate: Address,
         compliance: Address,
         principal: U512,
+        reputation: Address,
+        min_reputation: i64,
+        custodian: Address,
     ) {
         self.agent.set(agent);
         self.spend_gate.set(spend_gate);
         self.compliance.set(compliance);
         self.principal_locked.set(principal);
+        self.reputation.set(reputation);
+        self.min_reputation.set(min_reputation);
+        self.custodian.set(custodian);
+        self.last_heartbeat.set(self.env().get_block_time());
+        self.frozen.set(false);
+    }
+
+    /// The agent proves it's alive each cycle (cheap). If it stops, `freeze_if_stale`
+    /// lets anyone trip the dead-man's switch. Agent-only.
+    pub fn heartbeat(&mut self) {
+        if self.env().caller() != self.agent.get_or_revert_with(Error::AddressNotSet) {
+            self.env().revert(Error::NotAuthorized);
+        }
+        self.last_heartbeat.set(self.env().get_block_time());
+    }
+
+    /// Dead-man's switch: ANYONE may freeze the vault if the agent has been silent
+    /// longer than `max_age_ms`. A rogue or dead agent can't keep trading in the dark.
+    pub fn freeze_if_stale(&mut self, max_age_ms: u64) {
+        let now = self.env().get_block_time();
+        let last = self.last_heartbeat.get_or_default();
+        if now < last + max_age_ms {
+            self.env().revert(Error::NotStale);
+        }
+        self.frozen.set(true);
+        self.env().emit_event(VaultFrozen { by: self.env().caller(), last_heartbeat: last, block_time: now });
+    }
+
+    /// Custodian-only: lift a freeze after a human has reviewed the incident.
+    pub fn unfreeze(&mut self) {
+        if self.env().caller() != self.custodian.get_or_revert_with(Error::AddressNotSet) {
+            self.env().revert(Error::NotAuthorized);
+        }
+        self.frozen.set(false);
+        self.last_heartbeat.set(self.env().get_block_time());
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        self.frozen.get_or_default()
     }
 
     /// Add `amount` of `asset` to the vault.
@@ -59,9 +115,27 @@ impl RwaVault {
         attestation_hash: [u8; 32],
     ) {
         // Only the autonomous agent may move funds.
-        if self.env().caller() != self.agent.get_or_revert_with(Error::AddressNotSet) {
+        let agent = self.agent.get_or_revert_with(Error::AddressNotSet);
+        if self.env().caller() != agent {
             self.env().revert(Error::NotAuthorized);
         }
+
+        // Circuit breaker 1: a frozen vault (dead-man's switch tripped) blocks all moves.
+        if self.frozen.get_or_default() {
+            self.env().revert(Error::Frozen);
+        }
+        // Circuit breaker 2: the agent's on-chain reputation must be at/above the floor.
+        // Auditor VETOes slash it; enough bad decisions auto-bench the agent on-chain.
+        let score = ReputationRegistryContractRef::new(
+            self.env(),
+            self.reputation.get_or_revert_with(Error::AddressNotSet),
+        )
+        .score_of(agent);
+        if score < self.min_reputation.get_or_default() {
+            self.env().revert(Error::BelowReputationFloor);
+        }
+        // Reallocating is itself proof of liveness — refresh the heartbeat.
+        self.last_heartbeat.set(self.env().get_block_time());
 
         // The party the policy checks run against. With the spec's signature
         // there is no counterparty argument, so we gate on the agent itself: it

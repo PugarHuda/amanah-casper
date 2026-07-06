@@ -30,6 +30,7 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
     if compliant {
         compliance.set_status(agent, Status::Valid, [0u8; 32]);
     }
+    let reputation = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: env.get_account(0) });
 
     let mut vault = RwaVault::deploy(
         &env,
@@ -38,6 +39,9 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
             spend_gate: spend_gate.contract_address(),
             compliance: compliance.contract_address(),
             principal: U512::zero(),
+            reputation: reputation.contract_address(),
+            min_reputation: 0, // floor 0: score 0 (default) passes; raise it to bench
+            custodian: env.get_account(0),
         },
     );
     vault.deposit(AssetId::Gold, U256::from(1000));
@@ -96,6 +100,7 @@ fn reallocate_rejected_when_it_would_touch_principal() {
     spend_gate.add_allowlist(agent);
     let mut compliance = ComplianceRegistry::deploy(&env, NoArgs);
     compliance.set_status(agent, Status::Valid, [0u8; 32]);
+    let reputation = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: env.get_account(0) });
 
     let mut vault = RwaVault::deploy(
         &env,
@@ -104,6 +109,9 @@ fn reallocate_rejected_when_it_would_touch_principal() {
             spend_gate: spend_gate.contract_address(),
             compliance: compliance.contract_address(),
             principal: U512::from(2000u64),
+            reputation: reputation.contract_address(),
+            min_reputation: 0,
+            custodian: env.get_account(0),
         },
     );
     vault.deposit(AssetId::Gold, U256::from(1000));
@@ -113,6 +121,78 @@ fn reallocate_rejected_when_it_would_touch_principal() {
         .try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32])
         .unwrap_err();
     assert_eq!(err, Error::TouchesPrincipal.into());
+}
+
+// --- v4 circuit breakers ----------------------------------------------------
+
+/// A full vault wired with a reputation floor of `min_rep`; the agent (account 1) is
+/// allowlisted + KYC-Valid and holds 1000 Gold. Returns (vault, reputation, env).
+fn setup_v4(min_rep: i64) -> (RwaVaultHostRef, amanah_contracts::reputation_registry::ReputationRegistryHostRef, odra::host::HostEnv) {
+    let env = odra_test::env();
+    let agent = env.get_account(1);
+    let custodian = env.get_account(0);
+
+    let mut spend_gate = SpendGate::deploy(&env, SpendGateInitArgs {
+        max_per_tx: U512::from(1_000_000u64), daily_limit: U512::from(1_000_000u64), expiry: 0,
+    });
+    spend_gate.add_allowlist(agent);
+    let mut compliance = ComplianceRegistry::deploy(&env, NoArgs);
+    compliance.set_status(agent, Status::Valid, [0u8; 32]);
+    let reputation = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: custodian });
+
+    let mut vault = RwaVault::deploy(&env, RwaVaultInitArgs {
+        agent, spend_gate: spend_gate.contract_address(), compliance: compliance.contract_address(),
+        principal: U512::zero(), reputation: reputation.contract_address(), min_reputation: min_rep, custodian,
+    });
+    vault.deposit(AssetId::Gold, U256::from(1000));
+    (vault, reputation, env)
+}
+
+#[test]
+fn reallocate_blocked_when_reputation_below_floor() {
+    // Floor = 1, but the agent's score is 0 (default) -> auto-benched.
+    let (mut vault, mut reputation, env) = setup_v4(1);
+    let agent = env.get_account(1);
+    env.set_caller(agent);
+    let err = vault.try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]).unwrap_err();
+    assert_eq!(err, Error::BelowReputationFloor.into());
+
+    // Credit the agent to reach the floor -> trading resumes.
+    reputation.record_payment(agent, [3u8; 32]); // score 0 -> 1
+    vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]);
+    assert_eq!(vault.get_allocation(AssetId::TBond), U256::from(100));
+}
+
+#[test]
+fn dead_mans_switch_freezes_a_silent_agent_and_blocks_trading() {
+    let (mut vault, _rep, env) = setup_v4(0);
+    let agent = env.get_account(1);
+    let outsider = env.get_account(2);
+
+    // Not stale yet -> cannot freeze.
+    env.set_caller(outsider);
+    let err = vault.try_freeze_if_stale(1_000).unwrap_err();
+    assert_eq!(err, Error::NotStale.into());
+
+    // Agent goes silent past the window -> ANYONE can trip the switch.
+    env.advance_block_time(2_000);
+    vault.freeze_if_stale(1_000);
+    assert!(vault.is_frozen());
+
+    // Frozen vault blocks the agent's moves.
+    env.set_caller(agent);
+    let err = vault.try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]).unwrap_err();
+    assert_eq!(err, Error::Frozen.into());
+
+    // Only the custodian can lift the freeze; then trading resumes.
+    env.set_caller(agent);
+    assert_eq!(vault.try_unfreeze().unwrap_err(), Error::NotAuthorized.into());
+    env.set_caller(env.get_account(0));
+    vault.unfreeze();
+    assert!(!vault.is_frozen());
+    env.set_caller(agent);
+    vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]);
+    assert_eq!(vault.get_allocation(AssetId::TBond), U256::from(100));
 }
 
 #[test]

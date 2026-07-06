@@ -259,6 +259,20 @@ export async function getComplianceState(
   }
 }
 
+// --- RwaVault v4 circuit breaker: live frozen flag (Var field 10) -----------
+/** Live dead-man's-switch state from the vault (frozen = Var field 10, a bool).
+ *  null if the vault seed is unset. */
+export async function getVaultFrozen(): Promise<boolean | null> {
+  if (!STATE_SEED) return null;
+  try {
+    const srh = await stateRootHash();
+    const byte = await readByte(srh, STATE_SEED, 10, []); // frozen: Var<bool>, no mapping key
+    return byte == null ? false : byte === 1; // absent => never frozen => false
+  } catch {
+    return null;
+  }
+}
+
 // --- ZkKycVerifier: live zero-knowledge KYC status --------------------------
 // zk_verified: Mapping<Address,bool> is field 3 (struct order authority=1,
 // credentials=2, zk_verified=3; Odra 1-indexes, reserves 0). Key = Key::Account.

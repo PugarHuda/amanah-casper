@@ -97,6 +97,15 @@ export default async function Dashboard() {
                   <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>Schnorr NIZK · on-chain · secret never sent</div>
                 </div>
               )}
+              {compliance.circuitBreaker !== null && (
+                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${compliance.circuitBreaker ? "#f0d9d9" : "#dcefe2"}`, borderRadius: 16, background: compliance.circuitBreaker ? "#fbf4f4" : "#f4fbf6" }}>
+                  <div style={{ fontSize: 13, color: compliance.circuitBreaker ? "#a05555" : "#5b8a6a", fontWeight: 600 }}>Circuit breaker</div>
+                  <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.circuitBreaker ? "var(--red, #c0392b)" : "var(--green-deep)" }}>
+                    {compliance.circuitBreaker ? "FROZEN ⛔" : "Armed ✓"}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>reputation floor + dead-man&apos;s switch · on-chain</div>
+                </div>
+              )}
               {audit && (
                 <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${audit.approved ? "#dcefe2" : "#f0d9d9"}`, borderRadius: 16, background: audit.approved ? "#f4fbf6" : "#fbf4f4" }}>
                   <div style={{ fontSize: 13, color: audit.approved ? "#5b8a6a" : "#a05555", fontWeight: 600 }}>Independent auditor</div>

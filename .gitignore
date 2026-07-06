@@ -29,3 +29,5 @@ Thumbs.db
 agent/secret/zk_kyc_secret.hex
 .env.accountinfo
 .env.compliance
+.env.vaultv4
+.env.vaultv4b

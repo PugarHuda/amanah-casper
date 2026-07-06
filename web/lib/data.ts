@@ -21,6 +21,7 @@ import {
   complianceReadable,
   getZkVerified,
   zkReadable,
+  getVaultFrozen,
   shortHash,
   relTime,
   type RawDeploy,
@@ -369,6 +370,7 @@ export async function getDashboard() {
     dailyUsed: "—", dailyLimit: "—", txCap: "—",
     vaultStatus: "—", allowlisted: false,
     zkVerified: null as boolean | null,
+    circuitBreaker: null as boolean | null, // vault frozen? (dead-man's switch)
   };
   // Track what's actually live so the UI never labels representative data "live".
   let trailLive = false;
@@ -398,6 +400,10 @@ export async function getDashboard() {
   if (zkReadable()) {
     // Live zero-knowledge KYC flag from the ZkKycVerifier contract.
     compliance.zkVerified = await getZkVerified(AGENT_ACCOUNT_HASH);
+  }
+  if (vaultReadable()) {
+    // Live dead-man's-switch state from the vault (circuit breaker).
+    compliance.circuitBreaker = await getVaultFrozen();
   }
 
   if (vaultReadable()) {
