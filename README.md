@@ -89,6 +89,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | RwaVault (v4 — principal-locked $800K + on-chain circuit breakers) | `bf841fa2797021732c2206891ec9586c8a5803237f3213f09fb47a1f72d6e00c` |
 | AttestationLog (agent's reasoning) | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
 | AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
+| AuditorQuorum (K-of-N independent auditors vote on-chain) | `0a877c50b90076b14199fb5fcb88ff0f1316db722e3d738e76d37864ff0bd6cd` |
 | SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
 | ComplianceRegistry (v3, `set_status`/`revoke` owner-gated to custodian) | `93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5` |
 | ReputationRegistry (v3, `adjust` gated to custodian) | `8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b` |
@@ -123,6 +124,7 @@ agent moves only the $200K yield.
 | Reallocate through the **owner-gated** compliance v3 (custodian-only KYC) | `33905a576154aacf42872414e1f647a5f9d024bf469a941b532b61f72702323b` |
 | **Circuit breaker** — reallocate BLOCKED, agent below the reputation floor (`BelowReputationFloor`) | `d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336` |
 | **Circuit breaker released** — trading resumed after the agent earned back reputation | `57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8` |
+| **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain (vote 1 / vote 2) | `78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -141,7 +143,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 14/14 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 8 contracts: RwaVault, **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), SpendGate, ComplianceRegistry, ReputationRegistry (record_payment caller-gated; `adjust`/slash gated to the custodian authority), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC). On-chain Ed25519 + ZK verification is the heart. 15/15 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce (distinct payee per route), both directions proven on-chain: `GET /alpha` (Amanah **pays a separate provider** — the custodian — proof `785ceb25`) and `GET /verified-reasoning` (the **earn** side — a buyer paid Amanah, proof `cf48c91d`). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -199,7 +201,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**73 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**74 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **43 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

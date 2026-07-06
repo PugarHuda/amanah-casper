@@ -1,5 +1,6 @@
 //! Cross-contract integration tests on the OdraVM host environment.
 use amanah_contracts::attestation_log::{AttestationLog, AttestationLogInitArgs};
+use amanah_contracts::auditor_quorum::{AuditorQuorum, AuditorQuorumInitArgs};
 use amanah_contracts::common::{AssetId, Error, Status};
 use amanah_contracts::compliance_registry::ComplianceRegistry;
 use amanah_contracts::payment_token::{PaymentToken, PaymentTokenInitArgs};
@@ -391,4 +392,42 @@ fn compliance_set_status_is_gated_to_owner() {
     env.set_caller(owner);
     c.set_status(agent, Status::Valid, [0u8; 32]);
     assert!(matches!(c.status_of(agent), Status::Valid));
+}
+
+#[test]
+fn auditor_quorum_requires_k_of_n_signed_votes() {
+    let env = odra_test::env();
+    let a0 = env.get_account(0);
+    let a1 = env.get_account(1);
+    let a2 = env.get_account(2);
+    let outsider = env.get_account(3);
+    let (pk0, pk1, pk2, pko) = (env.public_key(&a0), env.public_key(&a1), env.public_key(&a2), env.public_key(&outsider));
+
+    let mut q = AuditorQuorum::deploy(
+        &env,
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone(), pk1.clone(), pk2.clone()], threshold: 2 },
+    );
+
+    let hash = [5u8; 32];
+    let msg = Bytes::from(hash.as_slice());
+    let (s0, s1, s2, so) = (env.sign_message(&msg, &a0), env.sign_message(&msg, &a1), env.sign_message(&msg, &a2), env.sign_message(&msg, &outsider));
+
+    // One approval — not a quorum yet.
+    q.vote(hash, true, s0.clone(), pk0.clone());
+    assert_eq!(q.approvals_for(hash), 1);
+    assert!(!q.approved(hash));
+
+    // A second DISTINCT auditor approves — quorum (2-of-3) passes.
+    q.vote(hash, true, s1, pk1);
+    assert!(q.approved(hash));
+
+    // Same auditor can't vote twice.
+    assert_eq!(q.try_vote(hash, true, s0, pk0).unwrap_err(), Error::ReplayedProof.into());
+
+    // A non-authorized key can't vote.
+    assert_eq!(q.try_vote(hash, true, so, pko).unwrap_err(), Error::UnknownSigner.into());
+
+    // A signature over a DIFFERENT hash doesn't verify (s2 signs `hash`, not `other`).
+    let other = [6u8; 32];
+    assert_eq!(q.try_vote(other, true, s2, pk2).unwrap_err(), Error::InvalidAttestation.into());
 }

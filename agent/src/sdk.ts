@@ -19,5 +19,6 @@ export const {
   Args,
   CLValue,
   CLTypeUInt8,
+  CLTypePublicKey,
   Key,
 } = csp;

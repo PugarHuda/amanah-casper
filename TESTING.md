@@ -36,7 +36,7 @@ Clicks every page and asserts: live treasury $1M + **$800K principal**, live Spe
 cap, reputation, the real-data provenance line, the IPFS verify link, the CSPR.click
 modal opens, every cspr.live link is a real deep link, and **no stale fake numbers**.
 
-## 4. Smart contracts (OdraVM) — 14 tests
+## 4. Smart contracts (OdraVM) — 15 tests
 
 `cd contracts && cargo odra test` (Linux/WSL: rustup nightly + `cargo install
 cargo-odra`; dev-dep pin `indexmap = { version="=1.9.3", features=["std"] }`).
@@ -49,5 +49,5 @@ verifier vs a TS-generated golden vector) + issuer-gated credential registration
 
 ## Totals
 
-43 unit/regression + 4 integration + 12 E2E + 14 contract = **73 automated tests**,
+43 unit/regression + 4 integration + 12 E2E + 15 contract = **74 automated tests**,
 plus `tsc --noEmit` across all four TS packages.

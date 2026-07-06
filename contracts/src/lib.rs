@@ -4,6 +4,7 @@
 extern crate alloc;
 
 pub mod attestation_log;
+pub mod auditor_quorum;
 pub mod compliance_registry;
 pub mod common;
 pub mod payment_token;

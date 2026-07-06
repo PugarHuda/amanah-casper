@@ -29,3 +29,7 @@ fqn = "amanah_contracts::payment_token::PaymentToken"
 # ZkKycVerifier: on-chain Schnorr NIZK verification (real ZK KYC).
 [[contracts]]
 fqn = "amanah_contracts::zk_kyc::ZkKycVerifier"
+
+# AuditorQuorum: K-of-N independent auditors must approve on-chain.
+[[contracts]]
+fqn = "amanah_contracts::auditor_quorum::AuditorQuorum"

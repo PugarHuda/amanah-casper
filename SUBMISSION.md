@@ -52,7 +52,7 @@ Live dashboard: https://amanah-casper-rwa.vercel.app
 Repo (public): https://github.com/PugarHuda/amanah-casper
 
 ## Partner tools used (all genuinely integrated)
-Casper L1 (Odra, 8 contracts) · x402 / CEP-3009 (two-sided: pays *and* earns) ·
+Casper L1 (Odra, 9 contracts) · x402 / CEP-3009 (two-sided: pays *and* earns) ·
 CSPR.cloud REST + **Streaming API** + hosted **MCP server (consumed)** · **CSPR.trade
 DEX MCP (consumed)** · CSPR.click wallet · **Casper Account Info** (verified "Amanah"
 identity on cspr.live via `set_url`) · IPFS/Pinata · our own MCP server · an
@@ -69,8 +69,8 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-73 automated tests: 43 unit/regression + 4 live-testnet integration + 12 Playwright
-E2E + 14 OdraVM contract tests. See TESTING.md.
+74 automated tests: 43 unit/regression + 4 live-testnet integration + 12 Playwright
+E2E + 15 OdraVM contract tests. See TESTING.md.
 
 ## What to look at
 - `USE_CASE.md` — the real-world case + separation-of-powers.
