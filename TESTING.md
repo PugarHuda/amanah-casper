@@ -15,6 +15,7 @@ Pure logic, no network. `node:test` via `tsx` (no test framework dependency).
 | `web` | `npm run test:unit` | `fmtUsd`, `shortHash`, `relTime`, `dataSources` (real-provider extraction) |
 | `mcp` | `npm test` | `get_attestation` blob hash round-trip (proof-not-a-diary), unknown-hash path, `get_reputation` address validation |
 | `signal-service` | `npm test` | `buildSignal` shape + tilt clamp |
+| `bot` | `npm test` | `/audit` reply builder + deploy-link formatting; import is side-effect-free (no token/polling) |
 
 **Regression tests** lock in every fixed bug: the deepseek `riskScore=20`→`0.2`
 coercion, the Casper-2.0 `i64` little-endian-array decode (`[1,0,…]`→`1`), and the
@@ -48,5 +49,5 @@ verifier vs a TS-generated golden vector) + issuer-gated credential registration
 
 ## Totals
 
-39 unit/regression + 4 integration + 12 E2E + 12 contract = **67 automated tests**,
+43 unit/regression + 4 integration + 12 E2E + 12 contract = **71 automated tests**,
 plus `tsc --noEmit` across all four TS packages.

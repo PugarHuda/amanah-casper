@@ -69,7 +69,7 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-67 automated tests: 39 unit/regression + 4 live-testnet integration + 12 Playwright
+71 automated tests: 43 unit/regression + 4 live-testnet integration + 12 Playwright
 E2E + 12 OdraVM contract tests. See TESTING.md.
 
 ## What to look at
