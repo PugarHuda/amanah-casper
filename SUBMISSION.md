@@ -72,7 +72,16 @@ installable **AI Agent Skill** · Venice (reasoning).
 79 automated tests: 47 unit/regression + 4 live-testnet integration + 12 Playwright
 E2E + 16 OdraVM contract tests. See TESTING.md.
 
+## Long-term launch plan
+Amanah is a real project, not a throwaway. Testnet proves the hard part — a complete
+on-chain fiduciary-controls stack (10 contracts). Next: security audit → mainnet core →
+first real tokenized RWA + real KYC issuer → an open, staked auditor network + an Amanah
+SDK/MCP that turns our controls into shared Casper primitives. Revenue: management-fee
+bps on AUM, pay-per-proof (x402 earn side already live), and controls-as-a-service to
+other RWA protocols. Full plan in `ROADMAP.md`; launch kit (socials, thread) in `LAUNCH.md`.
+
 ## What to look at
+- `ROADMAP.md` — milestones, business model, ecosystem contribution. `LAUNCH.md` — socials.
 - `USE_CASE.md` — the real-world case + separation-of-powers.
 - `DEMO.md` — 2.5-min video script + runbook. `./scripts/demo.ps1` — 30s read-only demo.
 - `README.md` — architecture, addresses, the cycle.

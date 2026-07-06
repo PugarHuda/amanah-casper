@@ -2,7 +2,7 @@
 
 **🔗 Live dashboard:** https://amanah-casper-rwa.vercel.app — treasury,
 audit trail, guardrails, compliance, live event feed, and the agent console all read
-live from casper-test (+ IPFS). Repo is public.
+live from casper-test (+ IPFS). Repo is public. **Roadmap & launch plan:** [`ROADMAP.md`](ROADMAP.md).
 
 > Casper Agentic Buildathon 2026. **Amanah** (fiduciary trust). An autonomous AI
 > agent manages a tokenized RWA treasury (gold, US T-bond, oil, CSPR) on **Casper
