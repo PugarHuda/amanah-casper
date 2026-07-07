@@ -17,6 +17,11 @@ pub struct SpendGate {
     /// Day index (block_time / DAY_MS) that `spent_today` belongs to.
     day_anchor: Var<u64>,
     allowlist: Mapping<Address, bool>,
+    /// The vault contract — the ONLY address allowed to call `check` (which mutates
+    /// `spent_today`). Set by the owner after the vault is deployed. Without this,
+    /// anyone could call `check` directly and exhaust the daily limit to grief the
+    /// agent. Declared last so existing state field indices don't shift.
+    spender: Var<Address>,
 }
 
 #[odra::module]
@@ -33,6 +38,11 @@ impl SpendGate {
     /// Reverts with a machine-readable error if `amount` to `target` is not
     /// permitted; otherwise records the spend against today's running total.
     pub fn check(&mut self, target: Address, amount: U512) {
+        // Only the vault may spend against the gate. Anyone else calling this would
+        // inflate `spent_today` and grief the agent into `OverDailyLimit`.
+        if self.env().caller() != self.spender.get_or_revert_with(Error::NotAuthorized) {
+            self.env().revert(Error::NotAuthorized);
+        }
         let now = self.env().get_block_time();
 
         let expiry = self.expiry.get_or_default();
@@ -67,6 +77,13 @@ impl SpendGate {
         self.max_per_tx.set(max_per_tx);
         self.daily_limit.set(daily_limit);
         self.expiry.set(expiry);
+    }
+
+    /// Owner sets the vault contract that is allowed to call `check`. Called once,
+    /// after the vault is deployed (the vault's address isn't known at gate init).
+    pub fn set_spender(&mut self, spender: Address) {
+        self.assert_owner();
+        self.spender.set(spender);
     }
 
     /// Instant kill: expire the gate as of now.

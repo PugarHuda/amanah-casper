@@ -12,10 +12,10 @@ const RPC = process.env.CASPER_RPC_URL ?? "https://node.testnet.casper.network/r
 
 const PACKAGES = {
   // current deployed package hashes (see .env.deployed) — v3 vault + owner-gated compliance
-  RwaVault: process.env.RWA_VAULT_HASH ?? "bf841fa2797021732c2206891ec9586c8a5803237f3213f09fb47a1f72d6e00c",
+  RwaVault: process.env.RWA_VAULT_HASH ?? "540051ac4dacd251a9afe8bb14e4b47199ea7cdfb55f861e1531d17b4b47a1d1",
   ReputationRegistry: process.env.REPUTATION_REGISTRY_HASH ?? "8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b",
   AttestationLog: process.env.ATTESTATION_LOG_HASH ?? "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
-  SpendGate: process.env.SPEND_GATE_HASH ?? "fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc",
+  SpendGate: process.env.SPEND_GATE_HASH ?? "f19ed0e9b235e8422aef7d8fbbcaa9cbc34ef4864efd81bbeb7c82d2b77d0cf3",
   ComplianceRegistry: process.env.COMPLIANCE_HASH ?? "93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5",
   ZkKycVerifier: process.env.ZK_KYC_HASH ?? "e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f",
 };

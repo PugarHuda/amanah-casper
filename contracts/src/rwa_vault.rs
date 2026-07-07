@@ -8,6 +8,10 @@ use odra::casper_types::{U256, U512};
 use odra::prelude::*;
 use odra::ContractRef;
 
+/// Minimum silence window the dead-man's switch will accept (6h). Stops a griefer
+/// passing a tiny `max_age_ms` to freeze an active agent.
+const MIN_STALE_MS: u64 = 21_600_000;
+
 #[odra::event]
 pub struct Reallocated {
     pub from: AssetId,
@@ -73,10 +77,17 @@ impl RwaVault {
 
     /// Dead-man's switch: ANYONE may freeze the vault if the agent has been silent
     /// longer than `max_age_ms`. A rogue or dead agent can't keep trading in the dark.
+    /// `max_age_ms` must be at least `MIN_STALE_MS` (a 6h floor) so a griefer can't
+    /// pass 0 to freeze a perfectly active agent — an agent that heartbeats every
+    /// cycle (~60s) is never stale by this window; only a genuinely silent one is.
     pub fn freeze_if_stale(&mut self, max_age_ms: u64) {
+        if max_age_ms < MIN_STALE_MS {
+            self.env().revert(Error::NotStale);
+        }
         let now = self.env().get_block_time();
         let last = self.last_heartbeat.get_or_default();
-        if now < last + max_age_ms {
+        // saturating_add: a huge max_age_ms must not wrap u64 and skip the guard.
+        if now < last.saturating_add(max_age_ms) {
             self.env().revert(Error::NotStale);
         }
         self.frozen.set(true);

@@ -88,11 +88,11 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 
 | Contract | Package hash |
 |---|---|
-| RwaVault (v4 — principal-locked $800K + on-chain circuit breakers) | `bf841fa2797021732c2206891ec9586c8a5803237f3213f09fb47a1f72d6e00c` |
+| RwaVault (v5 — principal-locked $800K, circuit breakers, spend-gate hardened) | `540051ac4dacd251a9afe8bb14e4b47199ea7cdfb55f861e1531d17b4b47a1d1` |
 | AttestationLog (agent's reasoning) | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
 | AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
-| AuditorQuorum (K-of-N independent auditors vote on-chain) | `0a877c50b90076b14199fb5fcb88ff0f1316db722e3d738e76d37864ff0bd6cd` |
-| SpendGate (owned by custodian) | `fc36ac817cc68533fee59d9e03a7e2457cadb4edf3c5b469428a93ad6c04f8fc` |
+| AuditorQuorum (K-of-N independent auditors vote on-chain) | `55c09fab84ef3153a1872da422af15c61127d72fd0e1b08f6da2520accd3a293` |
+| SpendGate (v2, check() gated to the vault; owned by custodian) | `f19ed0e9b235e8422aef7d8fbbcaa9cbc34ef4864efd81bbeb7c82d2b77d0cf3` |
 | ComplianceRegistry (v3, `set_status`/`revoke` owner-gated to custodian) | `93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5` |
 | ReputationRegistry (v3, `adjust` gated to custodian) | `8d27187d49f2efe5d060033774b845864eace898d5bbc300d775130e1023304b` |
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
@@ -125,9 +125,9 @@ agent moves only the $200K yield.
 | **Reputation slash** — auditor veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN in the WASM VM (secret x never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
 | Reallocate through the **owner-gated** compliance v3 (custodian-only KYC) | `33905a576154aacf42872414e1f647a5f9d024bf469a941b532b61f72702323b` |
-| **Circuit breaker** — reallocate BLOCKED, agent below the reputation floor (`BelowReputationFloor`) | `d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336` |
-| **Circuit breaker released** — trading resumed after the agent earned back reputation | `57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8` |
-| **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain (vote 1 / vote 2) | `78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559` |
+| **Circuit breaker** — reallocate BLOCKED, agent below the reputation floor (`BelowReputationFloor`) | `82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350` |
+| **Circuit breaker released** — trading resumed after the agent earned back reputation | `09073684a1c8c17dbfae143aafb2d8c443ea7bd51f4296ae5b9fa566d538c6fe` |
+| **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain (vote 1 / vote 2) | `483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2` |
 | **ZK proof-of-reserves** — hidden allocations proven to sum ≥ principal, split hidden | `5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle

@@ -10,6 +10,10 @@ use crate::common::Error;
 use odra::casper_types::{bytesrepr::Bytes, PublicKey};
 use odra::prelude::*;
 
+/// Domain tag mixed into every signed vote so a signature can't be replayed as a
+/// different message (and to separate these votes from any other signing the key does).
+const DOMAIN: &[u8] = b"amanah-auditor-quorum-v1";
+
 #[odra::event]
 pub struct Voted {
     pub reasoning_hash: [u8; 32],
@@ -32,6 +36,10 @@ pub struct AuditorQuorum {
 impl AuditorQuorum {
     /// `auditors` are the authorized voter keys; `threshold` is the K in K-of-N.
     pub fn init(&mut self, auditors: Vec<PublicKey>, threshold: u32) {
+        // threshold 0 would make `approved()` true with zero votes.
+        if threshold < 1 {
+            self.env().revert(Error::NotAuthorized);
+        }
         for a in auditors.iter() {
             self.auditors.set(a, true);
         }
@@ -42,8 +50,14 @@ impl AuditorQuorum {
     /// from an authorized auditor key. Reverts `InvalidAttestation` on a bad signature,
     /// `UnknownSigner` if not an authorized auditor, `ReplayedProof` on a double-vote.
     pub fn vote(&mut self, reasoning_hash: [u8; 32], approve: bool, signature: Bytes, pubkey: PublicKey) {
-        let message = Bytes::from(reasoning_hash.as_slice());
-        if !self.env().verify_signature(&message, &signature, &pubkey) {
+        // Sign over DOMAIN ‖ reasoning_hash ‖ approve_byte. Binding `approve` stops a
+        // relayer flipping a signed REJECT into an APPROVE (or vice-versa) — the old
+        // scheme signed only the hash, leaving the vote direction unauthenticated.
+        let mut msg = Vec::with_capacity(DOMAIN.len() + 33);
+        msg.extend_from_slice(DOMAIN);
+        msg.extend_from_slice(&reasoning_hash);
+        msg.push(approve as u8);
+        if !self.env().verify_signature(&Bytes::from(msg), &signature, &pubkey) {
             self.env().revert(Error::InvalidAttestation);
         }
         if !self.auditors.get_or_default(&pubkey) {

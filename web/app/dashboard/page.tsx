@@ -116,7 +116,7 @@ export default async function Dashboard() {
                   <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>hidden split · sum ≥ principal · Pedersen+Schnorr ↗</div>
                 </a>
               )}
-              <a href={`${explorerBase}/deploy/78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559`} target="_blank" rel="noopener noreferrer"
+              <a href={`${explorerBase}/deploy/483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2`} target="_blank" rel="noopener noreferrer"
                 style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6", textDecoration: "none" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Auditor quorum</div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>2-of-3 ✓</div>

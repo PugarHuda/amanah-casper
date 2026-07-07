@@ -13,8 +13,8 @@ import { config } from "./config.js";
 const WASM = resolve(import.meta.dirname, "../../contracts/wasm/AuditorQuorum.lowered.wasm");
 const SECRET_DIR = resolve(import.meta.dirname, "../secret");
 const CUSTODIAN_PEM = resolve(SECRET_DIR, "custodian_key.pem");
-const STATE = resolve(import.meta.dirname, "../../.env.quorum");
-const KEY_NAME = "amanah_auditor_quorum_package_hash";
+const STATE = resolve(import.meta.dirname, "../../.env.quorumv2");
+const KEY_NAME = "amanah_auditor_quorum_v2_package_hash";
 // The decision being voted on (a real reasoning hash from the reallocate attestation).
 const REASONING_HASH = "7c409e7bfce729cea460c03d3557277ad14e12da2b5d1a82c35860b60fba2df4";
 
@@ -66,7 +66,11 @@ async function fund(target: PrivateKeyT, key: string): Promise<void> {
 async function vote(voter: PrivateKeyT, label: string, stateKey: string): Promise<void> {
   if (state[stateKey]) { console.log(`[skip] ${label} already voted`); return; }
   const hashBytes = Uint8Array.from(Buffer.from(REASONING_HASH, "hex"));
-  const sig = voter.signAndAddAlgorithmBytes(hashBytes);
+  // Sign DOMAIN ‖ hash ‖ approve_byte (must match AuditorQuorum::vote) so the signature
+  // binds the vote direction — a captured sig can't be replayed with `approve` flipped.
+  const DOMAIN = new TextEncoder().encode("amanah-auditor-quorum-v1");
+  const msg = new Uint8Array([...DOMAIN, ...hashBytes, 1]); // approve = true
+  const sig = voter.signAndAddAlgorithmBytes(msg);
   const { deployHash } = await callEntryPoint({ rpc, key: voter, contractHash: state.QUORUM, entryPoint: "vote",
     args: Args.fromMap({
       reasoning_hash: CLValue.newCLByteArray(hashBytes),

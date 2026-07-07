@@ -28,9 +28,9 @@ The on-chain steps of the loop, each a real transaction (attest → audit → gu
 | **Autonomous reallocate — LLM-decided** (Gold→CSPR, conf 0.85) + attest `0746b729…` | `9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a` | [view](https://testnet.cspr.live/deploy/9e266b0554d2930cd5716da9493e4ab7991d834d4a688fee20e02b6283b26d1a) |
 | **Auditor VETO** — 2nd agent (custodian key) blocked a flawed move on-chain | `987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11` | [view](https://testnet.cspr.live/deploy/987a3700aeb127649d26680fe5c92012f5d4990a24a6dc0f13e4f177936afe11) |
 | **Auditor APPROVE** (grade 0.9) → reallocate executed `204b3c9c…` | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` | [view](https://testnet.cspr.live/deploy/93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e) |
-| **Auditor QUORUM** — 2-of-3 independent auditors signed APPROVE on-chain (vote 1) | `78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559` | [view](https://testnet.cspr.live/deploy/78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559) |
-| **Circuit breaker BLOCKED** — reallocate refused, agent below reputation floor | `d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336` | [view](https://testnet.cspr.live/deploy/d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336) |
-| **Circuit breaker RESUMED** — trading resumed after reputation recovered | `57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8` | [view](https://testnet.cspr.live/deploy/57b3753c051f5d0fb6af083ce335efed4ddb1b52e915932196346e131a9da5f8) |
+| **Auditor QUORUM** — 2-of-3 independent auditors signed APPROVE on-chain (vote 1) | `483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2` | [view](https://testnet.cspr.live/deploy/483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2) |
+| **Circuit breaker BLOCKED** — reallocate refused, agent below reputation floor | `82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350` | [view](https://testnet.cspr.live/deploy/82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350) |
+| **Circuit breaker RESUMED** — trading resumed after reputation recovered | `09073684a1c8c17dbfae143aafb2d8c443ea7bd51f4296ae5b9fa566d538c6fe` | [view](https://testnet.cspr.live/deploy/09073684a1c8c17dbfae143aafb2d8c443ea7bd51f4296ae5b9fa566d538c6fe) |
 | **ZK proof-of-reserves** — solvency proven, per-asset split hidden (verified in-VM) | `5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793` | [view](https://testnet.cspr.live/deploy/5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793) |
 | **Reputation slash** — a veto docked the agent's score (custodian-gated) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` | [view](https://testnet.cspr.live/deploy/a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc) |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` | [view](https://testnet.cspr.live/deploy/da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4) |
@@ -41,7 +41,7 @@ owns SpendGate/Compliance, allowlisted the agent, and set its KYC — the agent 
 authorize itself (`agent/src/migrate-custody.ts`).
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`.
-Eight contract package hashes are in [`.env.deployed`](.env.deployed) / the README.
+Ten contract package hashes are in [`.env.deployed`](.env.deployed) / the README.
 
 ---
 

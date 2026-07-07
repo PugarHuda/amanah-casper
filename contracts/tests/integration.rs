@@ -47,6 +47,7 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
         },
     );
     vault.deposit(AssetId::Gold, U256::from(1000));
+    spend_gate.set_spender(vault.contract_address()); // only the vault may call check()
 
     (vault, env)
 }
@@ -117,6 +118,7 @@ fn reallocate_rejected_when_it_would_touch_principal() {
         },
     );
     vault.deposit(AssetId::Gold, U256::from(1000));
+    spend_gate.set_spender(vault.contract_address()); // only the vault may call check()
 
     env.set_caller(agent);
     let err = vault
@@ -147,6 +149,7 @@ fn setup_v4(min_rep: i64) -> (RwaVaultHostRef, amanah_contracts::reputation_regi
         principal: U512::zero(), reputation: reputation.contract_address(), min_reputation: min_rep, custodian,
     });
     vault.deposit(AssetId::Gold, U256::from(1000));
+    spend_gate.set_spender(vault.contract_address()); // only the vault may call check()
     (vault, reputation, env)
 }
 
@@ -171,14 +174,17 @@ fn dead_mans_switch_freezes_a_silent_agent_and_blocks_trading() {
     let agent = env.get_account(1);
     let outsider = env.get_account(2);
 
-    // Not stale yet -> cannot freeze.
+    const SIX_H: u64 = 21_600_000; // MIN_STALE_MS
+
+    // A griefer can't pass a tiny window to freeze an active agent (floor enforced).
     env.set_caller(outsider);
-    let err = vault.try_freeze_if_stale(1_000).unwrap_err();
-    assert_eq!(err, Error::NotStale.into());
+    assert_eq!(vault.try_freeze_if_stale(1_000).unwrap_err(), Error::NotStale.into());
+    // Not stale yet at the 6h window either -> cannot freeze.
+    assert_eq!(vault.try_freeze_if_stale(SIX_H).unwrap_err(), Error::NotStale.into());
 
     // Agent goes silent past the window -> ANYONE can trip the switch.
-    env.advance_block_time(2_000);
-    vault.freeze_if_stale(1_000);
+    env.advance_block_time(SIX_H + 1);
+    vault.freeze_if_stale(SIX_H);
     assert!(vault.is_frozen());
 
     // Frozen vault blocks the agent's moves.
@@ -410,7 +416,15 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
     );
 
     let hash = [5u8; 32];
-    let msg = Bytes::from(hash.as_slice());
+    // Auditors sign DOMAIN ‖ hash ‖ approve_byte (approve = 1 here).
+    let approve_msg = |h: &[u8; 32]| -> Bytes {
+        let mut m = Vec::new();
+        m.extend_from_slice(b"amanah-auditor-quorum-v1");
+        m.extend_from_slice(h);
+        m.push(1u8);
+        Bytes::from(m)
+    };
+    let msg = approve_msg(&hash);
     let (s0, s1, s2, so) = (env.sign_message(&msg, &a0), env.sign_message(&msg, &a1), env.sign_message(&msg, &a2), env.sign_message(&msg, &outsider));
 
     // One approval — not a quorum yet.
@@ -427,6 +441,10 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
 
     // A non-authorized key can't vote.
     assert_eq!(q.try_vote(hash, true, so, pko).unwrap_err(), Error::UnknownSigner.into());
+
+    // FORGE FIX: a signature over approve=1 can't be replayed as a REJECT — flipping
+    // `approve` rebuilds a different signed message, so it fails to verify.
+    assert_eq!(q.try_vote(hash, false, s2.clone(), pk2.clone()).unwrap_err(), Error::InvalidAttestation.into());
 
     // A signature over a DIFFERENT hash doesn't verify (s2 signs `hash`, not `other`).
     let other = [6u8; 32];
