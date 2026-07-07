@@ -31,6 +31,14 @@ via a **Schnorr NIZK verified inside the contract** (curve25519-dalek) — the s
 never transmitted. Not a stored flag, not a toy: a genuine 256-bit zero-knowledge proof
 verified in the Casper WASM VM.
 
+**Four more differentiators, all live + proven on-chain:** (1) a **K-of-N auditor
+quorum** — multiple independent auditor keys must sign APPROVE (proven 2-of-3); (2) a
+**reputation-gated circuit breaker** — the vault benches the agent on-chain when its
+reputation drops below a floor, then resumes once it recovers; (3) a **dead-man's
+switch** — anyone can freeze the vault if the agent goes silent; (4) **ZK
+proof-of-reserves** (`ZkReserves`, Pedersen+Schnorr) — proves solvency (reserves ≥
+principal) while **hiding the per-asset split**. 10 Odra contracts, 79 automated tests.
+
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
 |---|---|
@@ -39,6 +47,9 @@ verified in the Casper WASM VM.
 | **Auditor APPROVE** (grade 0.9) → reallocate executed | `93585d75dd8133bde3e40803ecb8e6fdfcb8c9acefdbbd26405aa13e09528f1e` |
 | Reallocate executed after the auditor approved (Gold→TBond) | `204b3c9c74e21cda22abe846cddefa57c68583411602dd7d6ad03c206dd117fa` |
 | **Reputation slash** — a veto docked the agent's score (custodian-gated `adjust`) | `a2ac131fb79dd1ae208a57719db86caa77806c0a22f3443f338e0112655977fc` |
+| **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain | `78f4fd69edb352e74ebfd8fc66b4b6038823253ab84f0d33447d62abb0e7a559` |
+| **Circuit breaker** — reallocate blocked below reputation floor, then resumed | `d0c35fdbd46f509e17a55d1548e4ec4bfa732355c47108b28faaeeee69d0f336` |
+| **ZK proof-of-reserves** — solvency proven on-chain, per-asset split hidden | `5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
 | **Verified identity** — `set_url` on MAKE's Account Info contract → "Amanah" on cspr.live | `ce60f0e4ddf288b208c33075793f2093c022255538226cc62c629561039db364` |
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |

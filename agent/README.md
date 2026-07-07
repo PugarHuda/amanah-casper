@@ -36,6 +36,11 @@ npm run test:integration # live-testnet reads (vault $1M/$800K, reputation, comp
 | `reputation.ts` | `ReputationRegistry.record_payment` (caller-gated) with the x402 deploy hash. |
 | `stream.ts` | Watch on-chain events live via the CSPR.cloud Streaming API. |
 | `migrate-custody.ts` | Deploy the custodian-separated gates + non-zero-principal vault. |
+| `audit.ts` | Independent auditor: skeptical LLM grades the decision, custodian key attests APPROVE/VETO on-chain (fails closed to VETO). |
+| `migrate-vault-v4.ts` | Deploy RwaVault v4 (circuit breakers) + demo the reputation floor: reallocate blocked below floor → resumed after reward. |
+| `deploy-quorum.ts` | Deploy `AuditorQuorum` (K-of-N) + cast a live 2-of-3 signed-vote quorum. |
+| `zk.ts` / `deploy-zk.ts` | Schnorr NIZK ZK-KYC prover + `ZkKycVerifier` deploy/prove. |
+| `zk-reserves.ts` / `deploy-zk-reserves.ts` | Pedersen+Schnorr ZK proof-of-reserves prover + `ZkReserves` deploy/prove (hides the split). |
 | `lib/codec.ts` | Pure on-chain state codec (unit-tested; see `src/tests/`). |
 | `casper.ts` / `config.ts` | casper-js-sdk v5 client + call builder; typed env. |
 

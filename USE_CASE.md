@@ -33,6 +33,9 @@ not promises:
 | Mandate / limits | `SpendGate`: per-tx cap, rolling daily limit, target allowlist, instant kill-switch — checked in-contract on every move. |
 | Compliance | `ComplianceRegistry`: an address must be `Valid` (KYC/AML) or the move reverts (`NotCompliant`). ERC-3643-style, without doxxing identity on-chain. |
 | Auditability | **Proof, not a diary.** Every decision is Ed25519-signed, blake2b-hashed, and the signature is **verified inside `AttestationLog`** before it's recorded. The reasoning blob is published; anyone can recompute the hash and confirm it matches the on-chain attestation. A forged decision can't be attested — the contract rejects it. |
+| Independent approval | **The agent that decides is not the agent that approves.** An independent auditor grades every move APPROVE/VETO on-chain; a `AuditorQuorum` contract can require **K-of-N** independent signed votes before a reallocate executes (proven 2-of-3). A VETO also **slashes the agent's reputation**. |
+| Runtime safety | **On-chain circuit breakers.** The vault refuses to reallocate when the agent's reputation drops below a floor (`BelowReputationFloor`) — repeated vetoes auto-bench it — and a **dead-man's switch** lets anyone freeze the vault if the agent goes silent (only the custodian unfreezes). |
+| Identity & solvency privacy | **Zero-knowledge, twice.** KYC is proven with a Schnorr NIZK (`ZkKycVerifier`) — the credential is never revealed. Solvency is proven with a Pedersen+Schnorr **proof-of-reserves** (`ZkReserves`): the treasury is shown to be backed ≥ principal while the **per-asset split stays hidden** from front-runners. |
 
 ## Why this is real, not a toy
 

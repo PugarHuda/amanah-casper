@@ -42,7 +42,7 @@ asset must be a contract defined in this crate. Its **package hash becomes
 ## Build
 
 ```bash
-# Compile all eight contracts to one wasm each (writes wasm/ via cargo-odra).
+# Compile all ten contracts to one wasm each (writes wasm/ via cargo-odra).
 # Needs a Linux/WSL toolchain (nightly-2026-01-01 + wasm32-unknown-unknown).
 cargo odra build
 
