@@ -36,3 +36,4 @@ agent/secret/auditor2_key.pem
 agent/secret/auditor3_key.pem
 .env.zkreserves
 .env.vaultv5
+.env.quorumv2
