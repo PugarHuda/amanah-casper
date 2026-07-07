@@ -1,5 +1,7 @@
 # Amanah — DoraHacks submission (ready to paste)
 
+**▶️ Demo video:** https://youtu.be/lqG0nfVifA8 · **Live:** https://amanah-casper-rwa.vercel.app · **Repo:** https://github.com/PugarHuda/amanah-casper
+
 ## One-liner
 Amanah is an autonomous, compliant RWA-treasury agent on Casper: every AI decision
 is Ed25519-signed and **verified on-chain by the contract itself** before it moves a

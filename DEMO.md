@@ -1,5 +1,7 @@
 # Amanah — Demo & Submission Guide
 
+**▶️ Watch the 3-min demo video:** https://youtu.be/lqG0nfVifA8
+
 **Casper Agentic Buildathon 2026.** Autonomous, compliant RWA treasury agent on
 Casper testnet. It ingests live RWA prices, **pays for a premium signal via x402**,
 reasons with an LLM, **signs its reasoning (Ed25519) and verifies that signature
