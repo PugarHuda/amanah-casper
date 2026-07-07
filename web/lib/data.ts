@@ -231,6 +231,27 @@ const ASSET_VIEW: Record<string, { name: string; unit: string; color: string; bg
 };
 const ASSET_ORDER = ["Gold", "TBond", "WTI", "CSPR"] as const;
 
+// Live 24h price change from CoinGecko for the assets it covers (CSPR, gold via PAXG).
+// WTI (no simple feed) and TBond (a yield, not a price) keep the "on-chain" tag.
+async function getChanges24h(): Promise<Partial<Record<string, number>>> {
+  try {
+    const r = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=casper-network,pax-gold&vs_currencies=usd&include_24hr_change=true",
+      { next: { revalidate: 60 } },
+    );
+    if (!r.ok) return {};
+    const d = (await r.json()) as Record<string, { usd_24h_change?: number }>;
+    const out: Partial<Record<string, number>> = {};
+    const c = d["casper-network"]?.usd_24h_change;
+    const g = d["pax-gold"]?.usd_24h_change;
+    if (typeof c === "number") out.CSPR = c;
+    if (typeof g === "number") out.Gold = g;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 // Agent console: LIVE from the newest published reasoning blob + on-chain data
 // when available; falls back to the representative mock (clearly labelled).
 export async function getAgentConsole() {
@@ -380,7 +401,7 @@ export async function getDashboard() {
 
   // All these on-chain reads are independent — fire them concurrently so the page is
   // one round-trip deep, not eight. (Was serial: ~2.3s cold; parallel ≈ slowest read.)
-  const [deploys, sg, cs, zkV, frozen, solvent, vault, audit, attestCnt] = await Promise.all([
+  const [deploys, sg, cs, zkV, frozen, solvent, vault, audit, attestCnt, changes] = await Promise.all([
     live() ? getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10) : Promise.resolve([]),
     spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
     complianceReadable() ? getComplianceState(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
@@ -390,6 +411,7 @@ export async function getDashboard() {
     vaultReadable() ? getVaultState() : Promise.resolve(null),
     latestAuditVerdict(),
     live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
+    getChanges24h(),
   ]);
 
   if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }
@@ -412,12 +434,13 @@ export async function getDashboard() {
         const v = ASSET_VIEW[a];
         const amt = vault.holdings[a as keyof typeof vault.holdings] ?? 0n;
         const pct = vault.total > 0n ? Number((amt * 10000n) / vault.total) / 100 : 0;
+        const ch = changes[a as string];
         return {
           name: v.name,
           sub: `${(Number(amt / 1_000_000n)).toLocaleString("en-US")} ${v.unit} · ${pct.toFixed(1)}% of treasury`,
           value: fmtUsd(amt),
-          chg: "on-chain",
-          chgColor: "var(--muted, #888)",
+          chg: ch != null ? `${ch >= 0 ? "+" : ""}${ch.toFixed(2)}% 24h` : "on-chain",
+          chgColor: ch != null ? (ch >= 0 ? "var(--green-deep)" : "var(--red, #c0392b)") : "var(--muted, #888)",
           color: v.color,
           bg: v.bg,
         };

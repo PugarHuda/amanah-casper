@@ -74,6 +74,17 @@ input::placeholder {
   animation: amn-pulse 1.8s ease-in-out infinite;
 }
 
+/* loading.tsx skeleton rows — shimmer while the server component streams */
+.skeleton-row {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 37%, rgba(0,0,0,0.04) 63%);
+  background-size: 400% 100%;
+  animation: amn-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes amn-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
 /* page + card shell (responsive replacement for fixed 1480px absolute layout) */
 .page {
   min-height: 100vh;
