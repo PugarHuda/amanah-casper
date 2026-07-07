@@ -1,0 +1,55 @@
+1
+00:00:00,000 --> 00:00:16,484
+Most AI agents that manage money ask you to trust a log file. Amanah proves every decision on-chain — and independent agents must approve it before a single token moves. It's live on Casper testnet.
+
+2
+00:00:16,484 --> 00:00:31,888
+Let's open the live dashboard. This is a real tokenized treasury: one million dollars, with eight hundred thousand locked as principal by a vault invariant. The agent can only ever move the yield.
+
+3
+00:00:31,888 --> 00:00:43,260
+The holdings — gold, US treasuries, oil, and Casper — are read live from the vault contract, with real twenty-four-hour price changes from the market.
+
+4
+00:00:43,260 --> 00:00:57,752
+The first safeguard is an on-chain circuit breaker. If the agent's reputation drops below a floor, the vault refuses to trade — and a dead-man's switch lets anyone freeze it if the agent goes silent.
+
+5
+00:00:57,752 --> 00:01:10,036
+Solvency is proven in zero knowledge. A Pedersen and Schnorr proof shows the reserves cover the principal, while hiding the exact per-asset split from front-runners.
+
+6
+00:01:10,036 --> 00:01:21,984
+K-Y-C is zero-knowledge too. The agent proves it holds a valid credential with a Schnorr proof verified inside the contract — the secret is never sent.
+
+7
+00:01:21,984 --> 00:01:32,756
+And approval isn't one agent's call. A two-of-three quorum of independent auditors must each sign off on-chain before a move can execute.
+
+8
+00:01:32,756 --> 00:01:44,944
+Spending passes a custodian-owned gate held by a separate key. The agent can't raise its own limits, clear its own K-Y-C, or ever touch the principal.
+
+9
+00:01:44,944 --> 00:02:02,028
+Every decision is a public transaction. This audit trail links straight to cspr dot live — including the agent paying for market data over x402, and even earning x402 payments for its verified reasoning.
+
+10
+00:02:02,028 --> 00:02:12,440
+Here's the very same vault on the Casper block explorer. Real contract, real state, independently verifiable by anyone.
+
+11
+00:02:12,440 --> 00:02:25,876
+Each cycle, the agent enriches its view through two official Casper M-C-P servers — CSPR dot cloud and the CSPR dot trade DEX — then reasons over the live data.
+
+12
+00:02:25,876 --> 00:02:37,512
+The agent console shows that reasoning — signed, hashed, and verified by the contract itself before it is recorded. Proof, not a diary.
+
+13
+00:02:37,512 --> 00:02:46,868
+You can connect a Casper wallet directly: Casper Wallet, Ledger, or social login, through the official hosted SDK.
+
+14
+00:02:46,868 --> 00:03:04,096
+Amanah — the on-chain fiduciary layer for autonomous real-world-asset treasuries. Ten smart contracts live, every claim provable. Find us on X, Discord, and Telegram. Thanks for watching.

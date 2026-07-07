@@ -79,4 +79,4 @@ all in Odra, all open source. Any RWA or agent project on Casper can build on th
 - **Builder:** Pugar Huda Mantoro
 - **Repo:** https://github.com/PugarHuda/amanah-casper
 - **Live:** https://amanah-casper-rwa.vercel.app
-- **X / Twitter:** [@BangDropID](https://x.com/BangDropID) · launch kit in [`LAUNCH.md`](LAUNCH.md).
+- **X / Twitter:** [@BangDropID](https://x.com/BangDropID) · **Discord:** hajilamet · **Telegram:** [@lynx129](https://t.me/lynx129) · launch kit in [`LAUNCH.md`](LAUNCH.md).

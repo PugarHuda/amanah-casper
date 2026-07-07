@@ -7,10 +7,10 @@ This directly satisfies the **Long-Term Launch Plans** judging criterion.
 
 ## 1. Accounts
 
-- [x] **X / Twitter** — [@BangDropID](https://x.com/BangDropID) (live; wired into the
-      verified `account-info` profile so it shows on cspr.live). Bio + pinned post below.
-- [ ] **Discord / Telegram** — a small "Amanah" server (`#announcements`, `#dev`, `#general`).
-- [ ] **Linktree / bio link** → point to the live app + repo + roadmap.
+- [x] **X / Twitter** — [@BangDropID](https://x.com/BangDropID). Bio + pinned post below.
+- [x] **Discord** — hajilamet. **Telegram** — [@lynx129](https://t.me/lynx129).
+- [x] All three wired into the verified `account-info` profile → they show on cspr.live.
+- [ ] **Linktree / bio link** → point to the live app + repo + roadmap (optional).
 
 ---
 
