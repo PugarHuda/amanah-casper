@@ -378,40 +378,32 @@ export async function getDashboard() {
   let trailLive = false;
   let treasuryLive = false;
 
-  if (live()) {
-    // Include x402 payment deploys alongside vault/attestation/reputation.
-    const deploys = await getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10);
-    if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }
-  }
+  // All these on-chain reads are independent — fire them concurrently so the page is
+  // one round-trip deep, not eight. (Was serial: ~2.3s cold; parallel ≈ slowest read.)
+  const [deploys, sg, cs, zkV, frozen, solvent, vault, audit, attestCnt] = await Promise.all([
+    live() ? getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10) : Promise.resolve([]),
+    spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
+    complianceReadable() ? getComplianceState(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
+    zkReadable() ? getZkVerified(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
+    vaultReadable() ? getVaultFrozen() : Promise.resolve(null),
+    getReservesSolvent(),
+    vaultReadable() ? getVaultState() : Promise.resolve(null),
+    latestAuditVerdict(),
+    live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
+  ]);
 
-  if (spendGateReadable()) {
-    const sg = await getSpendGateState();
-    if (sg) {
-      compliance.dailyUsed = fmtUsd(sg.spentToday);
-      compliance.dailyLimit = fmtUsd(sg.dailyLimit);
-      compliance.txCap = fmtUsd(sg.maxPerTx);
-    }
+  if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }
+  if (sg) {
+    compliance.dailyUsed = fmtUsd(sg.spentToday);
+    compliance.dailyLimit = fmtUsd(sg.dailyLimit);
+    compliance.txCap = fmtUsd(sg.maxPerTx);
   }
-  if (complianceReadable()) {
-    const cs = await getComplianceState(AGENT_ACCOUNT_HASH);
-    if (cs) {
-      compliance.vaultStatus = cs.status;
-      compliance.allowlisted = cs.allowlisted;
-    }
-  }
-  if (zkReadable()) {
-    // Live zero-knowledge KYC flag from the ZkKycVerifier contract.
-    compliance.zkVerified = await getZkVerified(AGENT_ACCOUNT_HASH);
-  }
-  if (vaultReadable()) {
-    // Live dead-man's-switch state from the vault (circuit breaker).
-    compliance.circuitBreaker = await getVaultFrozen();
-  }
-  // Live ZK proof-of-reserves solvency flag (null if the reserves seed is unset).
-  compliance.reservesSolvent = await getReservesSolvent();
+  if (cs) { compliance.vaultStatus = cs.status; compliance.allowlisted = cs.allowlisted; }
+  compliance.zkVerified = zkV;
+  compliance.circuitBreaker = frozen;
+  compliance.reservesSolvent = solvent;
 
-  if (vaultReadable()) {
-    const vault = await getVaultState();
+  {
     if (vault && vault.total > 0n) {
       treasuryLive = true;
       totalTreasury = fmtUsd(vault.total);
@@ -441,18 +433,11 @@ export async function getDashboard() {
         },
         { label: "ATTESTATIONS", value: "—", note: "on-chain proofs", color: "var(--blue)" },
       ];
-      // Best-effort: get attest count for the last banner slot.
-      if (live()) {
-        const cnt = await getDeployCount(ATTESTATION());
-        if (cnt != null) banner[2].value = cnt.toLocaleString("en-US");
-      }
+      if (attestCnt != null) banner[2].value = attestCnt.toLocaleString("en-US");
     }
   }
 
-  // The independent auditor's latest verdict — surfaced on the main dashboard so the
-  // two-agent separation of duties is visible where judges land first.
-  const audit = await latestAuditVerdict();
-
+  // `audit` (independent auditor's latest verdict) came from the parallel batch above.
   return {
     treasuryId: treasuryLive ? treasuryId : "REPRESENTATIVE · CASPER-TEST",
     totalTreasury,
