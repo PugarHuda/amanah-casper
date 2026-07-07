@@ -5,14 +5,12 @@ This directly satisfies the **Long-Term Launch Plans** judging criterion.
 
 ---
 
-## 1. Accounts to create (your action, ~15 min)
+## 1. Accounts
 
-- [ ] **X / Twitter** — handle suggestion: `@Amanah_RWA` (or `@AmanahAgent`). Bio + pinned post below.
-- [ ] **Discord** — a small server "Amanah" with `#announcements`, `#dev`, `#general`. Or a Telegram channel.
+- [x] **X / Twitter** — [@BangDropID](https://x.com/BangDropID) (live; wired into the
+      verified `account-info` profile so it shows on cspr.live). Bio + pinned post below.
+- [ ] **Discord / Telegram** — a small "Amanah" server (`#announcements`, `#dev`, `#general`).
 - [ ] **Linktree / bio link** → point to the live app + repo + roadmap.
-- [ ] Add the handles to `web/public/.well-known/casper/account-info.casper-test.json`
-      (`owner.social`) and re-run `agent/src/register-account-info.ts` — then your socials
-      show on the account's verified profile on cspr.live. (Tell me the handles; I'll wire it.)
 
 ---
 
