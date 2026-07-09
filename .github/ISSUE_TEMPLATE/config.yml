@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/PugarHuda/amanah-casper/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue (see SECURITY.md).
+  - name: Casper Developers (Telegram)
+    url: https://t.me/CSPRDevelopers
+    about: Casper ecosystem developer chat.
