@@ -23,7 +23,7 @@ odra-test = "2.8.1"
 # no_std deps pull indexmap with default-features=false, so `S` has no default and
 # the build fails. Forcing the `std` feature here (dev-only — not in the wasm
 # build) makes has_std true and restores the default. ponytail: transitive-dep pin.
-indexmap = { version = "=1.9.3", features = ["std"] }
+indexmap = { version = "=2.14.0", features = ["std"] }
 
 [build-dependencies]
 odra-build = "2.8.1"
