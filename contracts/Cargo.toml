@@ -11,7 +11,7 @@ odra = { version = "2.8.1", default-features = false }
 # default set, enabled explicitly here since we set default-features = false.
 odra-modules = { version = "2.8.1", default-features = false, features = ["eip712"] }
 # Real ZK KYC: on-chain Schnorr NIZK verification over ed25519 (no_std/WASM).
-curve25519-dalek = { version = "4", default-features = false, features = ["alloc"] }
+curve25519-dalek = { version = "5", default-features = false, features = ["alloc"] }
 blake2 = { version = "0.10", default-features = false }
 
 [dev-dependencies]
