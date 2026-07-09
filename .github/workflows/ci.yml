@@ -1,0 +1,30 @@
+# Typecheck the TypeScript packages on every push/PR. Deterministic + offline —
+# the full suite (79 tests incl. live-testnet integration, Playwright E2E, and the
+# OdraVM contract tests via cargo-odra) runs locally; see CONTRIBUTING.md.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [agent, web, mcp]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
