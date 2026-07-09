@@ -15,7 +15,7 @@
     "@make-software/casper-x402": "^1.0.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@types/ws": "^8.18.1",
-    "@x402/core": "2.15.0",
+    "@x402/core": "2.17.0",
     "blakejs": "^1.2.1",
     "casper-js-sdk": "^5.0.12",
     "dotenv": "^16.4.5",
