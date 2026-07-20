@@ -87,7 +87,7 @@ const earnAccepts = accepts; // payTo = PAY_TO = Amanah (the agent earns)
 
 const routes: RoutesConfig = {
   // PAY side: Amanah pays a separate signal provider for premium alpha (agent-pays-agent).
-  "GET /alpha": { description: "Premium RWA momentum/volatility signal", accepts: alphaAccepts },
+  "GET /alpha": { description: "Multi-asset RWA signal (CSPR + gold + US T-bond + WTI)", accepts: alphaAccepts },
   // EARN side (two-sided x402): Amanah SELLS its verified proof-of-reasoning; buyers pay Amanah.
   "GET /verified-reasoning": { description: "Amanah's latest on-chain-verified proof-of-reasoning", accepts: earnAccepts },
 };

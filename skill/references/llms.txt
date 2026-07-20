@@ -83,7 +83,7 @@ ReputationRegistry: score=1 (Mapping<Address,i64>). ComplianceRegistry v3 fields
 ## The cycle (what the agent does each CYCLE_MS)
 
 ingest live RWA prices -> enrich via official CSPR.cloud MCP (balance + CSPR rate)
--> pay premium signal via x402 (CEP-3009 settle, real tx) -> LLM reason (Venice)
+-> pay multi-asset premium signal via x402 (CEP-3009 settle, real tx) -> LLM reason (Venice)
 -> blake2b(reasoning) + Ed25519 sign -> AttestationLog.attest (verifies sig ON-CHAIN, publishes blob)
 -> K-of-N AuditorQuorum votes -> SpendGate.check + ComplianceRegistry.assert_valid
 -> RwaVault.reallocate (yield only; the VAULT itself re-checks AuditorQuorum.approved())

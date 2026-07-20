@@ -9,7 +9,7 @@ live from casper-test (+ IPFS). Repo is public.
 
 > Casper Agentic Buildathon 2026. **Amanah** (fiduciary trust). An autonomous AI
 > agent manages a tokenized RWA treasury (gold, US T-bond, oil, CSPR) on **Casper
-> testnet**: it ingests live RWA prices, pays for a premium signal via **x402**,
+> testnet**: it ingests live RWA prices, pays for a **multi-asset** premium signal via **x402**,
 > reasons with an LLM, **signs its reasoning (Ed25519) and attests it on-chain**,
 > checks guardrails + compliance, and only then reallocates **yield** (principal
 > stays locked).
@@ -78,7 +78,7 @@ See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
 
 ```
 ingest live RWA prices  →  enrich via the official CSPR.cloud + CSPR.trade MCP servers
-  →  pay premium signal via x402 (CEP-3009 settle, real tx)
+  →  pay multi-asset premium signal via x402 (CEP-3009 settle, real tx)
   →  LLM reasons over all of it: risk score + decision + reasoning steps
   →  blake2b256(reasoning) + Ed25519 sign  →  AttestationLog.attest (verifies sig ON-CHAIN)
        + publish blob to IPFS  →  ReputationRegistry.record_payment (authority-gated)

@@ -28,7 +28,7 @@ npm run test:integration # live-testnet reads (vault $1M/$800K, reputation, comp
 | File | Role |
 | --- | --- |
 | `ingest.ts` | Real RWA prices (Treasury, EIA WTI, gold, CSPR). Missing key ⇒ that field is `null`, never faked. |
-| `x402.ts` | Pay the premium-signal endpoint (402 → sign → resubmit), capture settlement deploy hash. |
+| `x402.ts` | Pay the premium-signal endpoint (402 → sign → resubmit), capture settlement deploy hash. The signal is multi-asset (CSPR + gold + US T-bond + WTI) from real public sources; unavailable legs come back `null`, never estimated. |
 | `reason.ts` + `prompts/decide.ts` | Venice LLM (OpenAI-compatible `/chat/completions`, default `deepseek-v4-flash`) → structured decision via schema-in-prompt + tolerant JSON parse. |
 | `cspr-mcp.ts` / `trade-mcp.ts` | Consume the official CSPR.cloud MCP (balance + rate) and CSPR.trade DEX MCP (CSPR↔sCSPR quote); fed into reasoning. CLI demos too. |
 | `attest.ts` | blake2b hash → Ed25519 sign → `AttestationLog.attest`; pins the blob to public IPFS (Pinata) + writes a CID sidecar. |
