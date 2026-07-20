@@ -26,15 +26,23 @@ export default async function Dashboard() {
               Audit dashboard
             </h1>
           </div>
-          <a
-            href={vaultHash ? `${explorerBase}/contract-package/${vaultHash}` : explorerBase}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--border)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 600, color: "var(--ink2)" }}
-          >
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--blue)" }} />
-            Open on cspr.live ↗
-          </a>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a
+              href="/verify"
+              style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--green-deep)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 700, color: "var(--green-deep)", background: "#f4fbf6" }}
+            >
+              🔍 Verify this yourself →
+            </a>
+            <a
+              href={vaultHash ? `${explorerBase}/contract-package/${vaultHash}` : explorerBase}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--border)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 600, color: "var(--ink2)" }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--blue)" }} />
+              Open on cspr.live ↗
+            </a>
+          </div>
         </div>
 
         {/* TOP BANNER STAT */}

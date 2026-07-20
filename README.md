@@ -5,6 +5,8 @@ audit trail, guardrails, compliance, live event feed, and the agent console all 
 live from casper-test (+ IPFS). Repo is public.
 **▶️ Demo video:** https://youtu.be/lqG0nfVifA8 · **Roadmap & launch plan:** [`ROADMAP.md`](ROADMAP.md).
 
+**🔍 Don't trust us — verify:** [amanah-casper-rwa.vercel.app/verify](https://amanah-casper-rwa.vercel.app/verify) re-runs our cryptography **in your own browser** against the exact bytes the Casper contracts accepted: the Pedersen+Schnorr **proof-of-reserves** and the blake2b **proof-of-reasoning**. Then tamper with the inputs and watch both proofs fail. Two independent implementations of the same maths — [`web/lib/zk-verify.ts`](web/lib/zk-verify.ts) (browser) and [`contracts/src/zk_reserves.rs`](contracts/src/zk_reserves.rs) (on-chain).
+
 > Casper Agentic Buildathon 2026. **Amanah** (fiduciary trust). An autonomous AI
 > agent manages a tokenized RWA treasury (gold, US T-bond, oil, CSPR) on **Casper
 > testnet**: it ingests live RWA prices, pays for a premium signal via **x402**,
@@ -218,7 +220,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**80 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**81 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **47 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

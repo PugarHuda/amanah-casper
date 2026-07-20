@@ -1,0 +1,24 @@
+{
+  "note": "Verified ON-CHAIN by ZkReserves (curve25519-dalek) in the deploy below. The /verify page re-runs the same Pedersen+Schnorr check in your browser.",
+  "domain": "amanah-zk-reserves-v1",
+  "H": "bc55d5c8b14e52ee5ab9a7e316f0eb330888c3bd610557c403a0b522f270629d",
+  "labels": [
+    "Gold",
+    "US T-bond",
+    "WTI crude",
+    "CSPR reserve"
+  ],
+  "commitments": [
+    "3e96546939a328893f6cb1d224de90acc25f3cc1263d257e033c82ec33399cd9",
+    "8bcf6f91fc2ea3bc8a30a7295723f9efb68f922cc6f247924de93adab8a3830d",
+    "83a39683e1b822ded9c180e78aa925203c24d5138ccc2708c5a8f2aebfecdf8d",
+    "c6483a93bd5e64c50dba8554f2fdde5c3ba3e8b7c9e1af6dedeaa41bcb791e5f"
+  ],
+  "total": "1000000000000",
+  "principalFloor": "800000000000",
+  "proofT": "d246471f9a6bdd3f36f2e94eb5ab7919e22ab6984137da0ca2d505dc74354bf8",
+  "s": "8b36fea6d1b2f36b44b94b10d81d0367f03d7598f4193ede92140ceb311c8f08",
+  "contractPackage": "5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a",
+  "deployHash": "aa4d82eb5b61c582d4910707ad25d223de3df03435835901112013b057b00565",
+  "chain": "casper-test"
+}

@@ -39,7 +39,7 @@ quorum** — multiple independent auditor keys must sign APPROVE (proven 2-of-3)
 reputation drops below a floor, then resumes once it recovers; (3) a **dead-man's
 switch** — anyone can freeze the vault if the agent goes silent; (4) **ZK
 proof-of-reserves** (`ZkReserves`, Pedersen+Schnorr) — proves solvency (reserves ≥
-principal) while **hiding the per-asset split**. 10 Odra contracts, 80 automated tests.
+principal) while **hiding the per-asset split**. 10 Odra contracts, 81 automated tests.
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
@@ -84,7 +84,7 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-80 automated tests: 47 unit/regression + 4 live-testnet integration + 12 Playwright
+81 automated tests: 47 unit/regression + 4 live-testnet integration + 13 Playwright
 E2E + 17 OdraVM contract tests. See TESTING.md.
 
 ## Long-term launch plan

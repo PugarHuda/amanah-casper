@@ -174,4 +174,18 @@ test.describe("Amanah manual-click QA", () => {
     console.log("Read the spec ->", href);
     expect(href).toContain("github.com");
   });
+  test("proof lab verifies our cryptography in the browser — and tampering breaks it", async ({ page }) => {
+    await gotoAndSettle(page, "/verify");
+    // The ZK proof-of-reserves and the attested reasoning blob both verify client-side.
+    await expect(page.getByText(/✓ verified in [\d.]+ ms/)).toBeVisible({ timeout: 20000 });
+    await expect(page.getByText(/✓ hash matches the attestation/)).toBeVisible({ timeout: 20000 });
+
+    // Soundness: claiming more reserves than the hidden amounts sum to must FAIL.
+    await page.getByRole("button", { name: /claim \$1,000 more/ }).click();
+    await expect(page.getByText(/✗ proof rejected/)).toBeVisible({ timeout: 10000 });
+
+    // Integrity: a single edited character must break the attestation hash.
+    await page.getByRole("button", { name: /change one digit/ }).click();
+    await expect(page.getByText(/hash mismatch/)).toBeVisible({ timeout: 10000 });
+  });
 });

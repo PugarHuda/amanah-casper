@@ -1,0 +1,228 @@
+"use client";
+
+// Proof lab — the point of Amanah is "don't trust us, check it". This page re-runs our
+// cryptography IN YOUR BROWSER against the exact bytes the Casper contracts accepted,
+// and lets you tamper with the inputs to watch the proofs fail.
+import { useEffect, useState } from "react";
+import Nav from "@/components/Nav";
+import { blake2b } from "blakejs";
+import { verifyReserves, bytesToHex, type ReservesProof } from "@/lib/zk-verify";
+
+const EXPLORER = "https://testnet.cspr.live";
+const mono: React.CSSProperties = { fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: 11, wordBreak: "break-all" };
+
+type Reserves = ReservesProof & {
+  labels?: string[]; total: string; principalFloor: string; deployHash: string; H: string; contractPackage: string;
+};
+
+function Badge({ ok, okText, badText }: { ok: boolean | null; okText: string; badText: string }) {
+  if (ok === null) return <span style={{ fontSize: 13, color: "var(--faint)" }}>checking…</span>;
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 13px", borderRadius: 999, fontSize: 13, fontWeight: 700,
+      background: ok ? "#e8f6ed" : "#fbeaea", color: ok ? "var(--green-deep)" : "#b3382c", border: `1px solid ${ok ? "#c9e7d5" : "#f0cdc9"}` }}>
+      {ok ? "✓ " + okText : "✗ " + badText}
+    </span>
+  );
+}
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div style={{ display: "flex", gap: 10, padding: "5px 0", borderBottom: "1px solid var(--border2)" }}>
+      <span style={{ fontSize: 11, color: "var(--faint)", minWidth: 122, flexShrink: 0 }}>{k}</span>
+      <span className="mono" style={mono}>{v}</span>
+    </div>
+  );
+}
+
+/** Flip exactly ONE character of the blob. The point is that any edit at all — a single
+ *  digit — changes blake2b completely, so the attested hash no longer matches. */
+function tamperText(raw: string): string {
+  const i = raw.search(/[1-9]/);
+  if (i < 0) return raw + " ";
+  const d = raw[i] === "9" ? "8" : String(Number(raw[i]) + 1);
+  return raw.slice(0, i) + d + raw.slice(i + 1);
+}
+
+function Card({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
+  return (
+    <section style={{ border: "1px solid var(--border2)", borderRadius: 18, padding: "22px 24px", background: "var(--surface-subtle)", marginBottom: 18 }}>
+      <h2 className="serif" style={{ margin: 0, fontSize: 22, fontWeight: 400, color: "var(--ink)" }}>{title}</h2>
+      <p style={{ margin: "6px 0 16px", fontSize: 13.5, color: "var(--muted, #6b6b6b)", lineHeight: 1.55 }}>{sub}</p>
+      {children}
+    </section>
+  );
+}
+
+export default function VerifyPage() {
+  // --- ZK proof-of-reserves -------------------------------------------------
+  const [rv, setRv] = useState<Reserves | null>(null);
+  const [rvTampered, setRvTampered] = useState(false);
+  const [rvOut, setRvOut] = useState<ReturnType<typeof verifyReserves> | null>(null);
+  const [rvMs, setRvMs] = useState(0);
+
+  useEffect(() => {
+    fetch("/proofs/reserves.json").then((r) => r.json()).then(setRv).catch(() => setRv(null));
+  }, []);
+  useEffect(() => {
+    if (!rv) return;
+    const claimed = rvTampered ? (BigInt(rv.total) + 1_000_000_000n).toString() : rv.total;
+    const t0 = performance.now();
+    setRvOut(verifyReserves({ commitments: rv.commitments, total: claimed, proofT: rv.proofT, s: rv.s }));
+    setRvMs(Math.round((performance.now() - t0) * 10) / 10);
+  }, [rv, rvTampered]);
+
+  // --- proof-of-reasoning ---------------------------------------------------
+  const [blob, setBlob] = useState<{ hash: string; raw: string; cid: string | null } | null>(null);
+  const [blobErr, setBlobErr] = useState<string | null>(null);
+  const [poTampered, setPoTampered] = useState(false);
+  const [computed, setComputed] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/reasoning")
+      .then(async (r) => (r.ok ? r.json() : Promise.reject(new Error((await r.json()).error ?? "unavailable"))))
+      .then(setBlob)
+      .catch((e) => setBlobErr(e.message));
+  }, []);
+  useEffect(() => {
+    if (!blob) return;
+    const text = poTampered ? tamperText(blob.raw) : blob.raw;
+    setComputed(bytesToHex(blake2b(new TextEncoder().encode(text), undefined, 32)));
+  }, [blob, poTampered]);
+
+  const fmtUsd = (v: string) => "$" + (Number(v) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 0 });
+
+  return (
+    <main className="page">
+      <div className="card">
+        <Nav active={null} />
+
+        <div style={{ marginTop: 44 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span className="pulse-dot" />
+            <span className="mono" style={{ fontSize: 12, letterSpacing: "2px", color: "var(--faint)" }}>PROOF LAB · RUNS IN YOUR BROWSER</span>
+          </div>
+          <h1 className="serif" style={{ margin: "10px 0 0", fontSize: 42, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.8px" }}>
+            Don&apos;t trust us. Verify.
+          </h1>
+          <p style={{ margin: "12px 0 30px", fontSize: 15, color: "var(--muted, #6b6b6b)", maxWidth: 720, lineHeight: 1.6 }}>
+            Every claim Amanah makes is checkable. The checks below run <strong>client-side, on your
+            machine</strong>, against the exact bytes the Casper contracts accepted — then you can
+            tamper with the inputs and watch the proofs break.
+          </p>
+        </div>
+
+        {/* 1 — ZK proof-of-reserves */}
+        <Card
+          title="1 · Zero-knowledge proof-of-reserves"
+          sub="The treasury proves its reserves cover the locked principal WITHOUT revealing the per-asset split. Below is the Pedersen+Schnorr proof the on-chain verifier accepted; your browser re-derives the generator H, recomputes the Fiat–Shamir challenge, and checks s·H = proof_T + c·(ΣC − T·G)."
+        >
+          {!rv ? <span style={{ fontSize: 13, color: "var(--faint)" }}>loading proof…</span> : (
+            <>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+                <Badge ok={rvOut ? rvOut.ok : null} okText={`verified in ${rvMs} ms`} badText="proof rejected" />
+                <button onClick={() => setRvTampered((t) => !t)}
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: rvTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
+                  {rvTampered ? "↺ restore the real total" : "⚡ claim $1,000 more than we hold"}
+                </button>
+                <a href={`${EXPLORER}/deploy/${rv.deployHash}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)" }}>
+                  the same proof, verified on-chain ↗
+                </a>
+              </div>
+              {rvTampered && (
+                <p style={{ fontSize: 13, color: "#b3382c", margin: "0 0 12px", fontWeight: 600 }}>
+                  Claiming a total the hidden amounts don&apos;t add up to breaks the Schnorr equation — exactly as it would on-chain. Solvency can&apos;t be faked.
+                </p>
+              )}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+                {rv.commitments.map((c, i) => (
+                  <div key={c} style={{ flex: "1 1 210px", padding: "11px 13px", border: "1px solid var(--border2)", borderRadius: 12, background: "var(--surface, #fff)" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>{rv.labels?.[i] ?? `asset ${i}`}</div>
+                    <div style={{ fontSize: 11, color: "var(--faint)", margin: "2px 0 5px" }}>amount hidden · Pedersen commitment</div>
+                    <div className="mono" style={{ ...mono, color: "var(--blue)" }}>{c.slice(0, 26)}…</div>
+                  </div>
+                ))}
+              </div>
+              <Row k="claimed total" v={`${fmtUsd(rvTampered ? (BigInt(rv.total) + 1_000_000_000n).toString() : rv.total)}${rvTampered ? "  ← tampered" : ""}`} />
+              <Row k="principal floor" v={`${fmtUsd(rv.principalFloor)} (must be ≤ total)`} />
+              <Row k="H (re-derived here)" v={rvOut?.H ?? ""} />
+              <Row k="challenge c" v={rvOut?.challenge ?? ""} />
+              <Row k="s·H" v={rvOut?.lhs ?? ""} />
+              <Row k="proof_T + c·P" v={rvOut?.rhs ?? ""} />
+            </>
+          )}
+        </Card>
+
+        {/* 2 — proof-of-reasoning */}
+        <Card
+          title="2 · Proof-of-reasoning"
+          sub="Every decision blob is blake2b-256 hashed and that hash is Ed25519-signed and verified INSIDE the AttestationLog contract before it is recorded. Your browser hashes the published blob and compares it to what was attested on-chain."
+        >
+          {blobErr ? (
+            <p style={{ fontSize: 13, color: "var(--faint)" }}>
+              No published reasoning blob is reachable right now ({blobErr}). The on-chain attestations are still listed on the{" "}
+              <a href="/dashboard" style={{ color: "var(--blue)" }}>dashboard</a>.
+            </p>
+          ) : !blob ? <span style={{ fontSize: 13, color: "var(--faint)" }}>loading blob…</span> : (
+            <>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
+                <Badge ok={computed === null ? null : computed === blob.hash} okText="hash matches the attestation" badText="hash mismatch — would be rejected" />
+                <button onClick={() => setPoTampered((t) => !t)}
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: poTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
+                  {poTampered ? "↺ restore the real blob" : "⚡ change one digit in the blob"}
+                </button>
+                {blob.cid && (
+                  <a href={`https://ipfs.io/ipfs/${blob.cid}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)" }}>
+                    fetch the same bytes from IPFS ↗
+                  </a>
+                )}
+              </div>
+              {poTampered && (
+                <p style={{ fontSize: 13, color: "#b3382c", margin: "0 0 12px", fontWeight: 600 }}>
+                  One edited character changes the hash completely — so it no longer matches the signature the contract verified. A forged decision cannot be attested.
+                </p>
+              )}
+              <Row k="attested on-chain" v={blob.hash} />
+              <Row k="computed by you" v={computed ?? ""} />
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--blue)", fontWeight: 600 }}>show the reasoning blob</summary>
+                <pre className="mono" style={{ ...mono, whiteSpace: "pre-wrap", maxHeight: 260, overflow: "auto", background: "var(--surface, #fff)", padding: 12, borderRadius: 10, border: "1px solid var(--border2)", marginTop: 8 }}>
+                  {(poTampered ? tamperText(blob.raw) : blob.raw).slice(0, 2600)}
+                </pre>
+              </details>
+            </>
+          )}
+        </Card>
+
+        {/* 3 — the guard rails, as real failed transactions */}
+        <Card
+          title="3 · The guard rails refusing real transactions"
+          sub="These aren't diagrams. Each is a transaction that was REFUSED by a contract on casper-test — open any of them and read the revert."
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {[
+              { t: "Auditor quorum not satisfied", e: "NotApproved", d: "Signed with the agent's own key, reputation passing — still refused, because the independent auditors never approved that decision.", h: "ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7" },
+              { t: "Agent below the reputation floor", e: "BelowReputationFloor", d: "Vetoed decisions slash reputation; under the floor the vault stops trading until it's earned back.", h: "82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350" },
+              { t: "The approved decision executed", e: "success", d: "Same vault, same key — the only difference is that the auditors signed off on this one.", h: "e68d42184b6f7fac2e226bea10c6a3e0942a276da6d6065618ac0f2d6c533c8e" },
+              { t: "Zero-knowledge KYC", e: "verified in-VM", d: "A Schnorr NIZK proving the agent holds its credential — the secret is never transmitted.", h: "da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4" },
+            ].map((g) => (
+              <a key={g.h} href={`${EXPLORER}/deploy/${g.h}`} target="_blank" rel="noopener noreferrer"
+                style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 16px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface, #fff)", textDecoration: "none" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: g.e === "success" ? "#e8f6ed" : g.e === "verified in-VM" ? "#eef3fb" : "#fbeaea", color: g.e === "success" ? "var(--green-deep)" : g.e === "verified in-VM" ? "var(--blue)" : "#b3382c", flexShrink: 0, marginTop: 2 }}>{g.e}</span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: "var(--ink)" }}>{g.t}</span>
+                  <span style={{ display: "block", fontSize: 12.5, color: "var(--muted, #6b6b6b)", margin: "3px 0 4px", lineHeight: 1.5 }}>{g.d}</span>
+                  <span className="mono" style={{ ...mono, color: "var(--blue)" }}>{g.h.slice(0, 30)}… ↗</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </Card>
+
+        <p style={{ fontSize: 12.5, color: "var(--faint)", marginTop: 4, lineHeight: 1.6 }}>
+          Source: <a href="https://github.com/PugarHuda/amanah-casper/blob/master/web/lib/zk-verify.ts" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>web/lib/zk-verify.ts</a> (this page&apos;s verifier) ·{" "}
+          <a href="https://github.com/PugarHuda/amanah-casper/blob/master/contracts/src/zk_reserves.rs" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>contracts/src/zk_reserves.rs</a> (the on-chain verifier). Same maths, two independent implementations.
+        </p>
+      </div>
+    </main>
+  );
+}
