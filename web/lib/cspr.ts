@@ -46,6 +46,39 @@ export type RawDeploy = {
   entry_point_id?: number;
 };
 
+/**
+ * Real on-chain activity for a contract package over the last `days`: how many of its
+ * transactions succeeded and how many were REFUSED by a guard rail. Reverts are a
+ * feature here — they are the circuit breakers and the auditor quorum doing their job —
+ * so we surface both rather than a placeholder metric.
+ */
+export async function getActivity(
+  packageHash: string,
+  days = 30,
+): Promise<{ executed: number; refused: number; lastAt: string | null } | null> {
+  if (!packageHash) return null;
+  try {
+    const d = await cloudGet<{ data?: RawDeploy[] }>(
+      `/deploys?contract_package_hash=${packageHash}&page=1&page_size=100`,
+    );
+    const rows = d.data ?? [];
+    if (!rows.length) return { executed: 0, refused: 0, lastAt: null };
+    const cutoff = Date.now() - days * 86_400_000;
+    const recent = rows.filter((r) => {
+      const t = r.timestamp ? Date.parse(r.timestamp) : NaN;
+      return Number.isFinite(t) && t >= cutoff;
+    });
+    const refused = recent.filter((r) => !!r.error_message).length;
+    return {
+      executed: recent.length - refused,
+      refused,
+      lastAt: recent[0]?.timestamp ?? rows[0]?.timestamp ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Total deploy count for a contract package from CSPR.cloud item_count. */
 export async function getDeployCount(packageHash: string): Promise<number | null> {
   try {

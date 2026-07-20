@@ -1,12 +1,11 @@
 // Data access seam. Env-gated: when CSPR.cloud + the deployed contract hashes are
-// present, read live; otherwise return the static mock so the UI never breaks
+// present, read live; otherwise render honest empty states (no sample data anywhere)
 // before contracts ship. Return shapes are identical in both paths.
 //
 // Flip to live by setting CSPR_CLOUD_API_KEY + NEXT_PUBLIC_VAULT_HASH (see .env.example).
 import { readdirSync, statSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import * as mock from "./mock";
-import type { TrailRow } from "./mock";
+import type { TrailRow } from "./view-types";
 import {
   cloudConfigured,
   getContractDeploys,
@@ -23,11 +22,12 @@ import {
   zkReadable,
   getVaultFrozen,
   getReservesSolvent,
+  getActivity,
   shortHash,
   relTime,
   type RawDeploy,
 } from "./cspr";
-import type { Holding } from "./mock";
+import type { Holding } from "./view-types";
 
 // Agent account-hash (the signer whose reputation we display).
 const AGENT_ACCOUNT_HASH = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f";
@@ -212,7 +212,8 @@ export function fmtUsd(atomic6dp: bigint): string {
 
 // Live guardrail chip labels from on-chain SpendGate limits (falls back to mock).
 function liveGuards(sg: { maxPerTx: bigint; dailyLimit: bigint; spentToday: bigint } | null): string[] {
-  if (!sg) return mock.guards;
+  // No sample limits: if the gate can't be read we say so instead of inventing caps.
+  if (!sg) return ["guardrails unavailable — SpendGate not readable"];
   return [
     `Cap ${fmtUsd(sg.maxPerTx)} / tx`,
     `Daily limit ${fmtUsd(sg.dailyLimit)}`,
@@ -253,15 +254,15 @@ async function getChanges24h(): Promise<Partial<Record<string, number>>> {
 }
 
 // Agent console: LIVE from the newest published reasoning blob + on-chain data
-// when available; falls back to the representative mock (clearly labelled).
+// when available; otherwise an explicit "awaiting first cycle" empty state.
 export async function getAgentConsole() {
   // Local audit/ blob (dev) first; else fetch the latest from public IPFS (prod).
   const latest = latestReasoningBlob() ?? (await latestBlobFromPinata());
   if (!latest) {
     return {
-      metrics: mock.metrics, assets: mock.assets, guards: mock.guards,
-      steps: mock.steps, reasoningHash: mock.reasoningHash, decision: mock.decision,
-      cycleId: "REPRESENTATIVE CYCLE · CASPER-TEST",
+      metrics: [], assets: [], guards: ["no published reasoning blob yet"],
+      steps: [], reasoningHash: "", decision: {},
+      cycleId: "AWAITING FIRST PUBLISHED CYCLE · CASPER-TEST",
       attestDeployHash: "",
       ipfsCid: null as string | null,
     };
@@ -380,13 +381,18 @@ export async function getAgentConsole() {
 }
 
 // Dashboard: audit trail + treasury totals/holdings go live from on-chain state
-// when configured; banner uses live vault data where possible; else mock.
+// when configured; every value is live or an honest empty state (never sample data).
 export async function getDashboard() {
-  let trail = mock.trail;
-  let totalTreasury = mock.totalTreasury;
-  let holdings = mock.holdings;
-  let treasuryId = mock.treasuryId;
-  let banner = mock.banner;
+  // Honest empties — never sample numbers. If a read fails the UI shows "—"/"no data".
+  let trail: TrailRow[] = [];
+  let totalTreasury = "—";
+  let holdings: Holding[] = [];
+  let treasuryId = "AWAITING CHAIN READ · CASPER-TEST";
+  let banner: { label: string; value: string; note: string; color: string }[] = [
+    { label: "VAULT TX (30D)", value: "—", note: "on-chain activity", color: "var(--faint)" },
+    { label: "PRINCIPAL LOCKED", value: "—", note: "read from the vault", color: "var(--faint)" },
+    { label: "ATTESTATIONS", value: "—", note: "on-chain proofs", color: "var(--blue)" },
+  ];
   // Honest fallbacks: "—" (not plausible-but-wrong numbers) until read from chain.
   let compliance = {
     dailyUsed: "—", dailyLimit: "—", txCap: "—",
@@ -401,7 +407,7 @@ export async function getDashboard() {
 
   // All these on-chain reads are independent — fire them concurrently so the page is
   // one round-trip deep, not eight. (Was serial: ~2.3s cold; parallel ≈ slowest read.)
-  const [deploys, sg, cs, zkV, frozen, solvent, vault, audit, attestCnt, changes] = await Promise.all([
+  const [deploys, sg, cs, zkV, frozen, solvent, vault, audit, attestCnt, changes, activity] = await Promise.all([
     live() ? getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10) : Promise.resolve([]),
     spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
     complianceReadable() ? getComplianceState(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
@@ -412,6 +418,7 @@ export async function getDashboard() {
     latestAuditVerdict(),
     live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
     getChanges24h(),
+    live() ? getActivity(VAULT(), 30) : Promise.resolve(null),
   ]);
 
   if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }
@@ -447,7 +454,15 @@ export async function getDashboard() {
       });
       // Live banner: replace fake yield/principal/rep with honest values.
       banner = [
-        { label: "YIELD (30D)", value: "—", note: "testnet demo", color: "var(--faint)" },
+        {
+          // Real, read from chain: vault transactions in the last 30 days. `refused` are
+          // the guard rails (quorum / circuit breaker) rejecting moves — proof the
+          // controls are live, not a decorative number.
+          label: "VAULT TX (30D)",
+          value: activity ? String(activity.executed + activity.refused) : "—",
+          note: activity ? `${activity.executed} executed · ${activity.refused} refused by guards` : "on-chain activity",
+          color: "var(--faint)",
+        },
         {
           label: "PRINCIPAL LOCKED",
           value: fmtUsd(vault.principal),

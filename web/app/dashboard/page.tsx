@@ -66,6 +66,11 @@ export default async function Dashboard() {
           {/* LEFT: HOLDINGS */}
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px", marginBottom: 16 }}>HOLDINGS</div>
+            {holdings.length === 0 && (
+              <div style={{ padding: "18px 20px", border: "1px dashed var(--border2)", borderRadius: 16, fontSize: 13, color: "var(--faint)" }}>
+                Vault state not readable right now — no placeholder numbers are shown.
+              </div>
+            )}
             {holdings.map((h) => (
               <div key={h.name} style={{ display: "flex", alignItems: "center", gap: 16, padding: "18px 20px", border: "1px solid var(--border2)", borderRadius: 16, marginBottom: 10, background: "var(--surface-subtle)" }}>
                 <span style={{ width: 38, height: 38, borderRadius: 11, background: h.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -157,6 +162,11 @@ export default async function Dashboard() {
               <div className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>{trailLive ? "live · testnet" : "representative"}</div>
             </div>
             <div style={{ border: "1px solid var(--border2)", borderRadius: 18, overflow: "hidden", background: "var(--surface-subtle)" }}>
+              {trail.length === 0 && (
+                <div style={{ padding: "16px 18px", fontSize: 13, color: "var(--faint)" }}>
+                  No deploys read yet — the trail is populated straight from CSPR.cloud, never seeded.
+                </div>
+              )}
               {trail.map((t, i) => (
                 <a
                   key={i}

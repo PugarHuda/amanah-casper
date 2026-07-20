@@ -220,9 +220,9 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**94 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**98 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **55 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **59 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
   `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the
   escalation safety gate, the auditor verdict parser, **the ZK-KYC Schnorr NIZK**
