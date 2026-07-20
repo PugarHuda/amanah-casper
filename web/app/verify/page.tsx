@@ -95,6 +95,11 @@ export default function VerifyPage() {
 
   const fmtUsd = (v: string) => "$" + (Number(v) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 0 });
 
+  // The headline claim is SOLVENCY, which is two things: the sum proof verifies, and the
+  // proven total is at least the locked principal (and there is something to prove about).
+  const claimedTotal = rv ? (rvTampered ? BigInt(rv.total) + 1_000_000_000n : BigInt(rv.total)) : 0n;
+  const coversPrincipal = !!rv && rv.commitments.length > 0 && claimedTotal >= BigInt(rv.principalFloor);
+
   return (
     <main className="page">
       <div className="card">
@@ -131,7 +136,14 @@ export default function VerifyPage() {
           ) : !rv ? <span style={{ fontSize: 13, color: "var(--faint)" }}>loading proof…</span> : (
             <>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
-                <Badge ok={rvOut ? rvOut.ok : null} okText={`verified in ${rvMs} ms`} badText="proof rejected" />
+                {/* Solvency needs BOTH: the sum proof must verify AND the proven total must
+                    actually cover the locked principal (the contract checks the floor too —
+                    a valid proof of a total below the floor is still insolvent). */}
+                <Badge
+                  ok={rvOut ? rvOut.ok && coversPrincipal : null}
+                  okText={`verified in ${rvMs} ms · covers principal`}
+                  badText={rvOut && rvOut.ok && !coversPrincipal ? "proof valid, but reserves < principal" : "proof rejected"}
+                />
                 <button onClick={() => setRvTampered((t) => !t)}
                   style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: rvTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
                   {rvTampered ? "↺ restore the real total" : "⚡ claim $1,000 more than we hold"}
@@ -155,7 +167,7 @@ export default function VerifyPage() {
                 ))}
               </div>
               <Row k="claimed total" v={`${fmtUsd(rvTampered ? (BigInt(rv.total) + 1_000_000_000n).toString() : rv.total)}${rvTampered ? "  ← tampered" : ""}`} />
-              <Row k="principal floor" v={`${fmtUsd(rv.principalFloor)} (must be ≤ total)`} />
+              <Row k="principal floor" v={`${fmtUsd(rv.principalFloor)} — proven total ${coversPrincipal ? "≥ floor ✓ solvent" : "< floor ✗ INSOLVENT"}`} />
               <Row k="H (re-derived here)" v={rvOut?.H ?? ""} />
               <Row k="challenge c" v={rvOut?.challenge ?? ""} />
               <Row k="s·H" v={rvOut?.lhs ?? ""} />
