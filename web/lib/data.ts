@@ -210,7 +210,7 @@ export function fmtUsd(atomic6dp: bigint): string {
     : `$${dollars.toLocaleString("en-US")}`;
 }
 
-// Live guardrail chip labels from on-chain SpendGate limits (falls back to mock).
+// Live guardrail chip labels from on-chain SpendGate limits (says so if unreadable).
 function liveGuards(sg: { maxPerTx: bigint; dailyLimit: bigint; spentToday: bigint } | null): string[] {
   // No sample limits: if the gate can't be read we say so instead of inventing caps.
   if (!sg) return ["guardrails unavailable — SpendGate not readable"];

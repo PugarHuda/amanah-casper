@@ -33,7 +33,7 @@ npm run test:integration # live-testnet reads (vault $1M/$800K, reputation, comp
 | `cspr-mcp.ts` / `trade-mcp.ts` | Consume the official CSPR.cloud MCP (balance + rate) and CSPR.trade DEX MCP (CSPR↔sCSPR quote); fed into reasoning. CLI demos too. |
 | `attest.ts` | blake2b hash → Ed25519 sign → `AttestationLog.attest`; pins the blob to public IPFS (Pinata) + writes a CID sidecar. |
 | `execute.ts` | `RwaVault.reallocate` + `escalateToHuman()` below confidence threshold. |
-| `reputation.ts` | `ReputationRegistry.record_payment` (caller-gated) with the x402 deploy hash. |
+| `reputation.ts` | `ReputationRegistry.record_payment` (AUTHORITY-only — custodian-signed, agent is the payer) + `slashAgent`. |
 | `stream.ts` | Watch on-chain events live via the CSPR.cloud Streaming API. |
 | `migrate-custody.ts` | Deploy the custodian-separated gates + non-zero-principal vault. |
 | `audit.ts` | Independent auditor: skeptical LLM grades the decision, custodian key attests APPROVE/VETO on-chain (fails closed to VETO). |
