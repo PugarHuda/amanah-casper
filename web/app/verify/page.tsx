@@ -56,12 +56,16 @@ function Card({ title, sub, children }: { title: string; sub: string; children: 
 export default function VerifyPage() {
   // --- ZK proof-of-reserves -------------------------------------------------
   const [rv, setRv] = useState<Reserves | null>(null);
+  const [rvErr, setRvErr] = useState<string | null>(null);
   const [rvTampered, setRvTampered] = useState(false);
   const [rvOut, setRvOut] = useState<ReturnType<typeof verifyReserves> | null>(null);
   const [rvMs, setRvMs] = useState(0);
 
   useEffect(() => {
-    fetch("/proofs/reserves.json").then((r) => r.json()).then(setRv).catch(() => setRv(null));
+    fetch("/proofs/reserves.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(setRv)
+      .catch((e) => setRvErr(e.message || "could not load the proof"));
   }, []);
   useEffect(() => {
     if (!rv) return;
@@ -116,7 +120,15 @@ export default function VerifyPage() {
           title="1 · Zero-knowledge proof-of-reserves"
           sub="The treasury proves its reserves cover the locked principal WITHOUT revealing the per-asset split. Below is the Pedersen+Schnorr proof the on-chain verifier accepted; your browser re-derives the generator H, recomputes the Fiat–Shamir challenge, and checks s·H = proof_T + c·(ΣC − T·G)."
         >
-          {!rv ? <span style={{ fontSize: 13, color: "var(--faint)" }}>loading proof…</span> : (
+          {rvErr ? (
+            <p style={{ fontSize: 13, color: "var(--faint)" }}>
+              Couldn&apos;t load the published proof ({rvErr}). It is also verifiable straight from the
+              chain — see the{" "}
+              <a href={`${EXPLORER}/deploy/aa4d82eb5b61c582d4910707ad25d223de3df03435835901112013b057b00565`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>
+                on-chain verification ↗
+              </a>.
+            </p>
+          ) : !rv ? <span style={{ fontSize: 13, color: "var(--faint)" }}>loading proof…</span> : (
             <>
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
                 <Badge ok={rvOut ? rvOut.ok : null} okText={`verified in ${rvMs} ms`} badText="proof rejected" />

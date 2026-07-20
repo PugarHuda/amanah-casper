@@ -52,9 +52,9 @@ export default function Connect() {
         <div className="two-col" style={{ marginTop: 60, alignItems: "stretch" }}>
           {/* LEFT FORM */}
           <div style={{ maxWidth: 592 }}>
-            <div className="serif" style={{ fontSize: 46, fontWeight: 400, color: "var(--ink)", letterSpacing: "-1px" }}>
+            <h1 className="serif" style={{ margin: 0, fontSize: 46, fontWeight: 400, color: "var(--ink)", letterSpacing: "-1px" }}>
               Connect to amanah
-            </div>
+            </h1>
             <div style={{ marginTop: 14, fontSize: 16, color: "var(--body)", lineHeight: 1.5 }}>
               Access your treasury dashboard, live agent reasoning, and on-chain attestations.
             </div>
