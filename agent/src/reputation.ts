@@ -17,9 +17,14 @@ export async function recordPayment(
   rpc: RpcClient,
   key: PrivateKey,
   x402DeployHash: string,
+  payerAccountHashPrefixed?: string,
 ): Promise<string> {
-  // payer = the agent's own account (Address = Key::Account).
-  const accountHashPrefixed = key.publicKey.accountHash().toPrefixedString();
+  // `key` must be the registry AUTHORITY (the custodian): crediting is authority-only
+  // so the agent can't mint its own reputation and walk past the vault's circuit
+  // breaker. `payerAccountHashPrefixed` is who gets the credit (the agent), defaulting
+  // to the signer for standalone/legacy use.
+  const accountHashPrefixed =
+    payerAccountHashPrefixed ?? key.publicKey.accountHash().toPrefixedString();
   const payer = CLValue.newCLKey(Key.newKey(accountHashPrefixed));
 
   const args = Args.fromMap({

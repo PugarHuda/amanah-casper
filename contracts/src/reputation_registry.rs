@@ -24,7 +24,11 @@ impl ReputationRegistry {
     /// Credit `payer` for a settled payment. Each `deploy_hash` is single-use.
     /// Only the payer itself may submit the proof — you cannot credit someone else.
     pub fn record_payment(&mut self, payer: Address, deploy_hash: [u8; 32]) {
-        if self.env().caller() != payer {
+        // AUTHORITY-ONLY. A contract cannot verify that `deploy_hash` really settled a
+        // payment, so if the payer could call this it would mint its own reputation —
+        // nullifying the vault's reputation circuit breaker. The custodian verifies the
+        // settlement off-chain and credits it; uniqueness still blocks replays.
+        if self.env().caller() != self.authority.get_or_revert_with(Error::AddressNotSet) {
             self.env().revert(Error::NotAuthorized);
         }
         if self.consumed_payment_proofs.get_or_default(&deploy_hash) {

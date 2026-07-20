@@ -1,6 +1,6 @@
 //! Cross-contract integration tests on the OdraVM host environment.
 use amanah_contracts::attestation_log::{AttestationLog, AttestationLogInitArgs};
-use amanah_contracts::auditor_quorum::{AuditorQuorum, AuditorQuorumInitArgs};
+use amanah_contracts::auditor_quorum::{AuditorQuorum, AuditorQuorumHostRef, AuditorQuorumInitArgs};
 use amanah_contracts::common::{AssetId, Error, Status};
 use amanah_contracts::compliance_registry::ComplianceRegistry;
 use amanah_contracts::payment_token::{PaymentToken, PaymentTokenInitArgs};
@@ -11,6 +11,27 @@ use amanah_contracts::zk_kyc::{ZkKycVerifier, ZkKycVerifierInitArgs};
 use amanah_contracts::zk_reserves::ZkReserves;
 use odra::casper_types::{bytesrepr::Bytes, U256, U512};
 use odra::host::{Deployer, HostRef, NoArgs};
+
+/// Deploy an AuditorQuorum (1-of-1, account 0) that has already APPROVED each hash.
+/// The vault now REQUIRES quorum approval for every reallocate, so tests that expect a
+/// move to reach the gates must pre-approve the attestation hash they use.
+fn quorum_approving(env: &odra::host::HostEnv, hashes: &[[u8; 32]]) -> AuditorQuorumHostRef {
+    let a0 = env.get_account(0);
+    let pk0 = env.public_key(&a0);
+    let mut q = AuditorQuorum::deploy(
+        env,
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1 },
+    );
+    for h in hashes {
+        let mut m = Vec::new();
+        m.extend_from_slice(b"amanah-auditor-quorum-v1");
+        m.extend_from_slice(h);
+        m.push(1u8); // approve = true
+        let sig = env.sign_message(&Bytes::from(m), &a0);
+        q.vote(*h, true, sig, pk0.clone());
+    }
+    q
+}
 
 /// Wire up SpendGate + ComplianceRegistry + RwaVault. `cap` is max_per_tx;
 /// `compliant` decides whether the agent (account 1) is marked Valid.
@@ -44,6 +65,7 @@ fn setup(cap: u64, compliant: bool) -> (RwaVaultHostRef, odra::host::HostEnv) {
             reputation: reputation.contract_address(),
             min_reputation: 0, // floor 0: score 0 (default) passes; raise it to bench
             custodian: env.get_account(0),
+            quorum: quorum_approving(&env, &[[0u8; 32], [9u8; 32]]).contract_address(),
         },
     );
     vault.deposit(AssetId::Gold, U256::from(1000));
@@ -115,6 +137,7 @@ fn reallocate_rejected_when_it_would_touch_principal() {
             reputation: reputation.contract_address(),
             min_reputation: 0,
             custodian: env.get_account(0),
+            quorum: quorum_approving(&env, &[[0u8; 32]]).contract_address(),
         },
     );
     vault.deposit(AssetId::Gold, U256::from(1000));
@@ -147,6 +170,7 @@ fn setup_v4(min_rep: i64) -> (RwaVaultHostRef, amanah_contracts::reputation_regi
     let mut vault = RwaVault::deploy(&env, RwaVaultInitArgs {
         agent, spend_gate: spend_gate.contract_address(), compliance: compliance.contract_address(),
         principal: U512::zero(), reputation: reputation.contract_address(), min_reputation: min_rep, custodian,
+        quorum: quorum_approving(&env, &[[0u8; 32]]).contract_address(),
     });
     vault.deposit(AssetId::Gold, U256::from(1000));
     spend_gate.set_spender(vault.contract_address()); // only the vault may call check()
@@ -162,9 +186,39 @@ fn reallocate_blocked_when_reputation_below_floor() {
     let err = vault.try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]).unwrap_err();
     assert_eq!(err, Error::BelowReputationFloor.into());
 
-    // Credit the agent to reach the floor -> trading resumes.
+    // The agent CANNOT mint its own reputation to escape the breaker (authority-only).
+    assert_eq!(
+        reputation.try_record_payment(agent, [3u8; 32]).unwrap_err(),
+        Error::NotAuthorized.into()
+    );
+
+    // The custodian (registry authority) credits a verified payment -> trading resumes.
+    env.set_caller(env.get_account(0));
     reputation.record_payment(agent, [3u8; 32]); // score 0 -> 1
+    env.set_caller(agent);
     vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]);
+    assert_eq!(vault.get_allocation(AssetId::TBond), U256::from(100));
+}
+
+#[test]
+fn reallocate_reverts_when_the_auditor_quorum_has_not_approved() {
+    // THE separation-of-duties guarantee, enforced by the contract itself: the vault
+    // only accepts a decision the K-of-N auditor quorum signed off on-chain. Even the
+    // agent's own key can't move funds on an unapproved decision.
+    let (mut vault, _rep, env) = setup_v4(0);
+    let agent = env.get_account(1);
+    env.set_caller(agent);
+
+    // [0u8;32] was pre-approved by setup_v4 -> this move is allowed.
+    vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [0u8; 32]);
+    assert_eq!(vault.get_allocation(AssetId::TBond), U256::from(100));
+
+    // A DIFFERENT decision hash the quorum never voted on -> refused on-chain.
+    let err = vault
+        .try_reallocate(AssetId::Gold, AssetId::TBond, U256::from(100), [42u8; 32])
+        .unwrap_err();
+    assert_eq!(err, Error::NotApproved.into());
+    // Allocation unchanged — nothing moved.
     assert_eq!(vault.get_allocation(AssetId::TBond), U256::from(100));
 }
 
@@ -276,7 +330,15 @@ fn record_payment_rejects_replay() {
     let mut rep = ReputationRegistry::deploy(&env, ReputationRegistryInitArgs { authority: custodian });
 
     let deploy_hash = [1u8; 32];
-    env.set_caller(payer); // the payer submits its own proof
+    // The payer can no longer credit itself — crediting is authority-only, so an agent
+    // can't farm reputation to escape the vault's circuit breaker.
+    env.set_caller(payer);
+    assert_eq!(
+        rep.try_record_payment(payer, deploy_hash).unwrap_err(),
+        Error::NotAuthorized.into()
+    );
+
+    env.set_caller(custodian); // the authority credits a verified settlement
     rep.record_payment(payer, deploy_hash);
     assert_eq!(rep.score_of(payer), 1);
 

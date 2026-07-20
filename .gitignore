@@ -41,3 +41,4 @@ agent/secret/auditor3_key.pem
 # demo video artifacts (upload the mp4 to YouTube; regenerate via scripts/video)
 amanah-demo.mp4
 scripts/video/out/
+.env.vaultv6

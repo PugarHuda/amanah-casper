@@ -21,10 +21,10 @@ const STREAM_BASE = process.env.CSPR_CLOUD_STREAM_BASE || "wss://streaming.testn
 // Our deployed contract HASHES (not package hashes — the stream filters by contract_hash).
 const CONTRACTS: Record<string, string> = {
   // vault v3 contract hash (custodian-separated + owner-gated compliance)
-  "Reallocate · vault": process.env.VAULT_CONTRACT_HASH || "6a555d31158dc7593b0ccae7857f054ac8fc588605fe846a1e1fb944125e037d",
+  "Reallocate · vault": process.env.VAULT_CONTRACT_HASH || "3a6a434f14374e9b3f3a13b1aa9fc2391005abd1e2cd364cdd3716794c29d2ef",
   "Attestation · reasoning": process.env.ATTESTATION_CONTRACT_HASH || "c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003",
   // Reputation v3 contract hash (custodian-gated adjust). Old v2 was 7c887d21….
-  "Reputation · payment": process.env.REPUTATION_CONTRACT_HASH || "04a4234daf84cc2250c72382db63033be30483699c8760d5dfab5d4e3fe6911f",
+  "Reputation · payment": process.env.REPUTATION_CONTRACT_HASH || "c7b55a43217d17a44197dab44bb40762f1a179c085f456c772469e7643ae8dee",
   // AuditorLog — the independent auditor's APPROVE/VETO attestations.
   "Auditor · verdict": process.env.AUDITOR_CONTRACT_HASH || "439c39829d9093016167a83e6bcfcb5f7dcff908e854f35c9b2fec58b504d85a",
 };

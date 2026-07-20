@@ -46,7 +46,7 @@ asset must be a contract defined in this crate. Its **package hash becomes
 # Needs a Linux/WSL toolchain (nightly-2026-01-01 + wasm32-unknown-unknown).
 cargo odra build
 
-# OdraVM unit + integration tests (16 tests, all pass):
+# OdraVM unit + integration tests (17 tests, all pass):
 cargo odra test
 ```
 

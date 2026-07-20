@@ -17,6 +17,7 @@ import { recordPayment, slashAgent } from "./reputation.js";
 import { getAgentInsights } from "./cspr-mcp.js";
 import { getDexQuote } from "./trade-mcp.js";
 import { auditDecision, attestAudit } from "./audit.js";
+import { castQuorumVotes } from "./quorum.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -90,7 +91,14 @@ async function runCycle(cycle: number): Promise<void> {
   // cycle (the payment is real regardless of the hold/escalate/rebalance outcome),
   // so it runs before the branches below — not only on reallocation cycles.
   if (x402DeployHash) {
-    const repHash = await recordPayment(rpc, key, x402DeployHash);
+    // Signed by the CUSTODIAN — record_payment is authority-only so the agent cannot
+    // credit itself past the vault's reputation floor. Payer is still the agent.
+    const repHash = await recordPayment(
+      rpc,
+      loadPrivateKey(config.custodianKeyPath),
+      x402DeployHash,
+      key.publicKey.accountHash().toPrefixedString(),
+    );
     log(cycle, "reputation", { deployHash: repHash });
     console.log(`  ⛓  reputation deploy: ${repHash}`);
   }
@@ -140,7 +148,16 @@ async function runCycle(cycle: number): Promise<void> {
     return; // the auditor blocked the move — no reallocate
   }
 
-  // 8. EXECUTE — RwaVault.reallocate (SpendGate + Compliance gated on-chain).
+  // 7b. QUORUM — the vault ENFORCES a K-of-N auditor quorum: reallocate reverts
+  // NotApproved unless the independent auditors have signed APPROVE for THIS decision
+  // hash on-chain. Collect those votes before attempting the move.
+  const quorumVotes = await castQuorumVotes(rpc, attestation.reasoningHash);
+  if (quorumVotes.length) {
+    log(cycle, "quorum", { votes: quorumVotes });
+    console.log(`  ⛓  quorum votes: ${quorumVotes.length} (${quorumVotes[0].slice(0, 10)}…)`);
+  }
+
+  // 8. EXECUTE — RwaVault.reallocate (SpendGate + Compliance + QUORUM gated on-chain).
   const execHash = await executeReallocation(
     rpc,
     key,

@@ -39,7 +39,7 @@ quorum** — multiple independent auditor keys must sign APPROVE (proven 2-of-3)
 reputation drops below a floor, then resumes once it recovers; (3) a **dead-man's
 switch** — anyone can freeze the vault if the agent goes silent; (4) **ZK
 proof-of-reserves** (`ZkReserves`, Pedersen+Schnorr) — proves solvency (reserves ≥
-principal) while **hiding the per-asset split**. 10 Odra contracts, 79 automated tests.
+principal) while **hiding the per-asset split**. 10 Odra contracts, 80 automated tests.
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
@@ -52,6 +52,8 @@ principal) while **hiding the per-asset split**. 10 Odra contracts, 79 automated
 | **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain | `483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2` |
 | **Circuit breaker** — reallocate blocked below reputation floor, then resumed | `82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350` |
 | **ZK proof-of-reserves** — solvency proven on-chain, per-asset split hidden | `5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793` |
+| 🔒 **Auditor quorum ENFORCED by the vault** — unapproved decision refused (`NotApproved`) | `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7` |
+| **Approved decision executed** on the same vault | `e68d42184b6f7fac2e226bea10c6a3e0942a276da6d6065618ac0f2d6c533c8e` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
 | **Verified identity** — `set_url` on MAKE's Account Info contract → "Amanah" on cspr.live | `ce60f0e4ddf288b208c33075793f2093c022255538226cc62c629561039db364` |
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
@@ -82,8 +84,8 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-79 automated tests: 47 unit/regression + 4 live-testnet integration + 12 Playwright
-E2E + 16 OdraVM contract tests. See TESTING.md.
+80 automated tests: 47 unit/regression + 4 live-testnet integration + 12 Playwright
+E2E + 17 OdraVM contract tests. See TESTING.md.
 
 ## Long-term launch plan
 Amanah is a real project, not a throwaway. Testnet proves the hard part — a complete

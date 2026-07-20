@@ -1,6 +1,7 @@
 //! RwaVault - holds allocations across real-world assets and lets the agent
 //! rebalance yield while a hard principal invariant is enforced on every move.
 use crate::common::{u256_to_u512, AssetId, Error, ALL_ASSETS};
+use crate::auditor_quorum::AuditorQuorumContractRef;
 use crate::compliance_registry::ComplianceRegistryContractRef;
 use crate::reputation_registry::ReputationRegistryContractRef;
 use crate::spend_gate::SpendGateContractRef;
@@ -41,6 +42,10 @@ pub struct RwaVault {
     custodian: Var<Address>,       // may unfreeze after a dead-man's-switch trip
     last_heartbeat: Var<u64>,      // last time the agent proved liveness (ms)
     frozen: Var<bool>,             // dead-man's switch state
+    /// AuditorQuorum — a K-of-N quorum of independent auditors must have approved the
+    /// decision on-chain before funds move. Declared last so existing state field
+    /// indices (frozen=10, …) don't shift.
+    quorum: Var<Address>,
 }
 
 #[odra::module]
@@ -54,7 +59,9 @@ impl RwaVault {
         reputation: Address,
         min_reputation: i64,
         custodian: Address,
+        quorum: Address,
     ) {
+        self.quorum.set(quorum);
         self.agent.set(agent);
         self.spend_gate.set(spend_gate);
         self.compliance.set(compliance);
@@ -144,6 +151,18 @@ impl RwaVault {
         .score_of(agent);
         if score < self.min_reputation.get_or_default() {
             self.env().revert(Error::BelowReputationFloor);
+        }
+        // SEPARATION OF DUTIES, enforced by the contract (not by the agent's own code):
+        // a K-of-N quorum of INDEPENDENT auditors must have signed APPROVE for exactly
+        // this decision on-chain. Without it the move reverts — so a compromised or
+        // misbehaving agent still cannot move funds on its own say-so.
+        if !AuditorQuorumContractRef::new(
+            self.env(),
+            self.quorum.get_or_revert_with(Error::AddressNotSet),
+        )
+        .approved(attestation_hash)
+        {
+            self.env().revert(Error::NotApproved);
         }
         // Reallocating is itself proof of liveness — refresh the heartbeat.
         self.last_heartbeat.set(self.env().get_block_time());

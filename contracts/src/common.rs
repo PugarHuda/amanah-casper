@@ -73,6 +73,8 @@ pub enum Error {
     BelowReputationFloor = 14,
     /// `freeze_if_stale` was called but the agent is not actually stale yet.
     NotStale = 15,
+    /// The K-of-N auditor quorum has not approved this decision on-chain.
+    NotApproved = 16,
 }
 
 /// Widen a `U256` into a `U512` losslessly via big-endian bytes.
