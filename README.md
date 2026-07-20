@@ -59,8 +59,14 @@ its own score nor farm reputation to walk past the circuit breaker.
 agent's reputation drops below a floor (`BelowReputationFloor`) — enough vetoed decisions
 **auto-bench the agent on-chain** until it earns trust back — and a **dead-man's switch**
 lets anyone freeze the vault if the agent goes silent, so a rogue or dead agent can't keep
-trading in the dark (only the custodian can unfreeze). Proven live: a reallocate blocked
-below the floor, then resumed once the agent's reputation recovered. Partner integrations are
+trading in the dark (only the custodian can unfreeze). Both are proven live, not just in
+tests: a reallocate was blocked below the floor and resumed once reputation recovered, and
+an **unrelated third-party key** tripped the dead-man's switch on a vault whose agent had
+gone quiet ([`13729bde…`](https://testnet.cspr.live/deploy/13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d)) —
+that same key was then **refused** when it tried to lift the freeze
+([`1a4897f2…`](https://testnet.cspr.live/deploy/1a4897f2576bf2ad246548ccc8503ba6fab709031072cf86b2d13b1f58c22773)),
+which only the custodian could do
+([`302530d2…`](https://testnet.cspr.live/deploy/302530d2d9b2db38aec1a502caafd0450487b828f48ae75d67e3469acec1fb9a)). Partner integrations are
 live too: **CSPR.cloud** REST (audit trail + treasury) **and Streaming API** (live
 contract-event feed over WebSocket→SSE); the agent **consumes two official hosted MCP
 servers** each cycle and **reasons over their data** — **CSPR.cloud MCP** (82 tools:
@@ -144,6 +150,9 @@ agent moves only the $200K yield.
 | **ZK proof-of-reserves** — hidden allocations proven to sum ≥ principal, split hidden | `5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793` |
 | 🔒 **Quorum ENFORCED on-chain** — unapproved decision **refused by the vault** (`NotApproved`), agent key notwithstanding | `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7` |
 | **Quorum-approved decision executed** — same vault, approved hash → move applied | `e68d42184b6f7fac2e226bea10c6a3e0942a276da6d6065618ac0f2d6c533c8e` |
+| 💀 **Dead-man's switch tripped** — an UNRELATED third party froze a vault whose agent went silent | `13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d` |
+| **Non-custodian denied unfreeze** (`NotAuthorized`) — only the custodian may lift it | `1a4897f2576bf2ad246548ccc8503ba6fab709031072cf86b2d13b1f58c22773` |
+| **Custodian lifted the freeze** after review | `302530d2d9b2db38aec1a502caafd0450487b828f48ae75d67e3469acec1fb9a` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -220,9 +229,9 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**98 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**102 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **59 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **63 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
   `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the
   escalation safety gate, the auditor verdict parser, **the ZK-KYC Schnorr NIZK**

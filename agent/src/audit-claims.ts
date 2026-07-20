@@ -79,7 +79,7 @@ async function main() {
     if (kind === "deploy-reverted") {
       // Reverts we cite ON PURPOSE (the guard rails) are fine — check the surrounding text.
       const intentional = refs.some((r) =>
-        /refus|revert|block|reject|NotApproved|BelowReputationFloor|not approved|breaker|benched|unapproved/i.test(r.line));
+        /refus|revert|block|reject|denied|denies|NotAuthorized|NotApproved|BelowReputationFloor|not approved|breaker|benched|unapproved/i.test(r.line));
       const line = `${hash.slice(0, 12)}…  reverted "${detail}"  (${where})`;
       if (intentional) revertedOk.push(line);
       else bad.push(`MISDESCRIBED  ${line}\n           ↳ ${refs[0].line}`);

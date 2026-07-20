@@ -48,6 +48,9 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 - ZK proof-of-reserves verified ON-CHAIN (hidden split, sum >= principal): 5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793
 - QUORUM ENFORCED ON-CHAIN: vault refused an unapproved decision (NotApproved/err 16): ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7
 - Quorum-approved decision executed on the same vault: e68d42184b6f7fac2e226bea10c6a3e0942a276da6d6065618ac0f2d6c533c8e
+- DEAD-MAN'S SWITCH tripped LIVE by an unrelated third party: 13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d
+- Non-custodian unfreeze DENIED (NotAuthorized): 1a4897f2576bf2ad246548ccc8503ba6fab709031072cf86b2d13b1f58c22773
+- Custodian lifted the freeze: 302530d2d9b2db38aec1a502caafd0450487b828f48ae75d67e3469acec1fb9a
 
 ## Amanah MCP server (stdio) — tool I/O
 

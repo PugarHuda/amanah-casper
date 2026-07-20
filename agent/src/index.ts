@@ -18,6 +18,7 @@ import { getAgentInsights } from "./cspr-mcp.js";
 import { getDexQuote } from "./trade-mcp.js";
 import { auditDecision, attestAudit } from "./audit.js";
 import { castQuorumVotes } from "./quorum.js";
+import { notifyCycle, type CycleReport } from "./notify.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -120,13 +121,32 @@ async function runCycle(cycle: number): Promise<void> {
   }
   log(cycle, "audit", { approved: verdict.approved, grade: verdict.grade, concerns: verdict.concerns, deployHash: auditProof });
 
+  // Operator notification for EVERY outcome (not just escalations) — the on-call human
+  // gets the verdict plus every deploy hash as a cspr.live link, and can verify it.
+  const report = (outcome: CycleReport["outcome"], extra: Partial<CycleReport> = {}) =>
+    notifyCycle({
+      cycle,
+      action: `${decision.action} ${decision.amount} ${decision.fromAsset}->${decision.toAsset}`,
+      summary: decision.reasoningSteps?.[0] ?? "(no reasoning step recorded)",
+      confidence: decision.confidence ?? null,
+      reasoningHash: attestation.reasoningHash,
+      attestDeploy: attestation.deployHash,
+      x402Deploy: x402DeployHash || undefined,
+      auditDeploy: auditProof,
+      auditorApproved: verdict.approved,
+      outcome,
+      ...extra,
+    });
+
   // 7. GUARDRAIL / CONFIDENCE / AUDITOR
   if (shouldEscalate(decision)) {
     await escalateToHuman(decision, attestation.reasoningHash);
+    await report("escalated");
     log(cycle, "escalate", { confidence: decision.confidence });
     return;
   }
   if (decision.action !== "rebalance" || decision.amount <= 0) {
+    await report("held");
     log(cycle, "hold", { reason: "no reallocation this cycle" });
     return;
   }
@@ -144,6 +164,7 @@ async function runCycle(cycle: number): Promise<void> {
       }
     }
     await escalateToHuman(decision, attestation.reasoningHash);
+    await report("vetoed");
     log(cycle, "auditor-veto", { grade: verdict.grade, concerns: verdict.concerns, slashHash });
     return; // the auditor blocked the move — no reallocate
   }
@@ -164,6 +185,7 @@ async function runCycle(cycle: number): Promise<void> {
     decision,
     attestation.reasoningHash,
   );
+  await report("executed", { reallocateDeploy: execHash, quorumVotes });
   log(cycle, "execute", { deployHash: execHash });
   console.log(`  ⛓  reallocate deploy: ${execHash}`);
 }
