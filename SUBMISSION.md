@@ -39,7 +39,7 @@ quorum** — multiple independent auditor keys must sign APPROVE (proven 2-of-3)
 reputation drops below a floor, then resumes once it recovers; (3) a **dead-man's
 switch** — anyone can freeze the vault if the agent goes silent; (4) **ZK
 proof-of-reserves** (`ZkReserves`, Pedersen+Schnorr) — proves solvency (reserves ≥
-principal) while **hiding the per-asset split**. 10 Odra contracts, 102 automated tests.
+principal) while **hiding the per-asset split**. 10 Odra contracts, 104 automated tests.
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
@@ -84,8 +84,8 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-102 automated tests: 63 unit/regression + 4 live-testnet integration + 18 Playwright
-E2E + 17 OdraVM contract tests. See TESTING.md.
+104 automated tests: 63 unit/regression + 4 live-testnet integration + 18 Playwright
+E2E + 19 OdraVM contract tests. See TESTING.md.
 
 ## Long-term launch plan
 Amanah is a real project, not a throwaway. Testnet proves the hard part — a complete

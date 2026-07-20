@@ -187,6 +187,15 @@ impl RwaVault {
         )
         .assert_valid(target);
 
+        // A move must be BETWEEN two different assets. With from == to the credit below
+        // would overwrite the debit (both write the same key), leaving the balance at
+        // `bal + amount` — i.e. minting value from nothing, which the principal
+        // invariant cannot catch because it only ever checks that the total is not too
+        // LOW. Reject it outright so reallocation always conserves the total.
+        if from_asset == to_asset {
+            self.env().revert(Error::SameAsset);
+        }
+
         // Apply the move.
         let from_bal = self.allocations.get_or_default(&from_asset);
         if amount > from_bal {

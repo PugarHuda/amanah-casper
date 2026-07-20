@@ -75,6 +75,10 @@ pub enum Error {
     NotStale = 15,
     /// The K-of-N auditor quorum has not approved this decision on-chain.
     NotApproved = 16,
+    /// `from_asset` == `to_asset`. Rejected because such a "move" is not a
+    /// reallocation: writing both sides of the same balance would overwrite the debit
+    /// with the credit and mint `amount` out of nothing.
+    SameAsset = 17,
 }
 
 /// Widen a `U256` into a `U512` losslessly via big-endian bytes.

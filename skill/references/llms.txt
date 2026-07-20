@@ -21,7 +21,7 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 
 | Contract | Package hash | Contract hash |
 |----------|--------------|---------------|
-| RwaVault (v6, quorum enforced on-chain + circuit breakers: reputation floor + dead-man's switch; principal $800K) | 8ff5d18815e66eb50b9dfdf287cc622a48b29c93c4c58b51ad79e2e020815c87 | 3a6a434f14374e9b3f3a13b1aa9fc2391005abd1e2cd364cdd3716794c29d2ef |
+| RwaVault (v6, quorum enforced on-chain + circuit breakers: reputation floor + dead-man's switch; principal $800K) | 398d6cbf25c24369ea152c8b06fa9c9eb624a6cea12248a7891f0163e37d5d1f | 08af06d097381669267faeb3eb4183872237ef66d7214851920ac9d7d081ca45 |
 | AttestationLog | 365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532 | c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003 |
 | SpendGate (v2, check gated to vault; custodian-owned) | f19ed0e9b235e8422aef7d8fbbcaa9cbc34ef4864efd81bbeb7c82d2b77d0cf3 | f1c0eb4f6f62bf1132d94de3e9b3946495fa91ebcfe652daeaa365b7b91451bf |
 | ComplianceRegistry (v3, set_status/revoke owner-gated to custodian) | 93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5 | e5838f96bb7e010cd952d00e780e948e532b6d59dee3cdb6fe29e10fa598e863 |
@@ -71,7 +71,7 @@ Odra stores each Var/Mapping field in the contract's "state" dictionary:
 - i64 parsed comes back as an 8-byte little-endian array; enum (Status/AssetId) as a 1-byte variant
 - Mapping<Address,_> key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes
 
-State-dict seeds (uref addr, hex): vault aefd17288cab1e066e2b3a4b3b5c7192b679963aae18bd891048bcab050c4d0e,
+State-dict seeds (uref addr, hex): vault e5dab7f204f18a69e05bb7001ab8ccfba29def87496c547b983929b71e74ea89,
 reputation 05a27b6e8bd53fda50cdbb2e322f56912ed92b44cdd4f4c1a282a9c8440d5a84,
 attestation 739ed994a635834f536dee0f3af7a7ce5341d91ef6952a548aed7a3de0b0594a,
 spendgate 9837b12300bc72b37c876392e89773112e09b12aedd06bcf4f8b5793b19226de,

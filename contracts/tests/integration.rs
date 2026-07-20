@@ -544,3 +544,43 @@ fn zk_reserves_hides_split_and_proves_the_sum() {
     let err2 = zk.try_prove_reserves(commitments, total, proof_t, s, 2_000_000_000_000).unwrap_err();
     assert_eq!(err2, Error::NotCompliant.into());
 }
+
+#[test]
+fn reallocating_an_asset_to_itself_is_rejected_and_cannot_mint() {
+    // Regression: with from == to, the credit writes the same key as the debit and
+    // overwrites it, leaving `bal + amount` — value created from nothing. The principal
+    // invariant can't catch it because that check only fails when the total is too LOW.
+    let (mut vault, _rep, env) = setup_v4(0);
+    let agent = env.get_account(1);
+    env.set_caller(agent);
+
+    let before = vault.get_allocation(AssetId::Gold);
+    let err = vault
+        .try_reallocate(AssetId::Gold, AssetId::Gold, U256::from(100), [0u8; 32])
+        .unwrap_err();
+    assert_eq!(err, Error::SameAsset.into());
+    assert_eq!(vault.get_allocation(AssetId::Gold), before, "balance must be untouched");
+}
+
+#[test]
+fn a_reallocation_conserves_the_total() {
+    // The whole "principal locked, yield only" story rests on reallocation being a pure
+    // transfer. Pin it: the sum across every asset is identical before and after.
+    let (mut vault, _rep, env) = setup_v4(0);
+    let agent = env.get_account(1);
+    env.set_caller(agent);
+
+    let total = |v: &RwaVaultHostRef| {
+        v.get_allocation(AssetId::Gold)
+            + v.get_allocation(AssetId::TBond)
+            + v.get_allocation(AssetId::WTI)
+            + v.get_allocation(AssetId::CSPR)
+    };
+    let before = total(&vault);
+    vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(250), [0u8; 32]);
+    assert_eq!(total(&vault), before, "reallocation must conserve the total");
+
+    // And a zero-amount move is a harmless no-op that still conserves it.
+    vault.reallocate(AssetId::Gold, AssetId::WTI, U256::zero(), [0u8; 32]);
+    assert_eq!(total(&vault), before, "zero-amount move must not change the total");
+}
