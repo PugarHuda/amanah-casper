@@ -1,6 +1,6 @@
 import Nav from "@/components/Nav";
 
-type Active = "protocol" | "connect" | "dashboard" | "verify" | null;
+type Active = "protocol" | "connect" | "dashboard" | "verify" | "compliance" | null;
 
 // Instant shell shown by loading.tsx during navigation while the server component
 // streams. Nav renders immediately so a page switch never feels like a dead click.

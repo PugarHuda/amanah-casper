@@ -34,8 +34,12 @@ test.describe("Amanah manual-click QA", () => {
     await page.getByRole("link", { name: /see it reason/i }).click();
     await page.waitForURL("**/agent");
     await expect(page.getByRole("heading", { name: /agent console/i })).toBeVisible();
-    // Cycle banner should say LIVE (we have a published blob), not REPRESENTATIVE.
-    const cycleId = await page.locator(".mono").first().innerText();
+    // Wait for the real cycle banner. The loading.tsx skeleton also renders a `.mono`
+    // line ("… loading live chain state …"), so reading `.mono` first without waiting
+    // races the skeleton — that was a real intermittent failure, not flakiness to retry.
+    const banner = page.locator(".mono").filter({ hasText: /LIVE|REPRESENTATIVE|CYCLE/ }).first();
+    await expect(banner).toBeVisible({ timeout: 15000 });
+    const cycleId = await banner.innerText();
     console.log("Agent cycleId:", cycleId);
     expect(cycleId).toMatch(/LIVE|REPRESENTATIVE/);
     // Reasoning hash is a real 64-hex blake2b (0x + 64 chars).

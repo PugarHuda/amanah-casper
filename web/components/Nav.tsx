@@ -10,7 +10,7 @@ const Logo = () => (
   </svg>
 );
 
-type Active = "protocol" | "connect" | "dashboard" | "verify" | null;
+type Active = "protocol" | "connect" | "dashboard" | "verify" | "compliance" | null;
 
 export default function Nav({ active = null }: { active?: Active }) {
   const cls = (k: Active) => (active === k ? "active" : undefined);
@@ -29,6 +29,7 @@ export default function Nav({ active = null }: { active?: Active }) {
         </Link>
         <a href="https://github.com/PugarHuda/amanah-casper#readme" target="_blank" rel="noopener noreferrer">Read the spec</a>
         <Link href="/verify" className={cls("verify")}>Verify</Link>
+        <Link href="/compliance" className={cls("compliance")}>Evidence</Link>
         <Link href="/connect" className={cls("connect")}>Connect wallet</Link>
         <Link href="/dashboard" className={cls("dashboard")}>Dashboard</Link>
       </div>

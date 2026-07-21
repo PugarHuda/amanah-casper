@@ -58,3 +58,32 @@ test.describe("resilience", () => {
     await ctx.close();
   });
 });
+
+test.describe("control evidence", () => {
+  test("compliance page shows real refusals, named as the control that fired", async ({ page }) => {
+    await page.goto("/compliance", { waitUntil: "domcontentloaded" });
+    await expect(page.getByRole("heading", { name: /did the algorithm perform as intended/i })).toBeVisible();
+    // At least one policy refusal, described by control rather than raw error code.
+    await expect(page.getByText(/Separation of duties|Value conservation|Circuit breaker/).first()).toBeVisible({ timeout: 20000 });
+    // Raw Odra/VM codes must NOT be presented as control refusals.
+    const exceptionSection = await page.locator("body").innerText();
+    expect(exceptionSection).not.toMatch(/Unmapped contract error/);
+  });
+
+  test("evidence pack API separates policy refusals from platform faults", async ({ request }) => {
+    const res = await request.get("/api/compliance-report?days=30");
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body).toHaveProperty("exceptions");
+    expect(body).toHaveProperty("platformFaults");
+    expect(body).toHaveProperty("limitations");
+    // Every policy refusal must name a control and carry a verifiable deploy hash.
+    for (const e of body.exceptions) {
+      expect(e.deployHash, "refusal must cite a deploy").toMatch(/^[0-9a-f]{64}$/);
+      expect(e.control.length, "refusal must name a control").toBeGreaterThan(10);
+      expect(e.error).not.toMatch(/^Odra\/VM/);
+    }
+    // Platform faults must never be dressed up as controls.
+    for (const f of body.platformFaults) expect(f.note).toMatch(/not a policy control/i);
+  });
+});

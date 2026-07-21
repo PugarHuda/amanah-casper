@@ -32,17 +32,17 @@ import type { Holding } from "./view-types";
 // Agent account-hash (the signer whose reputation we display).
 const AGENT_ACCOUNT_HASH = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f";
 
-const VAULT = () => process.env.NEXT_PUBLIC_VAULT_HASH || "";
-const ATTESTATION = () => process.env.NEXT_PUBLIC_ATTESTATION_HASH || "";
-const REPUTATION = () => process.env.NEXT_PUBLIC_REPUTATION_HASH || "";
-const AUDITOR = () => process.env.NEXT_PUBLIC_AUDITOR_HASH || "ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89";
-const ZK = () => process.env.NEXT_PUBLIC_ZK_KYC_HASH || "e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f";
+export const VAULT = () => process.env.NEXT_PUBLIC_VAULT_HASH || "";
+export const ATTESTATION = () => process.env.NEXT_PUBLIC_ATTESTATION_HASH || "";
+export const REPUTATION = () => process.env.NEXT_PUBLIC_REPUTATION_HASH || "";
+export const AUDITOR = () => process.env.NEXT_PUBLIC_AUDITOR_HASH || "ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89";
+export const ZK = () => process.env.NEXT_PUBLIC_ZK_KYC_HASH || "e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f";
 // X402 PaymentToken package hash — baked as default since it's a known deployed contract.
-const X402 = () =>
+export const X402 = () =>
   process.env.NEXT_PUBLIC_X402_HASH ||
   "d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79";
 
-const live = () => cloudConfigured() && !!VAULT();
+export const live = () => cloudConfigured() && !!VAULT();
 
 // Map a raw CSPR.cloud deploy to an audit-trail row. Labels by which of our
 // contracts was called (contract_package_hash), since there's no string EP name.

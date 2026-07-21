@@ -96,6 +96,8 @@ bps on AUM, pay-per-proof (x402 earn side already live), and controls-as-a-servi
 other RWA protocols. Full plan in `ROADMAP.md`; launch kit (socials, thread) in `LAUNCH.md`.
 
 ## What to look at
+- `/compliance` + `/api/compliance-report` — Rule 206(4)-7 evidence pack: exception report of every refused transaction, named by control.
+- `THREAT_MODEL.md` — what each control stops and, explicitly, what it does NOT.
 - `RESEARCH.md` — primary-source research (AICPA Part II, EU AI Act Art. 14, MiCA) mapped to each control, incl. the criticism of our own approach.
 - `ROADMAP.md` — milestones, business model, regulatory posture (CASP). `LAUNCH.md` — socials.
 - `USE_CASE.md` — the real-world case + separation-of-powers.

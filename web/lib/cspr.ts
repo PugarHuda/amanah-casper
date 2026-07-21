@@ -47,6 +47,95 @@ export type RawDeploy = {
 };
 
 /**
+ * The contract error enum (contracts/src/common.rs). A revert is not a failure here — it
+ * is a control firing, so each code is mapped to the control it evidences. This is what
+ * turns raw `User error: N` into an exception report a compliance officer can read.
+ */
+export const CONTRACT_ERRORS: Record<number, { name: string; control: string }> = {
+  1: { name: "NotAuthorized", control: "Access control — caller is not the authorised party" },
+  2: { name: "OverTxCap", control: "Spend limit — per-transaction cap exceeded" },
+  3: { name: "NotAllowlisted", control: "Counterparty allowlist" },
+  4: { name: "OverDailyLimit", control: "Spend limit — rolling daily limit exceeded" },
+  5: { name: "Expired", control: "Kill switch — gate expired/revoked" },
+  6: { name: "NotCompliant", control: "KYC/AML — counterparty not Valid" },
+  7: { name: "InvalidAttestation", control: "Proof-of-reasoning — signature did not verify" },
+  8: { name: "UnknownSigner", control: "Signer is not an authorised auditor" },
+  9: { name: "ReplayedProof", control: "Anti-replay — proof already consumed" },
+  10: { name: "TouchesPrincipal", control: "Capital preservation — principal invariant" },
+  11: { name: "InsufficientAllocation", control: "Balance check" },
+  12: { name: "AddressNotSet", control: "Configuration guard" },
+  13: { name: "Frozen", control: "Dead-man's switch — vault frozen" },
+  14: { name: "BelowReputationFloor", control: "Circuit breaker — agent benched on reputation" },
+  15: { name: "NotStale", control: "Dead-man's switch — agent not actually silent" },
+  16: { name: "NotApproved", control: "Separation of duties — auditor quorum has not approved" },
+  17: { name: "SameAsset", control: "Value conservation — reallocation must move between assets" },
+};
+
+/**
+ * Classify a revert. This distinction matters for an evidence pack: a POLICY refusal is a
+ * control working as designed, whereas a PLATFORM error (Odra/VM codes, which sit in a
+ * high reserved range) is an operational failure. Presenting the two as the same thing
+ * would overstate how often the controls fired.
+ */
+export function describeRevert(
+  errorMessage?: string | null,
+): { name: string; control: string; kind: "policy" | "platform" } | null {
+  if (!errorMessage) return null;
+  const m = errorMessage.match(/User error:\s*(\d+)/);
+  if (!m) return { name: errorMessage.slice(0, 60), control: "Unclassified revert", kind: "platform" };
+  const code = Number(m[1]);
+  const known = CONTRACT_ERRORS[code];
+  if (known) return { ...known, kind: "policy" };
+  return {
+    name: `Odra/VM ${code}`,
+    control: "Platform or runtime error — not a policy control (e.g. deployment or gas condition)",
+    kind: "platform",
+  };
+}
+
+/** One refused transaction, described as the control (or platform fault) behind it. */
+export type Exception = {
+  deployHash: string; timestamp: string | null; error: string; name: string; control: string;
+  kind: "policy" | "platform";
+};
+
+/**
+ * Exception report: every transaction a control REFUSED, across the given packages.
+ * SEC staff applying Advisers Act Rule 206(4)-7 expect exception reports evidencing that
+ * automated systems behaved as intended — refusals are that evidence.
+ */
+export async function getExceptions(packageHashes: string[], limit = 100): Promise<Exception[]> {
+  const hashes = packageHashes.filter(Boolean);
+  if (!hashes.length) return [];
+  try {
+    const lists = await Promise.all(
+      hashes.map((h) =>
+        cloudGet<{ data?: RawDeploy[] }>(`/deploys?contract_package_hash=${h}&page=1&page_size=${limit}`)
+          .then((d) => d.data ?? [])
+          .catch(() => []),
+      ),
+    );
+    return lists
+      .flat()
+      .filter((d) => !!d.error_message)
+      .map((d) => {
+        const desc = describeRevert(d.error_message)!;
+        return {
+          deployHash: d.deploy_hash ?? "",
+          timestamp: d.timestamp ?? null,
+          error: d.error_message ?? "",
+          name: desc.name,
+          control: desc.control,
+          kind: desc.kind,
+        };
+      })
+      .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Real on-chain activity for a contract package over the last `days`: how many of its
  * transactions succeeded and how many were REFUSED by a guard rail. Reverts are a
  * feature here — they are the circuit breakers and the auditor quorum doing their job —
