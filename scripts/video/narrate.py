@@ -10,20 +10,20 @@ RATE = "-8%"
 # Each segment: the narration for one scene. record.mjs holds that scene for the clip's
 # measured duration, so audio and video stay in sync.
 SEGMENTS = [
-    "Most AI agents that manage money ask you to trust a log file. Amanah proves every decision on-chain — and independent agents must approve it before a single token moves. It's live on Casper testnet.",
-    "Let's open the live dashboard. This is a real tokenized treasury: one million dollars, with eight hundred thousand locked as principal by a vault invariant. The agent can only ever move the yield.",
-    "The holdings — gold, US treasuries, oil, and Casper — are read live from the vault contract, with real twenty-four-hour price changes from the market.",
-    "The first safeguard is an on-chain circuit breaker. If the agent's reputation drops below a floor, the vault refuses to trade — and a dead-man's switch lets anyone freeze it if the agent goes silent.",
-    "Solvency is proven in zero knowledge. A Pedersen and Schnorr proof shows the reserves cover the principal, while hiding the exact per-asset split from front-runners.",
-    "K-Y-C is zero-knowledge too. The agent proves it holds a valid credential with a Schnorr proof verified inside the contract — the secret is never sent.",
-    "And approval isn't one agent's call. A two-of-three quorum of independent auditors must each sign off on-chain before a move can execute.",
-    "Spending passes a custodian-owned gate held by a separate key. The agent can't raise its own limits, clear its own K-Y-C, or ever touch the principal.",
-    "Every decision is a public transaction. This audit trail links straight to cspr dot live — including the agent paying for market data over x402, and even earning x402 payments for its verified reasoning.",
-    "Here's the very same vault on the Casper block explorer. Real contract, real state, independently verifiable by anyone.",
-    "Each cycle, the agent enriches its view through two official Casper M-C-P servers — CSPR dot cloud and the CSPR dot trade DEX — then reasons over the live data.",
-    "The agent console shows that reasoning — signed, hashed, and verified by the contract itself before it is recorded. Proof, not a diary.",
-    "You can connect a Casper wallet directly: Casper Wallet, Ledger, or social login, through the official hosted SDK.",
-    "Amanah — the on-chain fiduciary layer for autonomous real-world-asset treasuries. Ten smart contracts live, every claim provable. Find us on X, Discord, and Telegram. Thanks for watching.",
+    "Most AI agents that manage money ask you to trust a log file. Amanah does the opposite: the vault itself refuses to move a single token unless independent auditors have approved that exact decision on-chain. It is live on Casper testnet.",
+    "Here is the treasury. One million dollars of tokenized real-world assets, with eight hundred thousand locked as principal by a vault invariant. The agent can only ever move the yield.",
+    "The holdings — gold, US treasuries, oil, and Casper — are read live from the vault contract, with real twenty-four-hour price moves from the market.",
+    "Now the part that matters. This counter is not decoration: eight vault transactions in the last thirty days, six executed and two REFUSED by a guard rail. The refusals are the controls doing their job.",
+    "Here is one of them. A decision the auditors never approved was refused by the contract — even though it was signed with the agent's own key and its reputation was passing. So a fully compromised agent key still cannot move funds.",
+    "The same vault also refuses to create value. We found the bug ourselves through edge-case testing: reallocating an asset to itself used to mint tokens from nothing. It is now rejected on-chain.",
+    "And if the agent goes silent, anyone can freeze the vault. An unrelated third-party key did exactly that, was then denied when it tried to lift the freeze, and only the custodian could release it.",
+    "Solvency is proven in zero knowledge, every cycle — not once. The hidden per-asset split stays private while the contract checks that reserves cover the locked principal.",
+    "The strongest criticism of zero-knowledge proofs of reserves is that only specialists can check them. So we built this. The proof re-runs in YOUR browser, against the exact bytes the contract accepted.",
+    "And you can break it. Claim a thousand dollars more than we hold, and the proof is rejected instantly. Change a single digit in a decision, and its hash no longer matches what was attested. You do not need to trust us.",
+    "For the people who have to answer to a regulator, this is the artifact they actually ask for: an exception report naming every transaction a control refused, generated from the chain, exportable, with the scope limits stated plainly.",
+    "Each cycle the agent reads live prices, buys a multi-asset signal over x402, reasons with an L-L-M through two official Casper M-C-P servers, then signs its reasoning — and the contract verifies that signature before recording it.",
+    "Ten smart contracts on Casper, a hundred and eleven automated tests, and every claim on this page is a public transaction you can open yourself.",
+    "Amanah — the on-chain fiduciary layer for autonomous real-world-asset treasuries. Don't trust us. Verify. Thanks for watching.",
 ]
 
 

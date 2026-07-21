@@ -7,7 +7,12 @@ import fs from "node:fs";
 
 const OUT = process.argv[2];
 const BASE = process.env.DEMO_BASE || "https://amanah-casper-rwa.vercel.app";
-const VAULT_PKG = "540051ac4dacd251a9afe8bb14e4b47199ea7cdfb55f861e1531d17b4b47a1d1";
+const REFUSED = {
+  quorum: "4a9ff08b6df9c2775bfabae17a47a17b49951915dd3a6c93fe1f8537dbcfa032",   // NotApproved
+  sameAsset: "fb45bfead42371eb6e7705c11cc686f0290a1273a966b54b3ca9763f3967b5c6", // SameAsset (mint blocked)
+  frozen: "13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d",   // dead-man's switch tripped
+};
+const VAULT_PKG = "8558283443dfceba9956eadc241401a78fbbeaf2410f6094581d135ecf5923dd";
 const timing = JSON.parse(fs.readFileSync(`${OUT}/timing.json`, "utf8"));
 const dur = timing.segments.map((s) => Math.round(s.dur * 1000));
 const vidDir = `${OUT}/vid`;
@@ -56,16 +61,26 @@ async function scene(i, setup) {
 await scene(0, async () => { await goto("/"); await sleep(400); });
 await scene(1, async () => { await navClick("/dashboard"); await page.evaluate(() => window.scrollTo(0, 0)); });
 await scene(2, async () => { await scrollTo(430); await highlight("Gold"); });
-await scene(3, async () => { await highlight("Circuit breaker"); });
-await scene(4, async () => { await highlight("ZK proof-of-reserves"); });
-await scene(5, async () => { await highlight("KYC (zero-knowledge"); });
-await scene(6, async () => { await highlight("Auditor quorum"); });
-await scene(7, async () => { await scrollTo(1150); await highlight("Agent allowlisted"); });
-await scene(8, async () => { await scrollTo(1850); await highlight("Reallocate"); });
-await scene(9, async () => { await goto(`https://testnet.cspr.live/contract-package/${VAULT_PKG}`); await sleep(1500); });
-await scene(10, async () => { await goto("/agent"); await sleep(1000); });
-await scene(11, async () => { await scrollTo(520); });
-await scene(12, async () => { await navClick("/connect"); });
+// The live executed-vs-refused counter is the heart of the story now.
+await scene(3, async () => { await page.evaluate(() => window.scrollTo(0, 0)); await sleep(400); await highlight("VAULT TX"); });
+// The three refusals, each a real transaction on the explorer.
+await scene(4, async () => { await goto(`https://testnet.cspr.live/deploy/${REFUSED.quorum}`); await sleep(1800); });
+await scene(5, async () => { await goto(`https://testnet.cspr.live/deploy/${REFUSED.sameAsset}`); await sleep(1800); });
+await scene(6, async () => { await goto(`https://testnet.cspr.live/deploy/${REFUSED.frozen}`); await sleep(1800); });
+// Proof lab: solvency, then break it on camera.
+await scene(7, async () => { await goto("/verify"); await sleep(3500); await highlight("Zero-knowledge proof-of-solvency"); });
+await scene(8, async () => { await scrollTo(360); });
+await scene(9, async () => {
+  await page.getByRole("button", { name: /claim \$1,000 more/ }).click().catch(() => {});
+  await sleep(1200);
+  await page.getByRole("button", { name: /change one digit/ }).click().catch(() => {});
+  await sleep(800);
+});
+// The compliance artifact.
+await scene(10, async () => { await goto("/compliance"); await sleep(1500); await scrollTo(420); });
+// The cycle itself.
+await scene(11, async () => { await goto("/agent"); await sleep(1200); await scrollTo(420); });
+await scene(12, async () => { await navClick("/dashboard"); await scrollTo(1500); });
 await scene(13, async () => { await goto("/"); await sleep(300); });
 
 await ctx.close();
