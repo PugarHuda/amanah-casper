@@ -97,6 +97,25 @@ verdict; a valid sum-proof for a total *below* principal reports
 **"proof valid, but reserves < principal"**. We state the **verification-participation
 assumption** openly: a distributed audit only binds what verifiers actually check.
 
+### 1a-i. Reserve presentation (by analogy to AICPA Part I)
+
+Part I is about presenting, at a point in time, **what is outstanding** and **what backs
+it**. Same caveat as below: scoped to fiat-pegged stablecoins, so this is an analogy.
+Amanah's difference is that each line is *provable* rather than asserted.
+
+| Part I presentation element | Amanah equivalent | How it is evidenced |
+|---|---|---|
+| Tokens outstanding at a point in time | locked principal (our liability) — `principal_locked` | read live from the vault; shown on the dashboard |
+| Value of backing assets | sum of per-asset allocations | read live; re-derived independently by `/verify` |
+| Composition of the reserve | four asset legs (gold, US T-bond, WTI, CSPR) | per-asset commitments published; amounts hidden |
+| Assets ≥ outstanding | `total ≥ principal` | **proven in zero knowledge and verified on-chain each cycle**, and re-checkable in your browser |
+| Point-in-time basis | timestamped proof per cycle | `provenAt` + the deploy hash in `/proofs/reserves.json` |
+| Independent examination | ✗ **not done** | requires a CPA engagement — Phase 1 |
+
+The one place we go beyond Part I: it is a **point-in-time** framework, and that is the
+structural criticism of snapshot attestations. We therefore re-prove **every cycle**
+(`agent/src/solvency.ts`), which is closer to Part II's "over a period" posture.
+
 ### 1a. Control mapping (by analogy to AICPA Part II)
 
 **This is a self-assessment by analogy** — Part II is scoped to fiat-pegged stablecoins, and

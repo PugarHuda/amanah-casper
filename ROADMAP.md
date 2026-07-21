@@ -75,6 +75,12 @@ We do not position Amanah as living outside regulation. Two primary sources set 
 | Ability to halt the system | **dead-man's switch** (anyone may freeze a silent agent; custodian-only unfreeze) — [proven live](https://testnet.cspr.live/deploy/13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d) |
 | Record retention / audit trail | every decision hashed, signed, verified **inside** the contract, and pinned to IPFS |
 
+**Implemented:** every attested decision blob now carries governance attribution — the
+approved policy version, who approved it, the machine-readable risk tolerance (the
+confidence threshold below which the agent escalates instead of acting), and the named
+accountable owner — so a DORA-scoped client's management body can *evidence* oversight.
+Attribution only: it does not transfer the duty.
+
 Two limits we state plainly rather than gloss:
 
 - **A quorum improves control, not liability.** MiCA/MiFID conduct and custody duties

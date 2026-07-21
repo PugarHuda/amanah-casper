@@ -31,6 +31,11 @@ export const config = {
   auditorLogHash: opt("AUDITOR_LOG_HASH", ""),
   auditorQuorumHash: opt("AUDITOR_QUORUM_HASH", ""),
   zkReservesHash: opt("ZK_RESERVES_HASH", ""),
+  // Governance attribution (DORA Art. 5(2)(a) / 28(1)(a)): recorded in every attested
+  // blob so a client's management body can EVIDENCE oversight. Unset = reported unset.
+  policyVersion: opt("POLICY_VERSION", ""),
+  policyApprovedBy: opt("POLICY_APPROVED_BY", ""),
+  accountableOwner: opt("ACCOUNTABLE_OWNER", ""),
   custodianKeyPath: opt("CUSTODIAN_KEY_PEM", "./secret/custodian_key.pem"),
   paymentMotes: num("CASPER_PAYMENT_MOTES", 5_000_000_000),
 

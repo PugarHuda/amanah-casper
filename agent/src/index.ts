@@ -20,6 +20,7 @@ import { auditDecision, attestAudit } from "./audit.js";
 import { castQuorumVotes } from "./quorum.js";
 import { notifyCycle, type CycleReport } from "./notify.js";
 import { proveSolvency } from "./solvency.js";
+import { governanceContext } from "./governance.js";
 import { readVault } from "./read-vault.js";
 import type { ReasoningBlob } from "./types.js";
 
@@ -83,6 +84,9 @@ async function runCycle(cycle: number): Promise<void> {
     premiumSignal,
     marketContext,
     decision,
+    // Recorded IN the signed blob so the attribution is attested on-chain with the
+    // decision itself, not kept in a mutable side-channel.
+    governance: governanceContext(),
     model: config.model,
     at: new Date().toISOString(),
   };
