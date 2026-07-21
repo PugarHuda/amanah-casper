@@ -25,15 +25,18 @@ test.describe("Amanah manual-click QA", () => {
     }
     await expect(page.getByText("Claude", { exact: true })).toHaveCount(0);
     // CTAs link to the right routes.
-    await expect(page.getByRole("link", { name: /see it reason/i })).toHaveAttribute("href", "/agent");
-    await expect(page.getByRole("link", { name: /open dashboard/i })).toHaveAttribute("href", "/dashboard");
+    // Connect is the entrance; the dashboard stays reachable without connecting.
+    await expect(page.getByRole("link", { name: /^connect wallet$/i }).first()).toHaveAttribute("href", "/connect");
+    await expect(page.getByRole("link", { name: /explore without connecting/i })).toHaveAttribute("href", "/dashboard");
   });
 
-  test("click 'See it reason' navigates to live agent console", async ({ page }) => {
-    await gotoAndSettle(page, "/");
-    await page.getByRole("link", { name: /see it reason/i }).click();
+  test("the agent console shows a real, live reasoning cycle", async ({ page }) => {
+    await gotoAndSettle(page, "/dashboard");
+    await page.getByRole("navigation").getByRole("link", { name: "How it works", exact: true }).click();
     await page.waitForURL("**/agent");
-    await expect(page.getByRole("heading", { name: /agent console/i })).toBeVisible();
+    // 15s: under parallel load these pages block on live testnet RPC reads, and the
+    // default 5s expect timeout races a slow node rather than a real regression.
+    await expect(page.getByRole("heading", { name: /agent console/i })).toBeVisible({ timeout: 15000 });
     // Wait for the real cycle banner. The loading.tsx skeleton also renders a `.mono`
     // line ("… loading live chain state …"), so reading `.mono` first without waiting
     // races the skeleton — that was a real intermittent failure, not flakiness to retry.
@@ -170,6 +173,8 @@ test.describe("Amanah manual-click QA", () => {
   test("every nav link lands where its label says, and marks itself current", async ({ page }) => {
     // The nav is the first thing a judge touches; a label that doesn't match its
     // destination (the old "Protocol" -> /agent) is what made it confusing.
+    // Start inside the app: the landing page deliberately shows only the entrance
+    // (Verify + Spec + Connect), not the whole app shell.
     for (const [label, path, heading] of [
       ["Dashboard", "/dashboard", /audit dashboard/i],
       ["Verify", "/verify", /verify/i],
@@ -177,16 +182,19 @@ test.describe("Amanah manual-click QA", () => {
       ["How it works", "/agent", /agent console/i],
       ["Connect wallet", "/connect", /connect to amanah/i],
     ] as const) {
-      await gotoAndSettle(page, "/");
+      await gotoAndSettle(page, "/verify");
       await page.getByRole("navigation").getByRole("link", { name: label, exact: true }).click();
       await page.waitForURL(`**${path}`);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading, { timeout: 15000 });
       // aria-current is how a screen reader (and the bold style) says "you are here".
       await expect(page.getByRole("navigation").getByRole("link", { name: label, exact: true }))
         .toHaveAttribute("aria-current", "page");
     }
-    // The external spec link points at the real GitHub docs, not a fabricated blog.
+    // The landing page shows the entrance only — not four app destinations to someone
+    // who has not been told what this is.
     await gotoAndSettle(page, "/");
+    await expect(page.getByRole("navigation").getByRole("link", { name: "Dashboard", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("navigation").getByRole("link", { name: "Verify", exact: true })).toBeVisible();
     expect(await page.getByRole("link", { name: /spec/i }).first().getAttribute("href")).toContain("github.com");
   });
   test("proof lab verifies our cryptography in the browser — and tampering breaks it", async ({ page }) => {

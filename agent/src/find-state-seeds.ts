@@ -17,6 +17,8 @@ const PACKAGES = {
   AttestationLog: process.env.ATTESTATION_LOG_HASH ?? "365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532",
   SpendGate: process.env.SPEND_GATE_HASH ?? "f19ed0e9b235e8422aef7d8fbbcaa9cbc34ef4864efd81bbeb7c82d2b77d0cf3",
   ComplianceRegistry: process.env.COMPLIANCE_HASH ?? "93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5",
+  AuditorQuorum: process.env.AUDITOR_QUORUM_HASH ?? "2663d7ce209f999670be56dc2732512cd500f1cd4423f1623383fff68ff3dfeb",
+  ZkReserves: process.env.ZK_RESERVES_HASH ?? "",
   ZkKycVerifier: process.env.ZK_KYC_HASH ?? "e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f",
 };
 

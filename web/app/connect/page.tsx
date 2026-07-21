@@ -1,10 +1,61 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Nav from "@/components/Nav";
 import { useCsprClick } from "@/lib/useCsprClick";
 import { WALLET_KEYS } from "@make-software/csprclick-core-types";
+import type { KeyIdentity } from "@/lib/cspr";
+
+// Renders what the chain says about the connected key. Every line is a live read —
+// nothing here is inferred from the session or stored client-side.
+function KeyIdentityCard({ who }: { who: KeyIdentity | null | false }) {
+  if (who === null) {
+    return <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Resolving this key against the contracts…</div>;
+  }
+  if (who === false) {
+    return <div style={{ marginTop: 14, fontSize: 13, color: "var(--muted)" }}>Could not read chain state for this key right now — role unknown, not &ldquo;none&rdquo;.</div>;
+  }
+  const ROLE_TEXT: Record<string, string> = {
+    custodian: `Custodian — you may unfreeze the vault after a dead-man's-switch trip, set spend limits, and attest KYC and settled payments.`,
+    auditor: `Registered auditor — your signature counts toward the ${who.quorumThreshold ?? "K"}-of-N quorum the vault requires before any reallocation.`,
+    agent: `The treasury agent — this is the autonomous signer. Every move it proposes is still gated by the quorum, spend limits and reputation floor.`,
+  };
+  const rows: [string, string][] = [
+    ["KYC status", who.kycStatus ?? "unknown"],
+    ["Spend allowlist", who.allowlisted == null ? "unknown" : who.allowlisted ? "allowlisted" : "not allowlisted"],
+    ["ZK-KYC proof", who.zkVerified == null ? "none on record" : who.zkVerified ? "verified on-chain" : "not verified"],
+    ["Reputation", who.reputation == null ? "unknown" : String(who.reputation)],
+  ];
+  return (
+    <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #dcefe2" }}>
+      <div className="mono" style={{ fontSize: 11, letterSpacing: "1.6px", color: "var(--faint)" }}>
+        WHAT THIS KEY CAN DO — READ FROM THE CONTRACTS
+      </div>
+      {who.roles.length === 0 ? (
+        <div style={{ marginTop: 8, fontSize: 14, color: "var(--body)", lineHeight: 1.55 }}>
+          <strong>Observer.</strong> This key holds no role in this deployment — it cannot move funds, vote in the
+          auditor quorum, or lift a freeze. That is not a limitation of the demo: everything worth checking is
+          public anyway, which is the point.
+        </div>
+      ) : (
+        <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 14, color: "var(--body)", lineHeight: 1.55 }}>
+          {who.roles.map((r) => (
+            <li key={r} style={{ marginTop: 4 }}>{ROLE_TEXT[r]}</li>
+          ))}
+        </ul>
+      )}
+      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", fontSize: 13 }}>
+        {rows.map(([k, v]) => (
+          <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ color: "var(--muted)" }}>{k}</span>
+            <span style={{ color: "var(--ink)", fontWeight: 600 }}>{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const Chevron = () => (
   <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
@@ -24,17 +75,33 @@ export default function Connect() {
   const { account, ready, error, appId, signIn, connect, signOut } = useCsprClick();
   const router = useRouter();
   const redirected = useRef(false);
+  // What the CONTRACTS say this key is. Connecting used to be decorative — it
+  // authenticated you and redirected. A key only has meaning here if on-chain state
+  // gives it one, so we resolve it: vault agent/custodian, quorum auditor, KYC,
+  // allowlist, reputation. `null` = still resolving, `false` = unreadable.
+  const [who, setWho] = useState<KeyIdentity | null | false>(null);
 
-  // Once a wallet is connected, go straight to the dashboard (what the user came for).
-  // Guarded so it fires once; router.prefetch warms the route for an instant transition.
   useEffect(() => {
     router.prefetch("/dashboard");
-    if (account && !redirected.current) {
-      redirected.current = true;
-      const t = setTimeout(() => router.push("/dashboard"), 700);
-      return () => clearTimeout(t);
-    }
+    if (!account) { setWho(null); return; }
+    let live = true;
+    fetch(`/api/whoami?pk=${account.public_key}`)
+      .then((r) => (r.ok ? r.json() : false))
+      .then((d) => live && setWho(d))
+      .catch(() => live && setWho(false));
+    return () => { live = false; };
   }, [account, router]);
+
+  // An observer key has nothing to be told, so send it where it wanted to go. A key
+  // that the chain gives a ROLE stops here instead — being told you are the custodian
+  // is the point of connecting, and flinging you to the dashboard would hide it.
+  useEffect(() => {
+    if (!account || who === null || redirected.current) return;
+    if (who !== false && who.roles.length > 0) return;
+    redirected.current = true;
+    const t = setTimeout(() => router.push("/dashboard"), 900);
+    return () => clearTimeout(t);
+  }, [account, who, router]);
 
   const onRow = (action: string) => {
     if (action === "signIn") signIn();
@@ -65,12 +132,13 @@ export default function Connect() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ width: 9, height: 9, borderRadius: "50%", background: "var(--green-deep)" }} />
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--green-deep)" }}>
-                    Connected via {account.provider} · entering dashboard…
+                    Connected via {account.provider}
                   </span>
                 </div>
                 <div className="mono" style={{ marginTop: 10, fontSize: 13, color: "var(--ink)", wordBreak: "break-all" }}>
                   {account.public_key}
                 </div>
+                <KeyIdentityCard who={who} />
                 <button
                   onClick={() => router.push("/dashboard")}
                   className="btn-primary"

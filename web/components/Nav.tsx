@@ -28,6 +28,10 @@ export default function Nav() {
   // /verify and /compliance passed active={null} and never highlighted.
   const path = usePathname();
   const cur = (href: string) => (path === href ? "page" : undefined);
+  // The landing page is not the app. Showing four app destinations to someone who
+  // has not been told what this is reads as a menu of unknowns; inside the app the
+  // same four are wayfinding. So: one entrance out front, full shell within.
+  const marketing = path === "/";
   return (
     <nav className="nav">
       <Link href="/" aria-label="amanah home" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
@@ -35,7 +39,7 @@ export default function Nav() {
         <span style={{ fontSize: 23, fontWeight: 600, letterSpacing: "-0.4px", color: "#16130f" }}>amanah</span>
       </Link>
       <div className="nav-links">
-        {LINKS.map((l) => (
+        {(marketing ? LINKS.filter((l) => l.href === "/verify") : LINKS).map((l) => (
           <Link key={l.href} href={l.href} className={path === l.href ? "active" : undefined} aria-current={cur(l.href)}>
             {l.label}
           </Link>

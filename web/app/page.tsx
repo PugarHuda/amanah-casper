@@ -30,8 +30,11 @@ export default function Landing() {
           </p>
 
           <div style={{ marginTop: 34, display: "flex", gap: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+            {/* Connect first — that is the entrance. But the dashboard stays open to
+                anyone: the whole claim is "don't trust us, verify", and an auditor who
+                has to sign in before they can check is not auditing. */}
             <Link
-              href="/agent"
+              href="/connect"
               style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 11, background: "#15120e", color: "#fff", fontSize: 16, fontWeight: 600, padding: "15px 26px 15px 22px", borderRadius: 999, boxShadow: "var(--cta-shadow)" }}
             >
               <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
@@ -42,13 +45,13 @@ export default function Landing() {
                 <circle cx="14" cy="8.5" r="1.7" fill="currentColor" opacity="0.5" />
                 <circle cx="8.5" cy="14" r="1.7" fill="currentColor" opacity="0.5" />
               </svg>
-              See it reason
+              Connect wallet
             </Link>
             <Link
               href="/dashboard"
               style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9, color: "#15120e", fontSize: 16, fontWeight: 600, padding: "15px 24px", borderRadius: 999, border: "1px solid #d8d2c4" }}
             >
-              Open dashboard
+              Explore without connecting
               <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
                 <path d="M1 1l5.5 5.5L1 12" stroke="#15120e" strokeWidth="1.7" strokeLinecap="round" />
               </svg>

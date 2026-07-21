@@ -11,7 +11,7 @@ import { proveReserves, verifyReserves, deriveH, hexToBytes, bytesToHex } from "
 import { config } from "./config.js";
 import { ed25519 } from "@noble/curves/ed25519";
 
-const ZK_RESERVES = process.env.ZK_RESERVES_HASH || "5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a";
+const ZK_RESERVES = process.env.ZK_RESERVES_HASH || "5f57375f6187920b15f833d702121f591c9e4559fbd674a6704dd22c09b8f520";
 const OUT = resolve(import.meta.dirname, "../../web/public/proofs/reserves.json");
 const ALLOCATIONS = [250_000_000_000n, 400_000_000_000n, 150_000_000_000n, 200_000_000_000n];
 const PRINCIPAL_FLOOR = 800_000_000_000n;

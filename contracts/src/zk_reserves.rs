@@ -10,8 +10,9 @@
 //!   P = ΣC_i − T·G          (= R·H, R = Σr_i, iff Σa_i = T)
 //!   c = blake2b256(DOMAIN ‖ ΣC ‖ T_le ‖ proof_T) mod L
 //!   accept iff  s·H == proof_T + c·P     (Schnorr PoK of R for base H)
-use crate::common::{AssetId, Error, ALL_ASSETS};
+use crate::common::{Error, ALL_ASSETS};
 use crate::rwa_vault::RwaVaultContractRef;
+use odra::casper_types::U256;
 use odra::prelude::*;
 use odra::ContractRef;
 

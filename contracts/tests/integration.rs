@@ -539,14 +539,22 @@ fn zk_reserves_hides_split_and_proves_the_sum() {
     let proof_t = hx32("9585b650eb4ec57858c21c188021b5d98b7a1cf066fa81cb4cb22bfbc37f70b2");
     let s = hx32("c18ef792d5f2c1a6e6c2bc30bf4ece1b8328413646a2a0f8640178b097ab6a08");
 
-    // Valid proof, total >= floor -> solvency recorded (split stays hidden).
+    // Valid proof, total >= floor, total == the vault's real allocations -> recorded.
     zk.prove_reserves(commitments.clone(), total, proof_t, s, 800_000_000_000);
     assert!(zk.is_solvent());
     assert_eq!(zk.last_total(), total);
 
-    // Claiming a different total breaks the Schnorr equation.
+    // Claiming a different total is now caught by the state binding BEFORE the crypto
+    // even runs — it no longer matches what the vault actually holds.
     let err = zk.try_prove_reserves(commitments.clone(), total + 1, proof_t, s, 800_000_000_000).unwrap_err();
-    assert_eq!(err, Error::InvalidAttestation.into());
+    assert_eq!(err, Error::TotalMismatch.into());
+
+    // Soundness of the proof itself, tested where the binding can't mask it: right
+    // total, tampered signature scalar -> the Schnorr equation fails.
+    let mut bad_s = s;
+    bad_s[0] ^= 1;
+    let err_sig = zk.try_prove_reserves(commitments.clone(), total, proof_t, bad_s, 800_000_000_000).unwrap_err();
+    assert_eq!(err_sig, Error::InvalidAttestation.into());
 
     // A valid proof but under the required backing -> insolvent.
     let err2 = zk.try_prove_reserves(commitments.clone(), total, proof_t, s, 2_000_000_000_000).unwrap_err();

@@ -5,16 +5,16 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadPrivateKey, makeRpcClient, callEntryPoint } from "./casper.js";
-import { SessionBuilder, AccountIdentifier, CLValue, CLTypeByteArray, Args } from "./sdk.js";
+import { SessionBuilder, AccountIdentifier, CLValue, CLTypeByteArray, Args, Key } from "./sdk.js";
+import { readVault } from "./read-vault.js";
 import { proveReserves, verifyReserves, hexToBytes } from "./zk-reserves.js";
 import { config } from "./config.js";
 import { ed25519 } from "@noble/curves/ed25519";
 
 const WASM = resolve(import.meta.dirname, "../../contracts/wasm/ZkReserves.lowered.wasm");
 const STATE = resolve(import.meta.dirname, "../../.env.zkreserves");
-const KEY_NAME = "amanah_zk_reserves_package_hash";
-// The vault's real per-asset allocations (6-dp atomic USD) — hidden by the commitments.
-const ALLOCATIONS = [250_000_000_000n, 400_000_000_000n, 150_000_000_000n, 200_000_000_000n];
+// Fresh key name per deploy — reusing one collides on-chain (User error: 64641).
+const KEY_NAME = "amanah_zk_reserves_v2_package_hash";
 const PRINCIPAL_FLOOR = 800_000_000_000n;
 
 const agentKey = loadPrivateKey(config.agentKeyPath);
@@ -46,6 +46,13 @@ async function waitForDeploy(hash: string): Promise<void> {
 async function main() {
   if (config.dryRun) throw new Error("DRY_RUN is on — run with DRY_RUN=false");
 
+  // The allocations come from the LIVE vault, never from a constant — v2 of the
+  // contract reads the same values and rejects the proof if they disagree, so a
+  // hardcoded array would simply revert TotalMismatch.
+  const vault = await readVault();
+  const ALLOCATIONS = Object.values(vault.holdings);
+  console.log("live vault allocations:", ALLOCATIONS.map(String).join(", "), "total =", vault.total.toString());
+
   // Build the ZK proof off-chain (blindings are secret; the split never leaves here).
   const blindings = ALLOCATIONS.map(() => BigInt("0x" + Buffer.from(ed25519.utils.randomPrivateKey()).toString("hex")));
   const proof = proveReserves(ALLOCATIONS, blindings);
@@ -60,6 +67,8 @@ async function main() {
         odra_cfg_allow_key_override: CLValue.newCLValueBool(false),
         odra_cfg_is_upgradable: CLValue.newCLValueBool(false),
         odra_cfg_is_upgrade: CLValue.newCLValueBool(false),
+        // v2: the contract needs to know WHICH vault it proves solvency for.
+        vault: CLValue.newCLKey(Key.newKey(`hash-${config.rwaVaultHash}`)),
       })).payment(300_000_000_000).buildFor1_5();
     tx.sign(agentKey);
     const dh = (await rpc.putTransaction(tx)).transactionHash.toHex();
@@ -84,7 +93,7 @@ async function main() {
     chainName: config.chainName, paymentMotes: 60_000_000_000 });
   save("PROOF", deployHash);
   console.log("\nprove_reserves (ZK verified ON-CHAIN):", deployHash);
-  console.log("=== DONE — ZK proof-of-reserves proven on-chain (split hidden) ===");
+  console.log("=== DONE — ZK proof-of-reserves proven on-chain, bound to live vault state ===");
   console.log("ZKR_HASH:", state.ZKR_HASH);
 }
 

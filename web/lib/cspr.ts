@@ -69,6 +69,7 @@ export const CONTRACT_ERRORS: Record<number, { name: string; control: string }> 
   15: { name: "NotStale", control: "Dead-man's switch — agent not actually silent" },
   16: { name: "NotApproved", control: "Separation of duties — auditor quorum has not approved" },
   17: { name: "SameAsset", control: "Value conservation — reallocation must move between assets" },
+  18: { name: "TotalMismatch", control: "Proof-of-reserves — claimed total is not the vault's real balance" },
 };
 
 /**
@@ -485,4 +486,91 @@ export function relTime(ts?: string): string {
   const h = Math.round(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
+}
+
+// --- Who is this key, on-chain? ---------------------------------------------
+// Connecting a wallet used to be decorative: it authenticated you and redirected.
+// A key only means something here if the CONTRACTS say it does, so we resolve it
+// against real state: the vault's agent/custodian Var<Address> fields, the quorum's
+// auditors Mapping<PublicKey,bool>, plus the KYC / allowlist / reputation registries.
+const QUORUM_SEED = (process.env.QUORUM_STATE_SEED || "").trim();
+
+/** Read a `Var<Address>` (Odra stores it as ToBytes: 1 tag byte + 32-byte hash).
+ *  Returns the 32-byte account-hash as hex, or null. */
+async function readAddr(srh: string, seed: string, index: number): Promise<string | null> {
+  if (!srh || !seed) return null;
+  const itemKey = hex(blake2b(new Uint8Array(be32(index)), undefined, 32));
+  const addr = hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${addr}` },
+  });
+  const p = r.result?.stored_value?.CLValue?.parsed;
+  if (!Array.isArray(p) || p.length !== 33) return null;
+  return hex(Uint8Array.from(p.slice(1)));
+}
+
+export type KeyIdentity = {
+  publicKey: string;
+  accountHash: string;
+  /** Every role the chain says this key holds. Empty = observer. */
+  roles: ("agent" | "custodian" | "auditor")[];
+  /** K in the K-of-N auditor quorum, read from the quorum contract. */
+  quorumThreshold: number | null;
+  kycStatus: string | null;
+  allowlisted: boolean | null;
+  zkVerified: boolean | null;
+  reputation: number | null;
+  /** True when a source was unreadable, so the UI can say "unknown" instead of "no". */
+  degraded: boolean;
+};
+
+/** Resolve what a connected public key is actually allowed to do, entirely from
+ *  on-chain state. `publicKeyHex` is the CSPR.click public key (01… / 02…). */
+export async function getKeyIdentity(publicKeyHex: string): Promise<KeyIdentity | null> {
+  const pk = publicKeyHex.trim().toLowerCase();
+  if (!/^0[12][0-9a-f]{64,128}$/.test(pk)) return null;
+  const accountHash = hex(
+    blake2b(
+      // Casper account-hash = blake2b256( algo_name ‖ 0x00 ‖ public_key_bytes )
+      new Uint8Array([
+        ...new TextEncoder().encode(pk.startsWith("01") ? "ed25519" : "secp256k1"),
+        0,
+        ...Buffer.from(pk.slice(2), "hex"),
+      ]),
+      undefined,
+      32,
+    ),
+  );
+  try {
+    const srh = await stateRootHash();
+    if (!srh) return null;
+    const pkBytes = Array.from(Buffer.from(pk, "hex"));
+    const [agent, custodian, auditorByte, threshold, compliance, zkVerified, reputation] = await Promise.all([
+      readAddr(srh, STATE_SEED, 3),   // RwaVault.agent
+      readAddr(srh, STATE_SEED, 8),   // RwaVault.custodian
+      QUORUM_SEED ? readByte(srh, QUORUM_SEED, 1, pkBytes) : Promise.resolve(null), // auditors[pk]
+      QUORUM_SEED ? readByte(srh, QUORUM_SEED, 2, []) : Promise.resolve(null),      // threshold (u32 LE)
+      getComplianceState(accountHash),
+      getZkVerified(accountHash),
+      getReputationScore(accountHash),
+    ]);
+    const roles: KeyIdentity["roles"] = [];
+    if (agent && agent === accountHash) roles.push("agent");
+    if (custodian && custodian === accountHash) roles.push("custodian");
+    if (auditorByte === 1) roles.push("auditor");
+    return {
+      publicKey: pk,
+      accountHash,
+      roles,
+      quorumThreshold: threshold,
+      kycStatus: compliance?.status ?? null,
+      allowlisted: compliance?.allowlisted ?? null,
+      zkVerified,
+      reputation,
+      degraded: !agent || !custodian || !QUORUM_SEED,
+    };
+  } catch {
+    return null;
+  }
 }

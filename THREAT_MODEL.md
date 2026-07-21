@@ -54,10 +54,13 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   that was an overclaim. The cryptography is real and sound, the privacy benefit for *this*
   vault is currently notional. Meaningful hiding needs a confidential vault that stores
   commitments instead of balances — a roadmap item, not a shipped property.
-- **Binding the proof to vault state — written, not yet deployed.** `prove_reserves` reads the vault's real allocations
-  over `ALL_ASSETS` and reverts `TotalMismatch` unless they equal the claimed total, so a
-  sound proof about invented numbers is rejected. It still assumes the configured `vault`
-  address is the right one (set at `init`, custodian-deployed).
+- **The proof is bound to vault state.** A Schnorr sum-proof only says the commitments add
+  up to the total the prover claimed — it says nothing about that total being the
+  treasury's. `prove_reserves` therefore reads the vault's real allocations over
+  `ALL_ASSETS` and reverts `TotalMismatch` unless they equal the claimed total. Proven live:
+  a **cryptographically valid** proof for $1.05M was refused because the vault holds $1.00M
+  ([`3c114651`](https://testnet.cspr.live/deploy/3c114651e1a0008e81286016264c05dcc570959279d1964b86b54409e60ff1ee)).
+  Residual assumption: the `vault` address configured at `init` is the right one.
 - **Custodian centralisation.** Segregation of duties currently rests on one custodian key.
   Progressive decentralisation to a governance quorum is on the roadmap.
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's

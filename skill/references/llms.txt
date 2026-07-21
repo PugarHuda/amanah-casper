@@ -30,7 +30,7 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 | PaymentToken (CEP-18+CEP-3009) | d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79 | — |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f | — |
 | AuditorQuorum (K-of-N independent auditors, signed on-chain votes) | 2663d7ce209f999670be56dc2732512cd500f1cd4423f1623383fff68ff3dfeb | — |
-| ZkReserves (ZK proof-of-reserves: Pedersen+Schnorr, hides the split) | 5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a | fca6a030b00a… |
+| ZkReserves (ZK proof-of-reserves: Pedersen+Schnorr, hides the split) | 5f57375f6187920b15f833d702121f591c9e4559fbd674a6704dd22c09b8f520 | fca6a030b00a… |
 
 ## Verifiable proof transactions (open on testnet.cspr.live/deploy/<hash>)
 
