@@ -1,5 +1,5 @@
 {
-  "note": "Verified ON-CHAIN by ZkReserves (curve25519-dalek) in the deploy below. The /verify page re-runs the same Pedersen+Schnorr check in your browser.",
+  "note": "Verified ON-CHAIN by ZkReserves (curve25519-dalek) in the deploy below. The /verify page re-runs the same Pedersen+Schnorr check in your browser. Regenerated every cycle — solvency is proven over a period, not as a one-off snapshot.",
   "domain": "amanah-zk-reserves-v1",
   "H": "bc55d5c8b14e52ee5ab9a7e316f0eb330888c3bd610557c403a0b522f270629d",
   "labels": [
@@ -9,16 +9,17 @@
     "CSPR reserve"
   ],
   "commitments": [
-    "3e96546939a328893f6cb1d224de90acc25f3cc1263d257e033c82ec33399cd9",
-    "8bcf6f91fc2ea3bc8a30a7295723f9efb68f922cc6f247924de93adab8a3830d",
-    "83a39683e1b822ded9c180e78aa925203c24d5138ccc2708c5a8f2aebfecdf8d",
-    "c6483a93bd5e64c50dba8554f2fdde5c3ba3e8b7c9e1af6dedeaa41bcb791e5f"
+    "b0931d5f01ce9e08174c8eb4066345f5b2bd3055bfa9e6c9513d2cc0d02da241",
+    "c6540b6b1e17e3acba4599564faf0446e835a49c04dd7c67d8371cfd51e82a07",
+    "a5de8a98ca60b61ce5e64d78290c4f9ffff9adee3e984adaee76f5394e4f1c44",
+    "3697590398536b9deaa3d7e08b4311e37a46b882a7be411324db6d12181f51da"
   ],
   "total": "1000000000000",
   "principalFloor": "800000000000",
-  "proofT": "d246471f9a6bdd3f36f2e94eb5ab7919e22ab6984137da0ca2d505dc74354bf8",
-  "s": "8b36fea6d1b2f36b44b94b10d81d0367f03d7598f4193ede92140ceb311c8f08",
+  "proofT": "12c081adbf17b90952bb09d4c7ebb96ed87553a0916ca20d72a51ded8b22ab0d",
+  "s": "664b11a50c2c09e579525f3d339c2b834b926efed3cf07d05c89194395e7d709",
   "contractPackage": "5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a",
-  "deployHash": "aa4d82eb5b61c582d4910707ad25d223de3df03435835901112013b057b00565",
-  "chain": "casper-test"
+  "deployHash": "dbc102ca1c3309e79ebf5971c25646b9039c6e50f24ac8b4252f911948500f76",
+  "chain": "casper-test",
+  "provenAt": "2026-07-21T16:01:46.322Z"
 }

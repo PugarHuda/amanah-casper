@@ -19,6 +19,8 @@ import { getDexQuote } from "./trade-mcp.js";
 import { auditDecision, attestAudit } from "./audit.js";
 import { castQuorumVotes } from "./quorum.js";
 import { notifyCycle, type CycleReport } from "./notify.js";
+import { proveSolvency } from "./solvency.js";
+import { readVault } from "./read-vault.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -187,6 +189,22 @@ async function runCycle(cycle: number): Promise<void> {
   );
   await report("executed", { reallocateDeploy: execHash, quorumVotes });
   log(cycle, "execute", { deployHash: execHash });
+
+  // 9. PROVE SOLVENCY — every cycle, from the vault's REAL post-move allocations. A
+  // point-in-time proof says nothing about the periods around it; proving each cycle is
+  // what makes this a control operating over a period rather than a snapshot.
+  try {
+    const v = await readVault();
+    const s = await proveSolvency(rpc, key, [
+      v.holdings.Gold, v.holdings.TBond, v.holdings.WTI, v.holdings.CSPR,
+    ], v.principal);
+    if (s) {
+      log(cycle, "solvency", { deployHash: s.deployHash, total: s.total.toString(), principal: s.principal.toString() });
+      console.log(`  ⛓  solvency proof (ZK, on-chain): ${s.deployHash}`);
+    }
+  } catch (e) {
+    log(cycle, "solvency.error", { message: (e as Error).message });
+  }
   console.log(`  ⛓  reallocate deploy: ${execHash}`);
 }
 

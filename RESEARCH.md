@@ -200,7 +200,9 @@ is theirs by law; our job is to make it provable.
 | 4 | **Independent audit of the ZK circuit** — without it the proof is not auditor evidence | High | High | roadmap Phase 1 |
 | 5 | Map zk output line-by-line to Part I criteria; expose mint/redeem, custodian and vendor controls as period evidence for Part II | High | Medium | partial (§1a) |
 | 6 | Governance hooks for DORA-scoped clients (sign-off, risk tolerance, named owner) | Medium | Low | roadmap |
-| 7 | Use the chain as an append-only commitment bulletin board; state the verification-participation assumption in the threat model | Medium | Low-Med | ✅ partly done |
+| 7 | Use the chain as an append-only commitment bulletin board; state the verification-participation assumption in the threat model | Medium | Low-Med | ✅ done ([`THREAT_MODEL.md`](THREAT_MODEL.md)) |
+| 8 | **Prove solvency every cycle**, not once — answers the point-in-time critique and matches Part II's "controls over a period" | High | Medium | ✅ done (`agent/src/solvency.ts`) |
+| 9 | **Rule 206(4)-7 evidence pack** with exception reports | Highest | Low | ✅ done (`/compliance`) |
 
 ---
 

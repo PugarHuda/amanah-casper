@@ -30,6 +30,7 @@ export const config = {
   // auditor agent attests its grade of the primary decision here (two keys, two logs).
   auditorLogHash: opt("AUDITOR_LOG_HASH", ""),
   auditorQuorumHash: opt("AUDITOR_QUORUM_HASH", ""),
+  zkReservesHash: opt("ZK_RESERVES_HASH", ""),
   custodianKeyPath: opt("CUSTODIAN_KEY_PEM", "./secret/custodian_key.pem"),
   paymentMotes: num("CASPER_PAYMENT_MOTES", 5_000_000_000),
 
