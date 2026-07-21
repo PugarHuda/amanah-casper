@@ -54,6 +54,30 @@ hashes; live dashboard + agent loop; 79 automated tests. See README proof table.
 
 ---
 
+## Regulatory posture (research-led — see [`RESEARCH.md`](RESEARCH.md))
+
+We do not position Amanah as living outside regulation. Two primary sources set the target:
+
+- **MiCA** regulates *"providing advice on crypto-assets and providing portfolio management
+  of crypto-assets"* as crypto-asset services — an autonomous agent managing client
+  portfolios in the EU is **inside the CASP authorisation perimeter**. Phase 2 therefore
+  assumes operating under (or in partnership with) an authorised CASP, not around it.
+- **EU AI Act Article 14** makes human oversight a **design-time obligation**. Amanah's
+  controls already map onto it:
+
+| AI Act obligation | Amanah feature |
+|---|---|
+| Art. 14(1) — effective oversight *via human-machine interface tools* | the live dashboard + [`/verify`](https://amanah-casper-rwa.vercel.app/verify) proof lab (oversight surface, not decoration) |
+| Art. 14(4)(a)–(c) — understand capacities/limits, resist automation bias, interpret output | plain-language `reasoningSteps` in every attested blob, rendered in the agent console — a signature proves authenticity, it does not discharge explainability |
+| Human-in-the-loop / stop authority | independent auditor + K-of-N quorum enforced by the vault; low-confidence decisions escalate to a human instead of executing |
+| Ability to halt the system | **dead-man's switch** (anyone may freeze a silent agent; custodian-only unfreeze) — [proven live](https://testnet.cspr.live/deploy/13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d) |
+| Record retention / audit trail | every decision hashed, signed, verified **inside** the contract, and pinned to IPFS |
+
+For reserve reporting, the auditor-accepted frame is the **AICPA 2025 Criteria** (Part II,
+Jan 2026, covers *controls over a period* — issuance, redemption, asset custody, vendor
+management). Our ZK proof-of-solvency is designed to be **evidence inside such an
+engagement, not a substitute for it**; an independent CPA examination is a Phase-1 item.
+
 ## Business model (how it pays for itself)
 
 Three revenue lines, all on rails that **already work today**:

@@ -113,17 +113,27 @@ export default function VerifyPage() {
           <h1 className="serif" style={{ margin: "10px 0 0", fontSize: 42, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.8px" }}>
             Don&apos;t trust us. Verify.
           </h1>
-          <p style={{ margin: "12px 0 30px", fontSize: 15, color: "var(--muted, #6b6b6b)", maxWidth: 720, lineHeight: 1.6 }}>
+          <p style={{ margin: "12px 0 16px", fontSize: 15, color: "var(--muted, #6b6b6b)", maxWidth: 720, lineHeight: 1.6 }}>
             Every claim Amanah makes is checkable. The checks below run <strong>client-side, on your
             machine</strong>, against the exact bytes the Casper contracts accepted — then you can
             tamper with the inputs and watch the proofs break.
+          </p>
+          {/* The strongest published criticism of zk proof-of-reserves is that only auditors
+              can actually check it. This page exists specifically to answer that. */}
+          <p style={{ margin: "0 0 30px", padding: "13px 16px", maxWidth: 720, fontSize: 13.5, lineHeight: 1.6, color: "var(--ink2)", background: "var(--surface-subtle)", border: "1px solid var(--border2)", borderRadius: 14 }}>
+            <strong>Why this page exists.</strong> The main criticism of zero-knowledge
+            proof-of-reserves is <em>asymmetric verifiability</em> — the cryptography is strong, but
+            non-technical users can&apos;t inspect it, so only auditors can really check it
+            (<a href="https://arxiv.org/pdf/2606.08211" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>arXiv 2606.08211</a>).
+            You shouldn&apos;t need to read a paper to falsify our claim: press a tamper button and
+            watch the proof fail. See <a href="https://github.com/PugarHuda/amanah-casper/blob/master/RESEARCH.md" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>RESEARCH.md</a> for the sources behind each control.
           </p>
         </div>
 
         {/* 1 — ZK proof-of-reserves */}
         <Card
-          title="1 · Zero-knowledge proof-of-reserves"
-          sub="The treasury proves its reserves cover the locked principal WITHOUT revealing the per-asset split. Below is the Pedersen+Schnorr proof the on-chain verifier accepted; your browser re-derives the generator H, recomputes the Fiat–Shamir challenge, and checks s·H = proof_T + c·(ΣC − T·G)."
+          title="1 · Zero-knowledge proof-of-solvency"
+          sub="Solvency has two halves — assets AND liabilities — so both are checked here: the hidden per-asset allocations must sum to the claimed total (assets), and that total must cover the locked principal (our liability). Neither individual amount is revealed. Below is the Pedersen+Schnorr proof the on-chain verifier accepted; your browser re-derives the generator H, recomputes the Fiat–Shamir challenge, and checks s·H = proof_T + c·(ΣC − T·G)."
         >
           {rvErr ? (
             <p style={{ fontSize: 13, color: "var(--faint)" }}>

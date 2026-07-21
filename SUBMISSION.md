@@ -96,7 +96,8 @@ bps on AUM, pay-per-proof (x402 earn side already live), and controls-as-a-servi
 other RWA protocols. Full plan in `ROADMAP.md`; launch kit (socials, thread) in `LAUNCH.md`.
 
 ## What to look at
-- `ROADMAP.md` — milestones, business model, ecosystem contribution. `LAUNCH.md` — socials.
+- `RESEARCH.md` — primary-source research (AICPA Part II, EU AI Act Art. 14, MiCA) mapped to each control, incl. the criticism of our own approach.
+- `ROADMAP.md` — milestones, business model, regulatory posture (CASP). `LAUNCH.md` — socials.
 - `USE_CASE.md` — the real-world case + separation-of-powers.
 - `DEMO.md` — 2.5-min video script + runbook. `./scripts/demo.ps1` — 30s read-only demo.
 - `README.md` — architecture, addresses, the cycle.

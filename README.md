@@ -5,6 +5,8 @@ audit trail, guardrails, compliance, live event feed, and the agent console all 
 live from casper-test (+ IPFS). Repo is public.
 **▶️ Demo video:** https://youtu.be/lqG0nfVifA8 · **Roadmap & launch plan:** [`ROADMAP.md`](ROADMAP.md).
 
+**📚 Research → design:** [`RESEARCH.md`](RESEARCH.md) — the primary sources behind each control (AICPA 2025 Criteria Part II, EU AI Act Art. 14, MiCA), a control-mapping table, and the one published criticism aimed squarely at our own approach — *asymmetric verifiability* — plus how `/verify` answers it. Every claim independently verified; unverified ones are listed as open questions instead of asserted.
+
 **🔍 Don't trust us — verify:** [amanah-casper-rwa.vercel.app/verify](https://amanah-casper-rwa.vercel.app/verify) re-runs our cryptography **in your own browser** against the exact bytes the Casper contracts accepted: the Pedersen+Schnorr **proof-of-reserves** and the blake2b **proof-of-reasoning**. Then tamper with the inputs and watch both proofs fail. Two independent implementations of the same maths — [`web/lib/zk-verify.ts`](web/lib/zk-verify.ts) (browser) and [`contracts/src/zk_reserves.rs`](contracts/src/zk_reserves.rs) (on-chain).
 
 > Casper Agentic Buildathon 2026. **Amanah** (fiduciary trust). An autonomous AI
