@@ -62,8 +62,10 @@ We do not position Amanah as living outside regulation. Two primary sources set 
   of crypto-assets"* as crypto-asset services — an autonomous agent managing client
   portfolios in the EU is **inside the CASP authorisation perimeter**. Phase 2 therefore
   assumes operating under (or in partnership with) an authorised CASP, not around it.
-- **EU AI Act Article 14** makes human oversight a **design-time obligation**. Amanah's
-  controls already map onto it:
+- **EU AI Act Article 14** makes human oversight a **design-time obligation** — but *only if*
+  the system is classified high-risk, which is **not established** for tokenized treasury
+  management. We treat the mapping below as a **preparedness posture, not a compliance
+  claim**:
 
 | AI Act obligation | Amanah feature |
 |---|---|
@@ -73,10 +75,27 @@ We do not position Amanah as living outside regulation. Two primary sources set 
 | Ability to halt the system | **dead-man's switch** (anyone may freeze a silent agent; custodian-only unfreeze) — [proven live](https://testnet.cspr.live/deploy/13729bdebafd2d3d6e928df56febfa0043d447470a8747ddc723c933a1d5897d) |
 | Record retention / audit trail | every decision hashed, signed, verified **inside** the contract, and pinned to IPFS |
 
-For reserve reporting, the auditor-accepted frame is the **AICPA 2025 Criteria** (Part II,
-Jan 2026, covers *controls over a period* — issuance, redemption, asset custody, vendor
-management). Our ZK proof-of-solvency is designed to be **evidence inside such an
-engagement, not a substitute for it**; an independent CPA examination is a Phase-1 item.
+Two limits we state plainly rather than gloss:
+
+- **A quorum improves control, not liability.** MiCA/MiFID conduct and custody duties
+  (MiCA Arts. 66, 70(1), 73, 75; MiFID II Art. 24(1)) **attach to the authorised provider and
+  cannot be shifted onto the protocol or its auditor quorum** — and tokenized T-bills likely
+  sit under **MiFID II**, since MiCA Art. 2(4) excludes financial instruments. Under **DORA
+  Art. 5(2)(a)** the client's management body bears **final, non-delegable** ICT
+  responsibility. Our job is to make their oversight *provable*, not to absorb it.
+- **Reserve reporting.** The auditor-accepted frame is the **AICPA 2025 Criteria** (Part II,
+  Jan 2026 — controls *over a period*). Those criteria are scoped to fiat-pegged
+  stablecoins, so applying them to us is an **analogy, not a citation**, and under the
+  **GENIUS Act** a reserve report must be examined by a **registered public accounting
+  firm** — a ZK proof is evidence for that engagement, never a substitute. An independent
+  **CPA examination and a ZK-circuit audit** are Phase-1 items; without the circuit audit,
+  "we have a ZK proof" is not auditor evidence.
+
+**Nearest-term commercial hook (research-ranked highest impact / lowest effort):** SEC staff
+applying **Advisers Act Rule 206(4)-7** expect advisers on automated platforms to hold
+written policies testing that *"algorithms were performing as intended"* — and explicitly
+flag **white-label/B2B platform** gaps. Amanah's proof-of-reasoning log is that evidence, and
+its refused transactions are ready-made **exception reports**. See [`RESEARCH.md`](RESEARCH.md).
 
 ## Business model (how it pays for itself)
 
