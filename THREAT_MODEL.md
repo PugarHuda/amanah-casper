@@ -25,7 +25,7 @@ actually check. Stating those assumptions is part of the design, not a disclaime
 
 | Threat | Control | Enforced by | Limit of the control |
 |---|---|---|---|
-| Agent moves funds on its own say-so | K-of-N **auditor quorum**; `reallocate` reverts `NotApproved` | contract | Assumes a majority of auditor keys are not jointly compromised. Quorum is 2-of-3 today — **not** Byzantine-robust at scale. |
+| Agent moves funds on its own say-so | K-of-N **auditor quorum**; `reallocate` reverts `NotApproved` | contract | Assumes a majority of auditor keys are not jointly compromised. Quorum is 2-of-3 today — **not** Byzantine-robust at scale. Votes are bound to this deployment's `instance_id`, so a signature farmed on a decoy quorum cannot be replayed here. |
 | **Compromised agent key** | same as above | contract | Proven live: a decision signed by the agent's own key was still refused ([`ba368de3`](https://testnet.cspr.live/deploy/ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7)). Does **not** stop an attacker who also holds ≥K auditor keys. |
 | Principal erosion | vault invariant → `TouchesPrincipal` | contract | Only checks the total is not too **low**. It cannot detect inflation — which is why the next row exists. |
 | **Value creation** | `SameAsset` guard | contract | Found by edge-case testing: `reallocate(X, X)` previously minted, because the credit overwrote the debit. Fixed in v7 ([`34ccd244`](https://testnet.cspr.live/deploy/34ccd2449d391db96279487294b5036da1c09faade0b151938a6636ef23e96b5)). |

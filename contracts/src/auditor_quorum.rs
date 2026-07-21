@@ -27,6 +27,11 @@ pub struct AuditorQuorum {
     /// Authorized auditor public keys (set at init). Only these may vote.
     auditors: Mapping<PublicKey, bool>,
     threshold: Var<u32>,
+    /// Per-deployment domain separator, mixed into every signed vote. Without it a
+    /// signature is valid on ANY deployment of this contract, so an attacker could get an
+    /// auditor to sign a vote on a decoy quorum and replay it to the real one. Declared
+    /// last so existing state field indices don't shift.
+    instance_id: Var<[u8; 32]>,
     /// approvals[hash] and a per-(hash,auditor) guard against double-voting.
     approvals: Mapping<[u8; 32], u32>,
     voted: Mapping<([u8; 32], PublicKey), bool>,
@@ -35,7 +40,7 @@ pub struct AuditorQuorum {
 #[odra::module]
 impl AuditorQuorum {
     /// `auditors` are the authorized voter keys; `threshold` is the K in K-of-N.
-    pub fn init(&mut self, auditors: Vec<PublicKey>, threshold: u32) {
+    pub fn init(&mut self, auditors: Vec<PublicKey>, threshold: u32, instance_id: [u8; 32]) {
         // threshold 0 would make `approved()` true with zero votes.
         if threshold < 1 {
             self.env().revert(Error::NotAuthorized);
@@ -44,17 +49,20 @@ impl AuditorQuorum {
             self.auditors.set(a, true);
         }
         self.threshold.set(threshold);
+        self.instance_id.set(instance_id);
     }
 
     /// Cast a signed vote. The signature must be over the 32-byte `reasoning_hash`,
     /// from an authorized auditor key. Reverts `InvalidAttestation` on a bad signature,
     /// `UnknownSigner` if not an authorized auditor, `ReplayedProof` on a double-vote.
     pub fn vote(&mut self, reasoning_hash: [u8; 32], approve: bool, signature: Bytes, pubkey: PublicKey) {
-        // Sign over DOMAIN ‖ reasoning_hash ‖ approve_byte. Binding `approve` stops a
-        // relayer flipping a signed REJECT into an APPROVE (or vice-versa) — the old
-        // scheme signed only the hash, leaving the vote direction unauthenticated.
-        let mut msg = Vec::with_capacity(DOMAIN.len() + 33);
+        // Sign over DOMAIN ‖ instance_id ‖ reasoning_hash ‖ approve_byte. Binding `approve`
+        // stops a relayer flipping a signed REJECT into an APPROVE; binding `instance_id`
+        // stops a signature farmed on a decoy deployment being replayed to this one.
+        let mut msg = Vec::with_capacity(DOMAIN.len() + 65);
         msg.extend_from_slice(DOMAIN);
+        // Bind THIS deployment: a signature farmed on another quorum instance is useless here.
+        msg.extend_from_slice(&self.instance_id.get_or_default());
         msg.extend_from_slice(&reasoning_hash);
         msg.push(approve as u8);
         if !self.env().verify_signature(&Bytes::from(msg), &signature, &pubkey) {
@@ -84,6 +92,11 @@ impl AuditorQuorum {
 
     pub fn approvals_for(&self, reasoning_hash: [u8; 32]) -> u32 {
         self.approvals.get_or_default(&reasoning_hash)
+    }
+
+    /// Published so verifiers/signers can reconstruct the exact signed message.
+    pub fn instance_id(&self) -> [u8; 32] {
+        self.instance_id.get_or_default()
     }
 
     pub fn threshold(&self) -> u32 {

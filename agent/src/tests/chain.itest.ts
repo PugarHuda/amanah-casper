@@ -10,7 +10,7 @@ import { blake2b } from "blakejs";
 import { dictAddr, decodeBlob, keyAccountBytes, decodeI64, decodeEnumByte } from "../lib/codec.js";
 
 const RPC = "https://node.testnet.casper.network/rpc";
-const VAULT_SEED = "e5dab7f204f18a69e05bb7001ab8ccfba29def87496c547b983929b71e74ea89";
+const VAULT_SEED = "d8037be3cb0eac0b9430b4a44cdd71d9d1e8021da35aaa598415e06953463a0c";
 const REP_SEED = "25c7c8b591a02d56217c1527f8bd8f911a78cb8f3b29c4a0e5e3e1ad433f1cd7"; // v2 (hardened)
 const COMP_SEED = "7fafb35c455edeecabdb92714a410ea43ce3c3bc3a8dcc68f55468b98320bcbc";
 const AGENT = "27e5e2b0c3840da2cf061c0cb4d7469c96764d5761b969b3f8314149d796358f";

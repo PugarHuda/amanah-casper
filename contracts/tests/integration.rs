@@ -20,11 +20,12 @@ fn quorum_approving(env: &odra::host::HostEnv, hashes: &[[u8; 32]]) -> AuditorQu
     let pk0 = env.public_key(&a0);
     let mut q = AuditorQuorum::deploy(
         env,
-        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1 },
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1, instance_id: [7u8; 32] },
     );
     for h in hashes {
         let mut m = Vec::new();
         m.extend_from_slice(b"amanah-auditor-quorum-v1");
+        m.extend_from_slice(&[7u8; 32]); // instance_id
         m.extend_from_slice(h);
         m.push(1u8); // approve = true
         let sig = env.sign_message(&Bytes::from(m), &a0);
@@ -474,7 +475,7 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
 
     let mut q = AuditorQuorum::deploy(
         &env,
-        AuditorQuorumInitArgs { auditors: vec![pk0.clone(), pk1.clone(), pk2.clone()], threshold: 2 },
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone(), pk1.clone(), pk2.clone()], threshold: 2, instance_id: [9u8; 32] },
     );
 
     let hash = [5u8; 32];
@@ -482,6 +483,7 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
     let approve_msg = |h: &[u8; 32]| -> Bytes {
         let mut m = Vec::new();
         m.extend_from_slice(b"amanah-auditor-quorum-v1");
+        m.extend_from_slice(&[9u8; 32]); // instance_id — binds the signature to THIS deployment
         m.extend_from_slice(h);
         m.push(1u8);
         Bytes::from(m)
@@ -583,4 +585,43 @@ fn a_reallocation_conserves_the_total() {
     // And a zero-amount move is a harmless no-op that still conserves it.
     vault.reallocate(AssetId::Gold, AssetId::WTI, U256::zero(), [0u8; 32]);
     assert_eq!(total(&vault), before, "zero-amount move must not change the total");
+}
+
+#[test]
+fn a_vote_signed_for_another_quorum_deployment_is_rejected() {
+    // Cross-deployment replay: without an instance binding, a signature farmed on a decoy
+    // quorum (same auditors, same domain tag) would be valid on the real one. Bind it.
+    let env = odra_test::env();
+    let a0 = env.get_account(0);
+    let pk0 = env.public_key(&a0);
+    let hash = [3u8; 32];
+
+    let sign_for = |instance: [u8; 32]| {
+        let mut m = Vec::new();
+        m.extend_from_slice(b"amanah-auditor-quorum-v1");
+        m.extend_from_slice(&instance);
+        m.extend_from_slice(&hash);
+        m.push(1u8);
+        env.sign_message(&Bytes::from(m), &a0)
+    };
+
+    let real = [1u8; 32];
+    let decoy = [2u8; 32];
+    let mut q = AuditorQuorum::deploy(
+        &env,
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1, instance_id: real },
+    );
+
+    // A signature produced for the DECOY deployment must not work here.
+    assert_eq!(
+        q.try_vote(hash, true, sign_for(decoy), pk0.clone()).unwrap_err(),
+        Error::InvalidAttestation.into(),
+        "a vote signed for another deployment must be refused",
+    );
+    assert!(!q.approved(hash), "the decoy signature must not have counted");
+
+    // The correctly-bound signature still works.
+    q.vote(hash, true, sign_for(real), pk0.clone());
+    assert!(q.approved(hash));
+    assert_eq!(q.instance_id(), real, "instance id must be published for signers");
 }

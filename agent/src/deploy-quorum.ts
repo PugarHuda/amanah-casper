@@ -13,9 +13,11 @@ import { config } from "./config.js";
 const WASM = resolve(import.meta.dirname, "../../contracts/wasm/AuditorQuorum.lowered.wasm");
 const SECRET_DIR = resolve(import.meta.dirname, "../secret");
 const CUSTODIAN_PEM = resolve(SECRET_DIR, "custodian_key.pem");
-const STATE = resolve(import.meta.dirname, "../../.env.quorumv2");
-const KEY_NAME = "amanah_auditor_quorum_v2_package_hash";
+const STATE = resolve(import.meta.dirname, "../../.env.quorumv3");
+const KEY_NAME = "amanah_auditor_quorum_v3_package_hash";
 // The decision being voted on (a real reasoning hash from the reallocate attestation).
+// Per-deployment domain separator; published so any signer can rebuild the exact message.
+const INSTANCE_ID = "a1".repeat(32).slice(0, 64);
 const REASONING_HASH = "7c409e7bfce729cea460c03d3557277ad14e12da2b5d1a82c35860b60fba2df4";
 
 const agentKey = loadPrivateKey(config.agentKeyPath);
@@ -69,7 +71,8 @@ async function vote(voter: PrivateKeyT, label: string, stateKey: string): Promis
   // Sign DOMAIN ‖ hash ‖ approve_byte (must match AuditorQuorum::vote) so the signature
   // binds the vote direction — a captured sig can't be replayed with `approve` flipped.
   const DOMAIN = new TextEncoder().encode("amanah-auditor-quorum-v1");
-  const msg = new Uint8Array([...DOMAIN, ...hashBytes, 1]); // approve = true
+  const inst = Uint8Array.from(Buffer.from(INSTANCE_ID, "hex"));
+  const msg = new Uint8Array([...DOMAIN, ...inst, ...hashBytes, 1]); // approve = true
   const sig = voter.signAndAddAlgorithmBytes(msg);
   const { deployHash } = await callEntryPoint({ rpc, key: voter, contractHash: state.QUORUM, entryPoint: "vote",
     args: Args.fromMap({
@@ -107,6 +110,7 @@ async function main() {
           CLValue.newCLPublicKey(auditor3.publicKey),
         ]),
         threshold: CLValue.newCLUInt32(2),
+        instance_id: CLValue.newCLByteArray(Uint8Array.from(Buffer.from(INSTANCE_ID, "hex"))),
       })).payment(300_000_000_000).buildFor1_5();
     tx.sign(agentKey);
     const dh = (await rpc.putTransaction(tx)).transactionHash.toHex();

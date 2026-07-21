@@ -21,7 +21,7 @@ const STREAM_BASE = process.env.CSPR_CLOUD_STREAM_BASE || "wss://streaming.testn
 // Our deployed contract HASHES (not package hashes — the stream filters by contract_hash).
 const CONTRACTS: Record<string, string> = {
   // vault v3 contract hash (custodian-separated + owner-gated compliance)
-  "Reallocate · vault": process.env.VAULT_CONTRACT_HASH || "08af06d097381669267faeb3eb4183872237ef66d7214851920ac9d7d081ca45",
+  "Reallocate · vault": process.env.VAULT_CONTRACT_HASH || "d5d988f7056aa91b0b60af2806dd77be35ae3ab31d636c8b54ae5c35ef8d2f2e",
   "Attestation · reasoning": process.env.ATTESTATION_CONTRACT_HASH || "c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003",
   // Reputation v3 contract hash (custodian-gated adjust). Old v2 was 7c887d21….
   "Reputation · payment": process.env.REPUTATION_CONTRACT_HASH || "c7b55a43217d17a44197dab44bb40762f1a179c085f456c772469e7643ae8dee",

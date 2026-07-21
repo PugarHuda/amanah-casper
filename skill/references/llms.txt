@@ -21,7 +21,7 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 
 | Contract | Package hash | Contract hash |
 |----------|--------------|---------------|
-| RwaVault (v6, quorum enforced on-chain + circuit breakers: reputation floor + dead-man's switch; principal $800K) | 398d6cbf25c24369ea152c8b06fa9c9eb624a6cea12248a7891f0163e37d5d1f | 08af06d097381669267faeb3eb4183872237ef66d7214851920ac9d7d081ca45 |
+| RwaVault (v6, quorum enforced on-chain + circuit breakers: reputation floor + dead-man's switch; principal $800K) | 8558283443dfceba9956eadc241401a78fbbeaf2410f6094581d135ecf5923dd | d5d988f7056aa91b0b60af2806dd77be35ae3ab31d636c8b54ae5c35ef8d2f2e |
 | AttestationLog | 365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532 | c214ac3fe6c8f832eefd8ff6d7ed6afe9fb7a11b6048fa0a77ffc04fd874f003 |
 | SpendGate (v2, check gated to vault; custodian-owned) | f19ed0e9b235e8422aef7d8fbbcaa9cbc34ef4864efd81bbeb7c82d2b77d0cf3 | f1c0eb4f6f62bf1132d94de3e9b3946495fa91ebcfe652daeaa365b7b91451bf |
 | ComplianceRegistry (v3, set_status/revoke owner-gated to custodian) | 93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5 | e5838f96bb7e010cd952d00e780e948e532b6d59dee3cdb6fe29e10fa598e863 |
@@ -29,7 +29,7 @@ Buildathon 2026). This file is the complete reference backing SKILL.md.
 | AuditorLog (auditor's APPROVE/VETO, custodian key) | ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89 | 439c39829d9093016167a83e6bcfcb5f7dcff908e854f35c9b2fec58b504d85a |
 | PaymentToken (CEP-18+CEP-3009) | d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79 | — |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f | — |
-| AuditorQuorum (K-of-N independent auditors, signed on-chain votes) | 55c09fab84ef3153a1872da422af15c61127d72fd0e1b08f6da2520accd3a293 | — |
+| AuditorQuorum (K-of-N independent auditors, signed on-chain votes) | 2663d7ce209f999670be56dc2732512cd500f1cd4423f1623383fff68ff3dfeb | — |
 | ZkReserves (ZK proof-of-reserves: Pedersen+Schnorr, hides the split) | 5b84d2f911d4bed7e7345c22a0236794b5dc8033f3fb8870595b0fb6e8f3688a | fca6a030b00a… |
 
 ## Verifiable proof transactions (open on testnet.cspr.live/deploy/<hash>)
@@ -71,7 +71,7 @@ Odra stores each Var/Mapping field in the contract's "state" dictionary:
 - i64 parsed comes back as an 8-byte little-endian array; enum (Status/AssetId) as a 1-byte variant
 - Mapping<Address,_> key = Key::Account bytesrepr = [0x00] + 32 account-hash bytes
 
-State-dict seeds (uref addr, hex): vault e5dab7f204f18a69e05bb7001ab8ccfba29def87496c547b983929b71e74ea89,
+State-dict seeds (uref addr, hex): vault d8037be3cb0eac0b9430b4a44cdd71d9d1e8021da35aaa598415e06953463a0c,
 reputation 05a27b6e8bd53fda50cdbb2e322f56912ed92b44cdd4f4c1a282a9c8440d5a84,
 attestation 739ed994a635834f536dee0f3af7a7ce5341d91ef6952a548aed7a3de0b0594a,
 spendgate 9837b12300bc72b37c876392e89773112e09b12aedd06bcf4f8b5793b19226de,

@@ -6,7 +6,7 @@ import { blake2b } from "blakejs";
 
 const RPC = process.env.CASPER_RPC_URL ?? "https://node.testnet.casper.network/rpc";
 const WEB = process.env.WEB_BASE ?? "https://amanah-casper-rwa.vercel.app";
-const VAULT_SEED = process.env.VAULT_STATE_SEED ?? "e5dab7f204f18a69e05bb7001ab8ccfba29def87496c547b983929b71e74ea89";
+const VAULT_SEED = process.env.VAULT_STATE_SEED ?? "d8037be3cb0eac0b9430b4a44cdd71d9d1e8021da35aaa598415e06953463a0c";
 
 const hex = (b: Uint8Array) => Buffer.from(b).toString("hex");
 const be32 = (n: number) => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, n, false); return b; };

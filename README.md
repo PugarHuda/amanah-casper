@@ -111,10 +111,10 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 
 | Contract | Package hash |
 |---|---|
-| RwaVault (v7 — quorum ENFORCED on-chain, value-conservation guard, circuit breakers, $800K principal) | `398d6cbf25c24369ea152c8b06fa9c9eb624a6cea12248a7891f0163e37d5d1f` |
+| RwaVault (v8 — quorum ENFORCED on-chain, value-conservation guard, circuit breakers, $800K principal) | `8558283443dfceba9956eadc241401a78fbbeaf2410f6094581d135ecf5923dd` |
 | AttestationLog (agent's reasoning) | `365913a7a26d3e50798c2c0ce31d0850b8b24b2e1a641f990e41f7ad219a6532` |
 | AuditorLog (auditor's verdict, custodian key) | `ec0721feef72482e745e8950f57fb17def15a51dda382f31de0004e886b1bf89` |
-| AuditorQuorum (K-of-N independent auditors vote on-chain) | `55c09fab84ef3153a1872da422af15c61127d72fd0e1b08f6da2520accd3a293` |
+| AuditorQuorum (v3 — K-of-N signed votes, bound to this deployment) | `2663d7ce209f999670be56dc2732512cd500f1cd4423f1623383fff68ff3dfeb` |
 | SpendGate (v2, check() gated to the vault; owned by custodian) | `f19ed0e9b235e8422aef7d8fbbcaa9cbc34ef4864efd81bbeb7c82d2b77d0cf3` |
 | ComplianceRegistry (v3, `set_status`/`revoke` owner-gated to custodian) | `93bc5e1389517acfb57b659ec1427c2979d6d931f1c1d587537427d5595f9ea5` |
 | ReputationRegistry (v4, `adjust` + `record_payment` authority-only) | `265ebc7dc27997529587517c8a6cc502fd187f163fefe4d3e0946ba10438669c` |
@@ -158,6 +158,7 @@ agent moves only the $200K yield.
 | **Non-custodian denied unfreeze** (`NotAuthorized`) — only the custodian may lift it | `1a4897f2576bf2ad246548ccc8503ba6fab709031072cf86b2d13b1f58c22773` |
 | **Custodian lifted the freeze** after review | `302530d2d9b2db38aec1a502caafd0450487b828f48ae75d67e3469acec1fb9a` |
 | 🛡 **Value-conservation guard** — reallocating an asset to ITSELF refused (`SameAsset`); v6 would have minted it | `34ccd2449d391db96279487294b5036da1c09faade0b151938a6636ef23e96b5` |
+| 🔗 **Cross-deployment replay blocked** — votes are bound to this quorum instance; approved move under the new signing | `284274a6949a9f4e1a23741bb738a446bcddb26e7635bf026bc03942d4a1db9c` |
 
 The autonomous reallocate above is the whole thesis in one tx: a live cycle
 (`MAX_CYCLES=1 npm run dev`) where the **LLM itself** read gold at a ~$4,000 extreme
@@ -176,7 +177,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 10 contracts: RwaVault (**v6 — enforces the auditor quorum on-chain + circuit breakers**), **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), **AuditorQuorum** (K-of-N signed votes), SpendGate (v2, `check` gated to the vault), ComplianceRegistry, ReputationRegistry (**v4** — `record_payment` *and* `adjust` authority-only), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC), **ZkReserves** (ZK proof-of-reserves — Pedersen+Schnorr). On-chain Ed25519 + ZK verification is the heart. 19/19 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 10 contracts: RwaVault (**v6 — enforces the auditor quorum on-chain + circuit breakers**), **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), **AuditorQuorum** (K-of-N signed votes), SpendGate (v2, `check` gated to the vault), ComplianceRegistry, ReputationRegistry (**v4** — `record_payment` *and* `adjust` authority-only), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC), **ZkReserves** (ZK proof-of-reserves — Pedersen+Schnorr). On-chain Ed25519 + ZK verification is the heart. 20/20 OdraVM tests pass. |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce (distinct payee per route), both directions proven on-chain: `GET /alpha` (Amanah **pays a separate provider** — the custodian — proof `785ceb25`) and `GET /verified-reasoning` (the **earn** side — a buyer paid Amanah, proof `cf48c91d`). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -234,7 +235,7 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**110 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**111 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
 - **69 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning

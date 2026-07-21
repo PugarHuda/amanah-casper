@@ -15,6 +15,8 @@ import type { PrivateKey as PrivateKeyT, RpcClient } from "casper-js-sdk";
 import { config } from "./config.js";
 
 const DOMAIN = new TextEncoder().encode("amanah-auditor-quorum-v1");
+// Per-deployment separator the contract mixes in; must match AuditorQuorum.instance_id().
+const INSTANCE_ID = process.env.AUDITOR_QUORUM_INSTANCE_ID || "a1".repeat(32).slice(0, 64);
 const SECRET = resolve(import.meta.dirname, "../secret");
 
 /** The independent auditor keys available to this node (custodian + generated auditors). */
@@ -37,7 +39,8 @@ export async function castQuorumVotes(
 ): Promise<string[]> {
   if (!config.auditorQuorumHash) return [];
   const hashBytes = Uint8Array.from(Buffer.from(reasoningHash, "hex"));
-  const msg = new Uint8Array([...DOMAIN, ...hashBytes, 1]); // approve = true
+  const inst = Uint8Array.from(Buffer.from(INSTANCE_ID, "hex"));
+  const msg = new Uint8Array([...DOMAIN, ...inst, ...hashBytes, 1]); // approve = true
   const landed: string[] = [];
 
   for (const voter of voters) {
