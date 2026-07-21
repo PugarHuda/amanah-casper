@@ -1,4 +1,4 @@
 import PageSkeleton from "@/components/PageSkeleton";
 export default function Loading() {
-  return <PageSkeleton active="protocol" title="AGENT CONSOLE" />;
+  return <PageSkeleton title="AGENT CONSOLE" heading="Agent console" />;
 }

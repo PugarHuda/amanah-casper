@@ -44,7 +44,7 @@ export default function Connect() {
   return (
     <main className="page">
       <div className="card">
-        <Nav active="connect" />
+        <Nav />
 
         {/* CSPR.click hosted SDK mounts its account widget here (kept minimal). */}
         <div id="csprclick-ui" />

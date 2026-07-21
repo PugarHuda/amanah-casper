@@ -48,7 +48,7 @@ quorum: multiple independent signers must agree.
 
 **4/** Real zero-knowledge — twice.
 • ZK KYC: the agent proves it holds its credential without revealing it (Schnorr NIZK, in-VM).
-• ZK proof-of-reserves: proves the treasury is solvent while hiding the per-asset split.
+• ZK proof-of-reserves: proves the treasury is solvent from commitments that never reveal an individual amount.
 
 **5/** Circuit breakers that close the loop.
 Too many vetoed decisions → the vault auto-benches the agent on-chain. Agent goes silent →

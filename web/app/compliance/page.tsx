@@ -28,7 +28,7 @@ export default async function CompliancePage() {
   return (
     <main className="page">
       <div className="card">
-        <Nav active={null} />
+        <Nav />
 
         <div style={{ marginTop: 44 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

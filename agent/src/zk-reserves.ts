@@ -3,7 +3,8 @@
 // and proves in zero-knowledge that the hidden allocations sum to a PUBLIC total T —
 // without revealing any individual a_i. Combined with the vault's public principal
 // invariant (T ≥ principal, enforced on-chain), this proves SOLVENCY while hiding the
-// trading STRATEGY (per-asset split) from front-runners. No range proof needed: the
+// individual amounts. (The vault's allocations are public today, so this hides the split
+// inside the proof, not yet in the system.) No range proof needed: the
 // sum is a linear relation, proved with a Schnorr PoK of the aggregate blinding.
 //
 //   Pedersen:  C_i = a_i·G + r_i·H            (G = ed25519 basepoint; H = nums generator)

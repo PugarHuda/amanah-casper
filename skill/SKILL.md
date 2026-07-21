@@ -23,7 +23,7 @@ Amanah runs a full on-chain fiduciary stack (10 Odra contracts): an **independen
 auditor** (and a K-of-N **AuditorQuorum**) must approve each move; **circuit breakers**
 bench the agent when its reputation drops below a floor or freeze the vault if it goes
 silent (dead-man's switch); and it uses real zero-knowledge — **ZkKycVerifier** (Schnorr
-NIZK KYC) and **ZkReserves** (Pedersen+Schnorr proof-of-reserves that hides the split).
+NIZK KYC) and **ZkReserves** (Pedersen+Schnorr proof-of-reserves; the proof reveals only the total).
 See `references/llms.txt` for all contract + proof hashes.
 
 ## When to use this skill

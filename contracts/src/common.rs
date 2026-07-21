@@ -79,6 +79,9 @@ pub enum Error {
     /// reallocation: writing both sides of the same balance would overwrite the debit
     /// with the credit and mint `amount` out of nothing.
     SameAsset = 17,
+    /// The total claimed by a proof-of-reserves does not equal the vault's real
+    /// allocations. A sound proof about invented numbers is still worthless.
+    TotalMismatch = 18,
 }
 
 /// Widen a `U256` into a `U512` losslessly via big-endian bytes.

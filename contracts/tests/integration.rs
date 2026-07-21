@@ -8,7 +8,7 @@ use amanah_contracts::reputation_registry::{ReputationRegistry, ReputationRegist
 use amanah_contracts::rwa_vault::{RwaVault, RwaVaultHostRef, RwaVaultInitArgs};
 use amanah_contracts::spend_gate::{SpendGate, SpendGateInitArgs};
 use amanah_contracts::zk_kyc::{ZkKycVerifier, ZkKycVerifierInitArgs};
-use amanah_contracts::zk_reserves::ZkReserves;
+use amanah_contracts::zk_reserves::{ZkReserves, ZkReservesInitArgs};
 use odra::casper_types::{bytesrepr::Bytes, U256, U512};
 use odra::host::{Deployer, HostRef, NoArgs};
 
@@ -520,8 +520,14 @@ fn zk_reserves_hides_split_and_proves_the_sum() {
     // Golden vector from the TS prover (agent/src/zk-reserves.ts): 4 hidden allocations
     // (250k/400k/150k/200k) whose Pedersen commitments prove they sum to $1M — the
     // individual splits never appear. TS(noble) ≡ Rust(dalek) for Pedersen + Schnorr.
-    let env = odra_test::env();
-    let mut zk = ZkReserves::deploy(&env, NoArgs);
+    let (mut vault, _rep, env) = setup_v4(0);
+    // The golden vector's hidden allocations ARE the vault's real ones — the proof is
+    // anchored to on-chain state, not to numbers the prover made up.
+    vault.deposit(AssetId::Gold, U256::from(250_000_000_000u64 - 1000)); // setup_v4 seeded 1000
+    vault.deposit(AssetId::TBond, U256::from(400_000_000_000u64));
+    vault.deposit(AssetId::WTI, U256::from(150_000_000_000u64));
+    vault.deposit(AssetId::CSPR, U256::from(200_000_000_000u64));
+    let mut zk = ZkReserves::deploy(&env, ZkReservesInitArgs { vault: vault.contract_address() });
 
     let commitments = vec![
         hx32("f128d7c372acc38dd1843869bc44c78df0dad576e8c447e777ac019d6103bbc9"),
@@ -543,8 +549,19 @@ fn zk_reserves_hides_split_and_proves_the_sum() {
     assert_eq!(err, Error::InvalidAttestation.into());
 
     // A valid proof but under the required backing -> insolvent.
-    let err2 = zk.try_prove_reserves(commitments, total, proof_t, s, 2_000_000_000_000).unwrap_err();
+    let err2 = zk.try_prove_reserves(commitments.clone(), total, proof_t, s, 2_000_000_000_000).unwrap_err();
     assert_eq!(err2, Error::NotCompliant.into());
+
+    // BINDING: move real money out of the vault, and the same cryptographically valid
+    // proof stops being accepted — it now describes numbers that are not this treasury's.
+    env.set_caller(env.get_account(1));
+    vault.reallocate(AssetId::Gold, AssetId::TBond, U256::from(1), [0u8; 32]); // total unchanged
+    assert!(zk.try_prove_reserves(commitments.clone(), total, proof_t, s, 800_000_000_000).is_ok(),
+        "a pure transfer keeps the total, so the proof still binds");
+    env.set_caller(env.get_account(0));
+    vault.deposit(AssetId::Gold, U256::from(1)); // total now != claimed total
+    let err3 = zk.try_prove_reserves(commitments, total, proof_t, s, 800_000_000_000).unwrap_err();
+    assert_eq!(err3, Error::TotalMismatch.into());
 }
 
 #[test]

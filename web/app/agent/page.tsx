@@ -21,7 +21,7 @@ export default async function Agent() {
   return (
     <main className="page">
       <div className="card">
-        <Nav active="protocol" />
+        <Nav />
 
         <div style={{ marginTop: 44, display: "flex", alignItems: "center", gap: 14 }}>
           <span className="pulse-dot" />

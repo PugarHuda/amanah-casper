@@ -2,15 +2,18 @@
 //!
 //! The agent publishes a Pedersen commitment per allocation `C_i = a_i·G + r_i·H`
 //! (perfectly hiding each `a_i`) and proves the hidden allocations sum to a PUBLIC
-//! total `T` — WITHOUT revealing any `a_i`. With the vault's on-chain principal
-//! invariant (`T ≥ principal`), this proves SOLVENCY while hiding the trading STRATEGY
-//! (the per-asset split). No range proof: the sum is a linear relation.
+//! total `T` — WITHOUT revealing any `a_i`. `T` is then checked against the vault's
+//! REAL allocations, so the proof is about this treasury and not about invented numbers.
+//! (Those allocations are public today: the hiding is a property of the proof, not yet
+//! of the system.) No range proof: the sum is a linear relation.
 //!
 //!   P = ΣC_i − T·G          (= R·H, R = Σr_i, iff Σa_i = T)
 //!   c = blake2b256(DOMAIN ‖ ΣC ‖ T_le ‖ proof_T) mod L
 //!   accept iff  s·H == proof_T + c·P     (Schnorr PoK of R for base H)
-use crate::common::Error;
+use crate::common::{AssetId, Error, ALL_ASSETS};
+use crate::rwa_vault::RwaVaultContractRef;
 use odra::prelude::*;
+use odra::ContractRef;
 
 use blake2::digest::consts::U32;
 use blake2::{Blake2b, Digest};
@@ -38,12 +41,17 @@ pub struct ReservesProven {
 pub struct ZkReserves {
     solvent: Var<bool>,
     last_total: Var<u64>,
+    /// The vault this contract proves solvency FOR. Without it a prover could submit a
+    /// perfectly sound proof about numbers it invented — the maths would verify and mean
+    /// nothing. Declared last so existing state field indices don't shift.
+    vault: Var<Address>,
 }
 
 #[odra::module]
 impl ZkReserves {
-    pub fn init(&mut self) {
+    pub fn init(&mut self, vault: Address) {
         self.solvent.set(false);
+        self.vault.set(vault);
     }
 
     /// Verify a ZK proof-of-reserves: the hidden allocations behind `commitments` sum
@@ -59,6 +67,19 @@ impl ZkReserves {
     ) {
         if total < principal_floor {
             self.env().revert(Error::NotCompliant); // reserves below the required backing
+        }
+
+        // BIND THE PROOF TO REAL STATE. A Schnorr proof only says "these commitments sum
+        // to the total I claimed" — it says nothing about whether that total is the
+        // treasury's. Read the vault's actual allocations and require the claimed total to
+        // equal them, so the proof is about THIS vault and not about invented numbers.
+        let vault = RwaVaultContractRef::new(self.env(), self.vault.get_or_revert_with(Error::AddressNotSet));
+        let mut real_total = U256::zero();
+        for asset in ALL_ASSETS {
+            real_total += vault.get_allocation(asset);
+        }
+        if real_total != U256::from(total) {
+            self.env().revert(Error::TotalMismatch);
         }
         let h = CompressedEdwardsY(H_BYTES)
             .decompress()

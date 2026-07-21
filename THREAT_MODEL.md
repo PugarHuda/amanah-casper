@@ -47,9 +47,17 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   We publish to the chain as a **public bulletin board** so the same commitment is shown to
   everyone, which removes the "different totals to different verifiers" attack but not the
   participation assumption.
-- **Commitments are not bound to vault state.** The solvency proof shows that *some* hidden
-  values sum to the claimed total and cover the principal. Binding those commitments to the
-  vault's own allocations is future work.
+- **What the solvency proof does and does not hide.** The commitments are perfectly hiding,
+  so no individual allocation appears in the proof — but this vault stores `allocations` as a
+  **public plaintext `Mapping` with a public getter**, so anyone can read the split straight
+  off the chain anyway. We previously described this as hiding the strategy from front-runners;
+  that was an overclaim. The cryptography is real and sound, the privacy benefit for *this*
+  vault is currently notional. Meaningful hiding needs a confidential vault that stores
+  commitments instead of balances — a roadmap item, not a shipped property.
+- **Binding the proof to vault state — written, not yet deployed.** `prove_reserves` reads the vault's real allocations
+  over `ALL_ASSETS` and reverts `TotalMismatch` unless they equal the claimed total, so a
+  sound proof about invented numbers is rejected. It still assumes the configured `vault`
+  address is the right one (set at `init`, custodian-deployed).
 - **Custodian centralisation.** Segregation of duties currently rests on one custodian key.
   Progressive decentralisation to a governance quorum is on the roadmap.
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's

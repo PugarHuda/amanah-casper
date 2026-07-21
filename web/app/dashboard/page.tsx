@@ -14,7 +14,7 @@ export default async function Dashboard() {
   return (
     <main className="page">
       <div className="card">
-        <Nav active="dashboard" />
+        <Nav />
 
         <div style={{ marginTop: 44, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
@@ -126,7 +126,7 @@ export default async function Dashboard() {
                   <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.reservesSolvent ? "var(--green-deep)" : "var(--ink)" }}>
                     {compliance.reservesSolvent ? "Solvent ✓" : "Unproven"}
                   </div>
-                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>hidden split · sum ≥ principal · Pedersen+Schnorr ↗</div>
+                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>sum ≥ principal · no amount revealed · Pedersen+Schnorr ↗</div>
                 </a>
               )}
               <a href={`${explorerBase}/deploy/483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2`} target="_blank" rel="noopener noreferrer"

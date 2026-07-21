@@ -167,16 +167,27 @@ test.describe("Amanah manual-click QA", () => {
     expect(appLine).toMatch(/csprclick-template|[0-9a-f]{8}-[0-9a-f]{4}/);
   });
 
-  test("nav links work; 'Read the spec' is an honest external doc link", async ({ page }) => {
-    await gotoAndSettle(page, "/dashboard");
-    // Click through nav to the agent console.
-    await page.getByRole("link", { name: /protocol|agent/i }).first().click().catch(() => {});
+  test("every nav link lands where its label says, and marks itself current", async ({ page }) => {
+    // The nav is the first thing a judge touches; a label that doesn't match its
+    // destination (the old "Protocol" -> /agent) is what made it confusing.
+    for (const [label, path, heading] of [
+      ["Dashboard", "/dashboard", /audit dashboard/i],
+      ["Verify", "/verify", /verify/i],
+      ["Evidence", "/compliance", /algorithm perform as intended/i],
+      ["How it works", "/agent", /agent console/i],
+      ["Connect wallet", "/connect", /connect to amanah/i],
+    ] as const) {
+      await gotoAndSettle(page, "/");
+      await page.getByRole("navigation").getByRole("link", { name: label, exact: true }).click();
+      await page.waitForURL(`**${path}`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
+      // aria-current is how a screen reader (and the bold style) says "you are here".
+      await expect(page.getByRole("navigation").getByRole("link", { name: label, exact: true }))
+        .toHaveAttribute("aria-current", "page");
+    }
+    // The external spec link points at the real GitHub docs, not a fabricated blog.
     await gotoAndSettle(page, "/");
-    // "Read the spec" points at the real GitHub docs, not a fabricated internal blog.
-    const spec = page.getByRole("link", { name: /read the spec/i });
-    const href = await spec.getAttribute("href");
-    console.log("Read the spec ->", href);
-    expect(href).toContain("github.com");
+    expect(await page.getByRole("link", { name: /spec/i }).first().getAttribute("href")).toContain("github.com");
   });
   test("proof lab verifies our cryptography in the browser — and tampering breaks it", async ({ page }) => {
     await gotoAndSettle(page, "/verify");

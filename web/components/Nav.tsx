@@ -1,4 +1,6 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const Logo = () => (
   <svg width="26" height="22" viewBox="0 0 26 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -10,28 +12,43 @@ const Logo = () => (
   </svg>
 );
 
-type Active = "protocol" | "connect" | "dashboard" | "verify" | "compliance" | null;
+// Ordered the way the story reads: see the treasury → check the proof yourself →
+// the artifact a regulator asks for → how the loop works. Each label names its
+// destination; the old "Protocol" pointed at the agent console and carried a
+// chevron that opened nothing.
+const LINKS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/verify", label: "Verify" },
+  { href: "/compliance", label: "Evidence" },
+  { href: "/agent", label: "How it works" },
+];
 
-export default function Nav({ active = null }: { active?: Active }) {
-  const cls = (k: Active) => (active === k ? "active" : undefined);
+export default function Nav() {
+  // Derived from the URL so a page can't forget to mark itself current —
+  // /verify and /compliance passed active={null} and never highlighted.
+  const path = usePathname();
+  const cur = (href: string) => (path === href ? "page" : undefined);
   return (
     <nav className="nav">
-      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
+      <Link href="/" aria-label="amanah home" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
         <Logo />
         <span style={{ fontSize: 23, fontWeight: 600, letterSpacing: "-0.4px", color: "#16130f" }}>amanah</span>
       </Link>
       <div className="nav-links">
-        <Link href="/agent" className={cls("protocol")}>
-          Protocol
-          <svg width="11" height="7" viewBox="0 0 11 7" fill="none">
-            <path d="M1 1l4.5 4.5L10 1" stroke="#1c1814" strokeWidth="1.6" strokeLinecap="round" />
+        {LINKS.map((l) => (
+          <Link key={l.href} href={l.href} className={path === l.href ? "active" : undefined} aria-current={cur(l.href)}>
+            {l.label}
+          </Link>
+        ))}
+        <a href="https://github.com/PugarHuda/amanah-casper#readme" target="_blank" rel="noopener noreferrer" className="nav-ext">
+          Spec
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <path d="M2.5 7.5L7.5 2.5M7.5 2.5H3.5M7.5 2.5V6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
+        </a>
+        <Link href="/connect" className="nav-cta" aria-current={cur("/connect")}>
+          Connect wallet
         </Link>
-        <a href="https://github.com/PugarHuda/amanah-casper#readme" target="_blank" rel="noopener noreferrer">Read the spec</a>
-        <Link href="/verify" className={cls("verify")}>Verify</Link>
-        <Link href="/compliance" className={cls("compliance")}>Evidence</Link>
-        <Link href="/connect" className={cls("connect")}>Connect wallet</Link>
-        <Link href="/dashboard" className={cls("dashboard")}>Dashboard</Link>
       </div>
     </nav>
   );

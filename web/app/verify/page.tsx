@@ -103,7 +103,7 @@ export default function VerifyPage() {
   return (
     <main className="page">
       <div className="card">
-        <Nav active={null} />
+        <Nav />
 
         <div style={{ marginTop: 44 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -111,7 +111,7 @@ export default function VerifyPage() {
             <span className="mono" style={{ fontSize: 12, letterSpacing: "2px", color: "var(--faint)" }}>PROOF LAB · RUNS IN YOUR BROWSER</span>
           </div>
           <h1 className="serif" style={{ margin: "10px 0 0", fontSize: 42, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.8px" }}>
-            Don&apos;t trust us. Verify.
+            Don’t trust us. Verify.
           </h1>
           <p style={{ margin: "12px 0 16px", fontSize: 15, color: "var(--muted, #6b6b6b)", maxWidth: 720, lineHeight: 1.6 }}>
             Every claim Amanah makes is checkable. The checks below run <strong>client-side, on your

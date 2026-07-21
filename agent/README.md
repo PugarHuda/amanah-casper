@@ -40,7 +40,7 @@ npm run test:integration # live-testnet reads (vault $1M/$800K, reputation, comp
 | `migrate-vault-v4.ts` | Deploy RwaVault v4 (circuit breakers) + demo the reputation floor: reallocate blocked below floor → resumed after reward. |
 | `deploy-quorum.ts` | Deploy `AuditorQuorum` (K-of-N) + cast a live 2-of-3 signed-vote quorum. |
 | `zk.ts` / `deploy-zk.ts` | Schnorr NIZK ZK-KYC prover + `ZkKycVerifier` deploy/prove. |
-| `zk-reserves.ts` / `deploy-zk-reserves.ts` | Pedersen+Schnorr ZK proof-of-reserves prover + `ZkReserves` deploy/prove (hides the split). |
+| `zk-reserves.ts` / `deploy-zk-reserves.ts` | Pedersen+Schnorr ZK proof-of-reserves prover + `ZkReserves` deploy/prove. The proof reveals only the total; the vault's own `allocations` are still public, so this hides the split *in the proof*, not yet in the system. |
 | `lib/codec.ts` | Pure on-chain state codec (unit-tested; see `src/tests/`). |
 | `casper.ts` / `config.ts` | casper-js-sdk v5 client + call builder; typed env. |
 

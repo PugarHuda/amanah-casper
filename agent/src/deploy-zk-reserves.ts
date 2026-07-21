@@ -50,7 +50,7 @@ async function main() {
   const blindings = ALLOCATIONS.map(() => BigInt("0x" + Buffer.from(ed25519.utils.randomPrivateKey()).toString("hex")));
   const proof = proveReserves(ALLOCATIONS, blindings);
   if (!verifyReserves(proof)) throw new Error("local proof failed — aborting");
-  console.log("proving reserves sum =", proof.total, "(≥ floor", PRINCIPAL_FLOOR.toString() + "); per-asset split hidden\n");
+  console.log("proving reserves sum =", proof.total, "(≥ floor", PRINCIPAL_FLOOR.toString() + "); per-asset amounts never appear in the proof\n");
 
   if (!state.ZKR_HASH) {
     const wasm = new Uint8Array(readFileSync(WASM));
