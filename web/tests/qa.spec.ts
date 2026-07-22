@@ -230,6 +230,12 @@ test.describe("Amanah manual-click QA", () => {
     await expect(page.getByText("ESCALATED").first()).toBeVisible({ timeout: 20000 });
   });
 
+  test("verifiable auditor selection re-derives in the browser", async ({ page }) => {
+    await gotoAndSettle(page, "/verify");
+    await expect(page.getByText(/Verifiable auditor selection/i)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/assignment re-derives/i)).toBeVisible({ timeout: 15000 });
+  });
+
   test("proof-of-liabilities: reserves >= liabilities and per-client Merkle inclusion verifies", async ({ page }) => {
     await gotoAndSettle(page, "/verify");
     await expect(page.getByText(/Proof-of-liabilities/i)).toBeVisible({ timeout: 15000 });

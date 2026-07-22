@@ -9,6 +9,7 @@ import { blake2b } from "blakejs";
 import { verifyReserves, bytesToHex, type ReservesProof } from "@/lib/zk-verify";
 import { computeLeaf, verifyInclusion } from "@/lib/merkle-verify";
 import { verifyRange } from "@/lib/range-verify";
+import { verifyAssignment } from "@/lib/select-verify";
 
 const EXPLORER = "https://testnet.cspr.live";
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: 11, wordBreak: "break-all" };
@@ -20,6 +21,11 @@ type Reserves = ReservesProof & {
 type Liabilities = {
   root: string; total: string; clientCount: number;
   proofs: { id: string; balance: string; nonce: string; leaf: string; path: { hash: string; right: boolean }[] }[];
+};
+
+type Assignment = {
+  decisionHash: string; k: number;
+  auditors: { id: string; account: string; ticket: string }[]; assigned: string[];
 };
 
 type RedTeam = {
@@ -124,6 +130,12 @@ export default function VerifyPage() {
       setRangeOk(ok);
     }).catch(() => setRangeOk(null));
   }, [rv]);
+
+  // --- verifiable auditor assignment (B7) -----------------------------------
+  const [assign, setAssign] = useState<Assignment | null>(null);
+  useEffect(() => {
+    fetch("/auditor-assignment.json").then((r) => (r.ok ? r.json() : null)).then(setAssign).catch(() => {});
+  }, []);
 
   // --- proof-of-liabilities (Merkle) ----------------------------------------
   const [liab, setLiab] = useState<Liabilities | null>(null);
@@ -325,6 +337,31 @@ export default function VerifyPage() {
             </div>
           </Card>
         )}
+
+        {/* 4b — verifiable auditor selection (B7) */}
+        {assign && (() => {
+          const ok = verifyAssignment(assign);
+          return (
+            <Card
+              title="4b · Verifiable auditor selection — the agent can't pick its judges"
+              sub="In an open registry any auditor could vote on any decision, which would let a captured agent route a borderline call to friendly reviewers. Instead, WHICH auditors are assigned to a decision is derived from the decision's own hash: ticket = blake2b(domain ‖ decisionHash ‖ account), and the K smallest tickets are the assigned reviewers. The decision hash is fixed by the attested reasoning, so the agent can't choose — and you can recompute it here."
+            >
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+                <Badge ok={ok} okText={`assignment re-derives — ${assign.assigned.join(" + ")} (${assign.k}-of-${assign.auditors.length})`} badText="assignment does not re-derive" />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[...assign.auditors].sort((a, b) => (a.ticket < b.ticket ? -1 : 1)).map((a, i) => (
+                  <div key={a.id} style={{ display: "flex", gap: 12, alignItems: "center", padding: "9px 12px", border: "1px solid var(--border2)", borderRadius: 12, background: "var(--surface, #fff)" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: i < assign.k ? "var(--ok-bg)" : "var(--border2)", color: i < assign.k ? "var(--green-deep)" : "var(--faint)" }}>{i < assign.k ? "assigned" : "not this round"}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>{a.id}</span>
+                    <span className="mono" style={{ ...mono, color: "var(--faint)", marginLeft: "auto" }}>ticket {a.ticket.slice(0, 18)}…</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mono" style={{ ...mono, color: "var(--faint)", marginTop: 8 }}>decision {assign.decisionHash.slice(0, 30)}… · smallest {assign.k} tickets are assigned</div>
+            </Card>
+          );
+        })()}
 
         {/* 5 — proof-of-liabilities (the other half of a real solvency proof) */}
         {liab && (() => {

@@ -1,0 +1,28 @@
+{
+  "note": "Which auditors are assigned to review this decision is derived from the decision's own hash, so the agent can't pick friendly reviewers. Recompute ticket = blake2b(DOMAIN ‖ decisionHash ‖ account) and take the K smallest.",
+  "domain": "amanah-auditor-select-v1",
+  "decisionHash": "7c409e7bfce729cea460c03d3557277ad14e12da2b5d1a82c35860b60fba2df4",
+  "k": 2,
+  "auditors": [
+    {
+      "id": "custodian",
+      "account": "4fd664f4779d6d0a4894f84f1ddbb60bcd9c7b9681066f915d084518b678925f",
+      "ticket": "75934027f497c3ed3e22fc49e6a1a0b9a197d3e14b1f99d9d5c870e71f13109a"
+    },
+    {
+      "id": "auditor-2",
+      "account": "520d1b936cabc9b18c64c9f075c11df9a48beadb9fde4fc3d83b4a10b362b3d7",
+      "ticket": "e14e43a4685cc1270215333aa7614825649b6c5ed0af2e5b5027b7d025733a0e"
+    },
+    {
+      "id": "auditor-3",
+      "account": "6c9e2267bda464b6dcb0fa1070fb77c342d8c40699f3ee6d12f4edf650bde9e9",
+      "ticket": "7f9345e4aea5783c3c7b6c2d3b5cab7190e915dc36c99e316f30d3f0cd39c339"
+    }
+  ],
+  "assigned": [
+    "custodian",
+    "auditor-3"
+  ],
+  "builtAt": "2026-07-22T07:15:11.720Z"
+}
