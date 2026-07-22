@@ -57,6 +57,10 @@ export default async function CompliancePage() {
               style={{ padding: "11px 18px", border: "1px solid var(--border)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "var(--ink2)", textDecoration: "none" }}>
               Sources &amp; scope limits ↗
             </a>
+            <a href="https://github.com/PugarHuda/amanah-casper/blob/master/SOC2.md" target="_blank" rel="noopener noreferrer"
+              style={{ padding: "11px 18px", border: "1px solid var(--border)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "var(--ink2)", textDecoration: "none" }}>
+              SOC 2 readiness ↗
+            </a>
           </div>
 
           {/* Policy sign-off (D4): the written policy the DORA-accountable body approves,

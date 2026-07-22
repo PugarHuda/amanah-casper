@@ -1,0 +1,68 @@
+# 24/7 hosted agent loop (C3).
+#
+# Runs the FULL real pipeline (ingest -> reason -> audit -> guard) on a schedule, in
+# paper-trading mode: it makes real decisions against a price-exposed paper portfolio and
+# grows the equity curve, WITHOUT touching the chain or exposing any signing key. This is
+# the safe, always-on version — a genuinely autonomous loop that keeps running whether or
+# not a laptop is on.
+#
+# Activation: add a repository secret VENICE_API_KEY (Settings -> Secrets -> Actions).
+# Optional data-source keys (EIA_API_KEY, METALS_API_KEY, CSPR_CLOUD_KEY) sharpen the price
+# feeds; without them ingest degrades gracefully. No agent/custodian key is used — a
+# throwaway key is generated in-run purely for the read-only pubkey lookups.
+#
+# Real ON-CHAIN hosted mode (signing every cycle) is intentionally NOT enabled here: it
+# would require the agent + custodian private keys as CI secrets. Run that from a trusted
+# host, not a public Actions runner.
+name: agent-loop (paper, 24/7)
+
+on:
+  schedule:
+    - cron: "17 */6 * * *" # every ~6 hours (offset so it isn't on the hour with everyone else)
+  workflow_dispatch: {} # allow manual runs
+
+permissions:
+  contents: write # to commit the updated equity curve back
+
+concurrency:
+  group: agent-loop
+  cancel-in-progress: false
+
+jobs:
+  paper-cycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install agent deps
+        working-directory: agent
+        run: npm ci --no-audit --no-fund
+      - name: Generate a throwaway key (read-only pubkey use; never signs)
+        working-directory: agent
+        run: |
+          mkdir -p secret
+          node --input-type=module -e "import csp from 'casper-js-sdk'; import { writeFileSync } from 'node:fs'; const k = csp.PrivateKey.generate(csp.KeyAlgorithm.ED25519); writeFileSync('secret/agent_key.pem', k.toPem());"
+      - name: Run one paper cycle
+        working-directory: agent
+        env:
+          SIMULATE: "true"
+          DRY_RUN: "true"
+          MAX_CYCLES: "1"
+          VENICE_API_KEY: ${{ secrets.VENICE_API_KEY }}
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+          METALS_API_KEY: ${{ secrets.METALS_API_KEY }}
+          CSPR_CLOUD_KEY: ${{ secrets.CSPR_CLOUD_KEY }}
+        run: npx tsx src/index.ts
+      - name: Commit the updated equity curve
+        run: |
+          git config user.name "amanah-agent[bot]"
+          git config user.email "agent@amanah.local"
+          if ! git diff --quiet -- web/public/simulation.json; then
+            git add web/public/simulation.json
+            git commit -m "chore(agent): paper cycle [skip ci]"
+            git push
+          else
+            echo "no change this cycle"
+          fi
