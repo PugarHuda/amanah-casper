@@ -50,7 +50,7 @@ export default async function CompliancePage() {
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", margin: "0 0 26px" }}>
             <a href="/api/compliance-report?days=30" target="_blank" rel="noopener noreferrer"
-              style={{ padding: "11px 18px", border: "1px solid var(--green-deep)", background: "#f4fbf6", borderRadius: 12, fontSize: 14, fontWeight: 700, color: "var(--green-deep)", textDecoration: "none" }}>
+              style={{ padding: "11px 18px", border: "1px solid var(--green-deep)", background: "var(--ok-bg)", borderRadius: 12, fontSize: 14, fontWeight: 700, color: "var(--green-deep)", textDecoration: "none" }}>
               ⤓ Export evidence pack (JSON)
             </a>
             <a href="https://github.com/PugarHuda/amanah-casper/blob/master/RESEARCH.md" target="_blank" rel="noopener noreferrer"
@@ -69,7 +69,7 @@ export default async function CompliancePage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <span className="mono" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--faint)" }}>POLICY SIGN-OFF · DORA ART. 5(2)(a)</span>
               {policy && (
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: policy.approved ? "#e8f6ed" : "#fbeaea", color: policy.approved ? "var(--green-deep)" : "#b3382c" }}>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: policy.approved ? "var(--ok-bg)" : "var(--bad-bg)", color: policy.approved ? "var(--green-deep)" : "#b3382c" }}>
                   {policy.approved ? `signed off on-chain · ${policy.approvals}/${policy.threshold}` : `awaiting sign-off · ${policy.approvals}/${policy.threshold}`}
                 </span>
               )}
@@ -128,7 +128,7 @@ export default async function CompliancePage() {
                 {policyRefusals.slice(0, 25).map((e) => (
                   <a key={e.deployHash} href={`${EXPLORER}/${e.deployHash}`} target="_blank" rel="noopener noreferrer"
                     style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "13px 16px", border: "1px solid #f0cdc9", background: "#fdf7f6", borderRadius: 14, textDecoration: "none" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: "#fbeaea", color: "#b3382c", flexShrink: 0, marginTop: 2 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: "var(--bad-bg)", color: "#b3382c", flexShrink: 0, marginTop: 2 }}>
                       {e.name}
                     </span>
                     <span style={{ flex: 1 }}>
@@ -151,7 +151,7 @@ export default async function CompliancePage() {
               {executed.slice(0, 12).map((d) => (
                 <a key={d.deploy_hash} href={`${EXPLORER}/${d.deploy_hash}`} target="_blank" rel="noopener noreferrer"
                   style={{ display: "flex", gap: 12, alignItems: "center", padding: "11px 15px", border: "1px solid var(--border2)", borderRadius: 12, textDecoration: "none", background: "var(--surface, #fff)" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: "#e8f6ed", color: "var(--green-deep)" }}>passed</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 999, background: "var(--ok-bg)", color: "var(--green-deep)" }}>passed</span>
                   <span className="mono" style={{ flex: 1, fontSize: 11, color: "var(--blue)" }}>{short(d.deploy_hash ?? "")} ↗</span>
                   <span className="mono" style={{ fontSize: 11, color: "var(--faint2)" }}>{when(d.timestamp ?? null)}</span>
                 </a>

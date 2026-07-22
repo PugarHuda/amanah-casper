@@ -32,7 +32,7 @@ export default async function Dashboard() {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a
               href="/verify"
-              style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--green-deep)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 700, color: "var(--green-deep)", background: "#f4fbf6" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 9, padding: "13px 20px", border: "1px solid var(--green-deep)", borderRadius: 12, textDecoration: "none", fontSize: 14, fontWeight: 700, color: "var(--green-deep)", background: "var(--ok-bg)" }}
             >
               🔍 Verify this yourself →
             </a>
@@ -92,20 +92,20 @@ export default async function Dashboard() {
 
             <div style={{ marginTop: 24, marginBottom: 14, fontSize: 14, fontWeight: 700, color: "var(--ink2)", letterSpacing: "0.3px" }}>COMPLIANCE STATUS</div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Compliance status</div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.vaultStatus === "Valid" ? "var(--green-deep)" : "var(--ink)" }}>
                   {compliance.vaultStatus}{compliance.vaultStatus === "Valid" ? " ✓" : ""}
                 </div>
               </div>
-              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Agent allowlisted</div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.allowlisted ? "var(--green-deep)" : "var(--ink)" }}>
                   {compliance.allowlisted ? "Yes ✓" : "No"}
                 </div>
               </div>
               {compliance.zkVerified !== null && (
-                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)" }}>
                   <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>KYC (zero-knowledge)</div>
                   <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.zkVerified ? "var(--green-deep)" : "var(--ink)" }}>
                     {compliance.zkVerified ? "Proven ✓" : "Unproven"}
@@ -114,7 +114,7 @@ export default async function Dashboard() {
                 </div>
               )}
               {compliance.circuitBreaker !== null && (
-                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${compliance.circuitBreaker ? "#f0d9d9" : "#dcefe2"}`, borderRadius: 16, background: compliance.circuitBreaker ? "#fbf4f4" : "#f4fbf6" }}>
+                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${compliance.circuitBreaker ? "#f0d9d9" : "#dcefe2"}`, borderRadius: 16, background: compliance.circuitBreaker ? "#fbf4f4" : "var(--ok-bg)" }}>
                   <div style={{ fontSize: 13, color: compliance.circuitBreaker ? "#a05555" : "#5b8a6a", fontWeight: 600 }}>Circuit breaker</div>
                   <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.circuitBreaker ? "var(--red, #c0392b)" : "var(--green-deep)" }}>
                     {compliance.circuitBreaker ? "FROZEN ⛔" : "Armed ✓"}
@@ -124,7 +124,7 @@ export default async function Dashboard() {
               )}
               {compliance.reservesSolvent !== null && (
                 <a href={`${explorerBase}/deploy/5be256a3b3b9aa4a33e8ea78646984edcfb91730e950d8d8eb054a83a4517793`} target="_blank" rel="noopener noreferrer"
-                  style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6", textDecoration: "none" }}>
+                  style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)", textDecoration: "none" }}>
                   <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>ZK proof-of-reserves</div>
                   <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: compliance.reservesSolvent ? "var(--green-deep)" : "var(--ink)" }}>
                     {compliance.reservesSolvent ? "Solvent ✓" : "Unproven"}
@@ -133,13 +133,13 @@ export default async function Dashboard() {
                 </a>
               )}
               <a href={`${explorerBase}/deploy/483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2`} target="_blank" rel="noopener noreferrer"
-                style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6", textDecoration: "none" }}>
+                style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)", textDecoration: "none" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Auditor quorum</div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>2-of-3 ✓</div>
                 <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>K-of-N independent signed votes · on-chain ↗</div>
               </a>
               {audit && (
-                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${audit.approved ? "#dcefe2" : "#f0d9d9"}`, borderRadius: 16, background: audit.approved ? "#f4fbf6" : "#fbf4f4" }}>
+                <div style={{ flex: "1 1 150px", padding: "18px 20px", border: `1px solid ${audit.approved ? "#dcefe2" : "#f0d9d9"}`, borderRadius: 16, background: audit.approved ? "var(--ok-bg)" : "#fbf4f4" }}>
                   <div style={{ fontSize: 13, color: audit.approved ? "#5b8a6a" : "#a05555", fontWeight: 600 }}>Independent auditor</div>
                   <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: audit.approved ? "var(--green-deep)" : "var(--red, #c0392b)" }}>
                     {audit.approved ? "Approved ✓" : "Vetoed ⛔"}
@@ -147,7 +147,7 @@ export default async function Dashboard() {
                   <div style={{ marginTop: 4, fontSize: 11, color: "var(--faint)" }}>2nd agent · separate key · grade {audit.grade}{audit.approved ? "" : " · reputation slashed"}</div>
                 </div>
               )}
-              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+              <div style={{ flex: "1 1 150px", padding: "18px 20px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)" }}>
                 <div style={{ fontSize: 13, color: "#5b8a6a", fontWeight: 600 }}>Per-tx cap</div>
                 <div style={{ marginTop: 6, fontSize: 20, fontWeight: 700, color: "var(--green-deep)" }}>{compliance.txCap}</div>
               </div>

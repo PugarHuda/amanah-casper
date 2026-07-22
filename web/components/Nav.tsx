@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ThemeToggle from "./ThemeToggle";
 
 const Logo = () => (
   <svg width="26" height="22" viewBox="0 0 26 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="1" width="11" height="3.4" rx="1.7" fill="#16130f" />
-    <rect x="14" y="1" width="7" height="3.4" rx="1.7" fill="#16130f" />
-    <rect x="4" y="9.3" width="18" height="3.4" rx="1.7" fill="#16130f" />
-    <rect x="0" y="17.6" width="8" height="3.4" rx="1.7" fill="#16130f" />
-    <rect x="11" y="17.6" width="13" height="3.4" rx="1.7" fill="#16130f" />
+    <rect x="0" y="1" width="11" height="3.4" rx="1.7" fill="var(--logo)" />
+    <rect x="14" y="1" width="7" height="3.4" rx="1.7" fill="var(--logo)" />
+    <rect x="4" y="9.3" width="18" height="3.4" rx="1.7" fill="var(--logo)" />
+    <rect x="0" y="17.6" width="8" height="3.4" rx="1.7" fill="var(--logo)" />
+    <rect x="11" y="17.6" width="13" height="3.4" rx="1.7" fill="var(--logo)" />
   </svg>
 );
 
@@ -37,7 +38,7 @@ export default function Nav() {
     <nav className="nav">
       <Link href="/" aria-label="amanah home" style={{ display: "flex", alignItems: "center", gap: 11, textDecoration: "none" }}>
         <Logo />
-        <span style={{ fontSize: 23, fontWeight: 600, letterSpacing: "-0.4px", color: "#16130f" }}>amanah</span>
+        <span style={{ fontSize: 23, fontWeight: 600, letterSpacing: "-0.4px", color: "var(--logo)" }}>amanah</span>
       </Link>
       <div className="nav-links">
         {(marketing ? LINKS.filter((l) => l.href === "/verify") : LINKS).map((l) => (
@@ -54,6 +55,7 @@ export default function Nav() {
         <Link href="/connect" className="nav-cta" aria-current={cur("/connect")}>
           Connect wallet
         </Link>
+        <ThemeToggle />
       </div>
     </nav>
   );

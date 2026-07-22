@@ -226,7 +226,7 @@ export default function Connect() {
 
             {account ? (
               /* CONNECTED STATE */
-              <div style={{ marginTop: 32, padding: "22px 24px", border: "1px solid #dcefe2", borderRadius: 16, background: "#f4fbf6" }}>
+              <div style={{ marginTop: 32, padding: "22px 24px", border: "1px solid #dcefe2", borderRadius: 16, background: "var(--ok-bg)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ width: 9, height: 9, borderRadius: "50%", background: "var(--green-deep)" }} />
                   <span style={{ fontSize: 14, fontWeight: 700, color: "var(--green-deep)" }}>

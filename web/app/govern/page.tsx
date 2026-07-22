@@ -103,7 +103,7 @@ export default function Govern() {
               return (
                 <div key={it.hash} style={{ padding: "18px 20px", border: "1px solid var(--border2)", borderRadius: 16, background: "var(--surface, #fff)" }}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "#fbeaea", color: "#b3382c" }}>ESCALATED</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "var(--bad-bg)", color: "#b3382c" }}>ESCALATED</span>
                     <span style={{ fontSize: 12, color: "var(--faint)" }}>{it.reason}</span>
                     {it.confidence != null && <span style={{ fontSize: 12, color: "var(--faint)" }}>· confidence {it.confidence.toFixed(2)}</span>}
                     {it.cycle != null && <span style={{ fontSize: 12, color: "var(--faint)" }}>· cycle #{it.cycle}</span>}

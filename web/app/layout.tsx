@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Newsreader, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Ships <meta name="color-scheme" content="light"> so a phone's auto-dark-theme
-// doesn't overlay a dark tint on this light-only design.
-export const viewport: Viewport = { colorScheme: "light" };
+// The page supports both themes now, so we let the browser know (prevents auto-dark
+// overlays fighting our own dark theme). The actual theme is set before paint below.
+export const viewport: Viewport = { colorScheme: "light dark" };
 
 const newsreader = Newsreader({
   subsets: ["latin"],
@@ -47,8 +47,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Set the theme BEFORE the page paints so there's no flash of the wrong theme.
+  const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){}})();`;
   return (
-    <html lang="en" className={`${newsreader.variable} ${manrope.variable} ${mono.variable}`}>
+    <html lang="en" className={`${newsreader.variable} ${manrope.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body>{children}</body>
     </html>
   );

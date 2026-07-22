@@ -32,7 +32,7 @@ export default function SimulationCard() {
     <div style={{ marginTop: 18, padding: "16px 18px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface-subtle)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span className="mono" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--faint)" }}>PAPER MODE · SIMULATED, NOTHING ON-CHAIN</span>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: up ? "#e8f6ed" : "#fbeaea", color: up ? "var(--green-deep)" : "#b3382c" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: up ? "var(--ok-bg)" : "var(--bad-bg)", color: up ? "var(--green-deep)" : "#b3382c" }}>
           {up ? "+" : ""}{last.pnlPct}% over {sim.cycles.length} cycle{sim.cycles.length > 1 ? "s" : ""}
         </span>
       </div>

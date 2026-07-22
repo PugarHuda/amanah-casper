@@ -31,7 +31,7 @@ function Badge({ ok, okText, badText }: { ok: boolean | null; okText: string; ba
   if (ok === null) return <span style={{ fontSize: 13, color: "var(--faint)" }}>checking…</span>;
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 13px", borderRadius: 999, fontSize: 13, fontWeight: 700,
-      background: ok ? "#e8f6ed" : "#fbeaea", color: ok ? "var(--green-deep)" : "#b3382c", border: `1px solid ${ok ? "#c9e7d5" : "#f0cdc9"}` }}>
+      background: ok ? "var(--ok-bg)" : "var(--bad-bg)", color: ok ? "var(--green-deep)" : "#b3382c", border: `1px solid ${ok ? "#c9e7d5" : "#f0cdc9"}` }}>
       {ok ? "✓ " + okText : "✗ " + badText}
     </span>
   );
@@ -198,7 +198,7 @@ export default function VerifyPage() {
                     can't use wrapped/negative values to fake the sum. */}
                 <Badge ok={rangeOk} okText={`each allocation proven ≥ 0 (${rangeBits}-bit range)`} badText="range proof failed" />
                 <button onClick={() => setRvTampered((t) => !t)}
-                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: rvTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: rvTampered ? "var(--bad-bg)" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
                   {rvTampered ? "↺ restore the real total" : "⚡ claim $1,000 more than we hold"}
                 </button>
                 <a href={`${EXPLORER}/deploy/${rv.deployHash}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)" }}>
@@ -244,7 +244,7 @@ export default function VerifyPage() {
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 14 }}>
                 <Badge ok={computed === null ? null : computed === blob.hash} okText="hash matches the attestation" badText="hash mismatch — would be rejected" />
                 <button onClick={() => setPoTampered((t) => !t)}
-                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: poTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: poTampered ? "var(--bad-bg)" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
                   {poTampered ? "↺ restore the real blob" : "⚡ change one digit in the blob"}
                 </button>
                 {blob.cid && (
@@ -284,7 +284,7 @@ export default function VerifyPage() {
             ].map((g) => (
               <a key={g.h} href={`${EXPLORER}/deploy/${g.h}`} target="_blank" rel="noopener noreferrer"
                 style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "14px 16px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface, #fff)", textDecoration: "none" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: g.e === "success" ? "#e8f6ed" : g.e === "verified in-VM" ? "#eef3fb" : "#fbeaea", color: g.e === "success" ? "var(--green-deep)" : g.e === "verified in-VM" ? "var(--blue)" : "#b3382c", flexShrink: 0, marginTop: 2 }}>{g.e}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: g.e === "success" ? "var(--ok-bg)" : g.e === "verified in-VM" ? "#eef3fb" : "var(--bad-bg)", color: g.e === "success" ? "var(--green-deep)" : g.e === "verified in-VM" ? "var(--blue)" : "#b3382c", flexShrink: 0, marginTop: 2 }}>{g.e}</span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: "var(--ink)" }}>{g.t}</span>
                   <span style={{ display: "block", fontSize: 12.5, color: "var(--muted, #6b6b6b)", margin: "3px 0 4px", lineHeight: 1.5 }}>{g.d}</span>
@@ -308,7 +308,7 @@ export default function VerifyPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
               {rt.results.map((r) => (
                 <div key={r.id} style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: "13px 16px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface, #fff)" }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: r.blocked ? "#e8f6ed" : "#fbeaea", color: r.blocked ? "var(--green-deep)" : "#b3382c", flexShrink: 0, marginTop: 2 }}>{r.blocked ? "blocked" : "GOT THROUGH"}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 999, background: r.blocked ? "var(--ok-bg)" : "var(--bad-bg)", color: r.blocked ? "var(--green-deep)" : "#b3382c", flexShrink: 0, marginTop: 2 }}>{r.blocked ? "blocked" : "GOT THROUGH"}</span>
                   <span style={{ flex: 1 }}>
                     <span style={{ display: "block", fontSize: 14.5, fontWeight: 700, color: "var(--ink)" }}>{r.id}</span>
                     <span style={{ display: "block", fontSize: 12.5, color: "var(--muted, #6b6b6b)", margin: "3px 0 4px", lineHeight: 1.5 }}>{r.what}</span>
@@ -343,7 +343,7 @@ export default function VerifyPage() {
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
                 <Badge ok={ok} okText={`${client.id} is included in the root`} badText="inclusion proof failed" />
                 {covers != null && (
-                  <span style={{ fontSize: 13, fontWeight: 700, padding: "6px 13px", borderRadius: 999, background: covers ? "#e8f6ed" : "#fbeaea", color: covers ? "var(--green-deep)" : "#b3382c", border: `1px solid ${covers ? "#c9e7d5" : "#f0cdc9"}` }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, padding: "6px 13px", borderRadius: 999, background: covers ? "var(--ok-bg)" : "var(--bad-bg)", color: covers ? "var(--green-deep)" : "#b3382c", border: `1px solid ${covers ? "#c9e7d5" : "#f0cdc9"}` }}>
                     {covers ? "✓ reserves ≥ liabilities" : "✗ reserves < liabilities"}
                   </span>
                 )}
@@ -359,7 +359,7 @@ export default function VerifyPage() {
                   {liab.proofs.map((p, i) => <option key={p.id} value={i}>{p.id} — {fmtUsd(p.balance)}</option>)}
                 </select>
                 <button onClick={() => setLiabTampered((t) => !t)}
-                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: liabTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: liabTampered ? "var(--bad-bg)" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
                   {liabTampered ? "↺ restore the real balance" : "⚡ overstate this balance by $1"}
                 </button>
               </div>
