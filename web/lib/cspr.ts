@@ -525,14 +525,12 @@ export type KeyIdentity = {
   degraded: boolean;
 };
 
-/** Resolve what a connected public key is actually allowed to do, entirely from
- *  on-chain state. `publicKeyHex` is the CSPR.click public key (01… / 02…). */
-export async function getKeyIdentity(publicKeyHex: string): Promise<KeyIdentity | null> {
+/** Casper account-hash = blake2b256( algo_name ‖ 0x00 ‖ public_key_bytes ). */
+export function accountHashOf(publicKeyHex: string): string | null {
   const pk = publicKeyHex.trim().toLowerCase();
   if (!/^0[12][0-9a-f]{64,128}$/.test(pk)) return null;
-  const accountHash = hex(
+  return hex(
     blake2b(
-      // Casper account-hash = blake2b256( algo_name ‖ 0x00 ‖ public_key_bytes )
       new Uint8Array([
         ...new TextEncoder().encode(pk.startsWith("01") ? "ed25519" : "secp256k1"),
         0,
@@ -542,6 +540,14 @@ export async function getKeyIdentity(publicKeyHex: string): Promise<KeyIdentity 
       32,
     ),
   );
+}
+
+/** Resolve what a connected public key is actually allowed to do, entirely from
+ *  on-chain state. `publicKeyHex` is the CSPR.click public key (01… / 02…). */
+export async function getKeyIdentity(publicKeyHex: string): Promise<KeyIdentity | null> {
+  const pk = publicKeyHex.trim().toLowerCase();
+  const accountHash = accountHashOf(pk);
+  if (!accountHash) return null;
   try {
     const srh = await stateRootHash();
     if (!srh) return null;
@@ -570,6 +576,37 @@ export async function getKeyIdentity(publicKeyHex: string): Promise<KeyIdentity 
       reputation,
       degraded: !agent || !custodian || !QUORUM_SEED,
     };
+  } catch {
+    return null;
+  }
+}
+
+// --- AuditorQuorum v4: the interactive quorum (browser voting) ---------------
+// Field order (Odra 1-indexes, reserves 0): auditors=1, threshold=2, instance_id=3,
+// approvals=4, voted=5, auditor_addrs=6, voted_addr=7.
+const QUORUM_V4_SEED = (process.env.QUORUM_V4_STATE_SEED || "").trim();
+export const quorumV4Readable = () => !!QUORUM_V4_SEED;
+
+/** Live state of the interactive quorum for `pendingHashHex`, and whether `accountHashHex`
+ *  has joined the open registry. Powers the browser vote UI. null if the seed is unset. */
+export async function getQuorumVote(
+  pendingHashHex: string,
+  accountHashHex: string,
+): Promise<{ approvals: number; threshold: number; registered: boolean; approved: boolean } | null> {
+  if (!QUORUM_V4_SEED || pendingHashHex.length !== 64) return null;
+  try {
+    const srh = await stateRootHash();
+    if (!srh) return null;
+    const hashKey = Array.from(Buffer.from(pendingHashHex, "hex")); // Mapping<[u8;32],_> key = 32 raw bytes
+    const acctKey = accountHashHex.length === 64 ? [0x00, ...Array.from(Buffer.from(accountHashHex, "hex"))] : null; // Key::Account
+    const [approvals, threshold, registered] = await Promise.all([
+      readByte(srh, QUORUM_V4_SEED, 4, hashKey),                       // approvals[hash] (u32 LE, small)
+      readByte(srh, QUORUM_V4_SEED, 2, []),                            // threshold (u32 LE)
+      acctKey ? readByte(srh, QUORUM_V4_SEED, 6, acctKey) : Promise.resolve(null), // auditor_addrs[acct]
+    ]);
+    const a = approvals ?? 0;
+    const t = threshold ?? 0;
+    return { approvals: a, threshold: t, registered: registered === 1, approved: t > 0 && a >= t };
   } catch {
     return null;
   }

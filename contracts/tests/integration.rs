@@ -516,6 +516,51 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
 }
 
 #[test]
+fn caller_authenticated_voting_from_the_open_registry() {
+    // The browser path: an auditor votes by SIGNING THE DEPLOY (caller auth), not a
+    // detached message signature — which is all a wallet can actually produce. Votes here
+    // count toward the SAME threshold as the signed votes.
+    let env = odra_test::env();
+    let pk0 = env.public_key(&env.get_account(0));
+    let mut q = AuditorQuorum::deploy(
+        &env,
+        AuditorQuorumInitArgs { auditors: vec![pk0], threshold: 2, instance_id: [3u8; 32] },
+    );
+    let hash = [4u8; 32];
+    let a1 = env.get_account(1);
+    let a2 = env.get_account(2);
+
+    // An unregistered account can't vote this way.
+    env.set_caller(a1);
+    assert_eq!(q.try_vote_as_caller(hash, true).unwrap_err(), Error::UnknownSigner.into());
+
+    // Anyone may join the open registry, then vote. One approval — not yet quorum (2).
+    env.set_caller(a1);
+    assert!(!q.is_registered(a1));
+    q.open_register();
+    assert!(q.is_registered(a1));
+    q.vote_as_caller(hash, true);
+    assert_eq!(q.approvals_for(hash), 1);
+    assert!(!q.approved(hash));
+
+    // Same account can't double-vote the same decision.
+    assert_eq!(q.try_vote_as_caller(hash, true).unwrap_err(), Error::ReplayedProof.into());
+
+    // A second independent auditor pushes it over the threshold.
+    env.set_caller(a2);
+    q.open_register();
+    q.vote_as_caller(hash, true);
+    assert_eq!(q.approvals_for(hash), 2);
+    assert!(q.approved(hash), "two independent caller-auth votes reach the 2-of-N quorum");
+
+    // A REJECT doesn't add to the tally (and isn't a double-vote for a fresh hash).
+    let hash2 = [5u8; 32];
+    env.set_caller(a1);
+    q.vote_as_caller(hash2, false);
+    assert_eq!(q.approvals_for(hash2), 0);
+}
+
+#[test]
 fn zk_reserves_hides_split_and_proves_the_sum() {
     // Golden vector from the TS prover (agent/src/zk-reserves.ts): 4 hidden allocations
     // (250k/400k/150k/200k) whose Pedersen commitments prove they sum to $1M — the

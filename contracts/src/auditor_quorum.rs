@@ -22,7 +22,25 @@ pub struct Voted {
     pub approvals: u32,
 }
 
-#[odra::module(events = [Voted], errors = Error)]
+/// Emitted by the caller-authenticated path (`vote_as_caller`), where the voter is
+/// identified by the deploy's own signature (`caller`) rather than a detached signature.
+/// This is what lets an auditor vote straight from a wallet in the browser — the wallet
+/// signs the deploy, and no separate raw-message signature is needed.
+#[odra::event]
+pub struct VotedByAccount {
+    pub reasoning_hash: [u8; 32],
+    pub auditor: Address,
+    pub approve: bool,
+    pub approvals: u32,
+}
+
+/// Emitted when an account joins the open auditor registry.
+#[odra::event]
+pub struct AuditorRegistered {
+    pub auditor: Address,
+}
+
+#[odra::module(events = [Voted, VotedByAccount, AuditorRegistered], errors = Error)]
 pub struct AuditorQuorum {
     /// Authorized auditor public keys (set at init). Only these may vote.
     auditors: Mapping<PublicKey, bool>,
@@ -35,6 +53,17 @@ pub struct AuditorQuorum {
     /// approvals[hash] and a per-(hash,auditor) guard against double-voting.
     approvals: Mapping<[u8; 32], u32>,
     voted: Mapping<([u8; 32], PublicKey), bool>,
+    // --- caller-authenticated path (browser voting + open registry) --------------
+    // Declared last so the fields above keep their state indices. This path identifies
+    // the voter by `caller` (the deploy signer) instead of a detached signature, which is
+    // what a browser wallet can actually produce. Votes here count toward the SAME
+    // threshold as the signed votes above — one unified quorum, two ways to reach it.
+    /// Accounts allowed to vote via `vote_as_caller`. In this deployment anyone may
+    /// self-register (a demo of the open auditor registry; production gates it behind a
+    /// stake — see roadmap B1). Distinct from `auditors` because caller auth is keyed by
+    /// account address, signed-vote auth by public key.
+    auditor_addrs: Mapping<Address, bool>,
+    voted_addr: Mapping<([u8; 32], Address), bool>,
 }
 
 #[odra::module]
@@ -83,6 +112,44 @@ impl AuditorQuorum {
             self.approvals.set(&reasoning_hash, approvals);
         }
         self.env().emit_event(Voted { reasoning_hash, auditor: pubkey, approve, approvals });
+    }
+
+    /// Join the open auditor registry. In this deployment registration is permissionless
+    /// so any wallet can participate in the demo; a production quorum would require a
+    /// stake here and slash it for bad audits (roadmap B1). Idempotent.
+    pub fn open_register(&mut self) {
+        let caller = self.env().caller();
+        self.auditor_addrs.set(&caller, true);
+        self.env().emit_event(AuditorRegistered { auditor: caller });
+    }
+
+    /// Cast a vote authenticated by the CALLER — the account that signed this deploy —
+    /// instead of a detached signature. This is the path a browser wallet uses: it signs
+    /// the deploy, and the contract trusts the on-chain caller identity. Reverts
+    /// `UnknownSigner` if the caller isn't a registered auditor, `ReplayedProof` on a
+    /// double-vote. Counts toward the same threshold as `vote`.
+    pub fn vote_as_caller(&mut self, reasoning_hash: [u8; 32], approve: bool) {
+        let caller = self.env().caller();
+        if !self.auditor_addrs.get_or_default(&caller) {
+            self.env().revert(Error::UnknownSigner);
+        }
+        let vkey = (reasoning_hash, caller);
+        if self.voted_addr.get_or_default(&vkey) {
+            self.env().revert(Error::ReplayedProof);
+        }
+        self.voted_addr.set(&vkey, true);
+
+        let mut approvals = self.approvals.get_or_default(&reasoning_hash);
+        if approve {
+            approvals += 1;
+            self.approvals.set(&reasoning_hash, approvals);
+        }
+        self.env().emit_event(VotedByAccount { reasoning_hash, auditor: caller, approve, approvals });
+    }
+
+    /// True if `who` is in the open auditor registry (may vote via `vote_as_caller`).
+    pub fn is_registered(&self, who: Address) -> bool {
+        self.auditor_addrs.get_or_default(&who)
     }
 
     /// True once approvals for `reasoning_hash` reach the threshold — the quorum passed.

@@ -120,5 +120,19 @@ export function useCsprClick() {
   }, []);
   const signOut = useCallback(() => window.csprclick?.signOut(), []);
 
-  return { account, ready, error, appId: APP_ID, signIn, connect, signOut };
+  // Sign + submit an (unsigned) transaction JSON with the connected wallet. Returns the
+  // deploy/tx hash. Throws on cancel/error/SDK-not-ready so the caller can show why.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const send = useCallback(async (tx: object, publicKey: string): Promise<string> => {
+    const sdk = window.csprclick;
+    if (!sdk?.send) throw new Error("Wallet SDK isn't ready on this domain (see the connect notice).");
+    const res = await sdk.send(tx, publicKey, true, 120);
+    if (!res || res.cancelled) throw new Error("Signing was cancelled in the wallet.");
+    if (res.error) throw new Error(res.error);
+    const hash = res.deployHash || res.transactionHash;
+    if (!hash) throw new Error("The wallet returned no transaction hash.");
+    return hash;
+  }, []);
+
+  return { account, ready, error, appId: APP_ID, signIn, connect, signOut, send };
 }
