@@ -1,4 +1,5 @@
 import type { PriceSnapshot } from "../types.js";
+import { fenceUntrusted } from "../guard.js";
 
 export const SYSTEM_PROMPT = `You are Amanah, an autonomous, compliance-bound treasury agent managing a \
 real-world-asset (RWA) reserve on the Casper blockchain. The reserve holds four \
@@ -48,22 +49,22 @@ export function buildUserPrompt(
 ): string {
   const ctx = marketContext
     ? `\nOn-chain market context (from the official Casper CSPR.cloud + CSPR.trade MCP servers):
-${JSON.stringify(marketContext, null, 2)}
+${fenceUntrusted("mcp-market-context", marketContext)}
 Use the DEX execution price + price impact to judge CSPR reserve liquidity, and the
 balance as available capital. Don't rebalance into a leg with high DEX price impact.\n`
     : "";
   return `Cycle #${cycle}.
 
 Live RWA prices (null = data source unavailable this cycle):
-${JSON.stringify(prices, null, 2)}
+${fenceUntrusted("price-feeds", prices)}
 
 Reference (long-run typical ranges, for judging relative value — NOT targets):
 - Gold: ~$1,800-2,600 /oz. WTI: ~$60-95 /bbl. US 10Y: ~3-5%. CSPR: ~$0.01-0.05.
 An asset trading far outside its typical range is stretched: trimming its yield
 into a cheaper/safer leg can be a well-supported move.
 
-Premium signal (paid for via x402):
-${JSON.stringify(premiumSignal, null, 2)}
+Premium signal (paid for via x402 — a third party we do not control):
+${fenceUntrusted("premium-signal", premiumSignal)}
 ${ctx}
 Decide the single best action for this cycle.`;
 }

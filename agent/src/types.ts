@@ -56,6 +56,10 @@ export interface ReasoningBlob {
    *  the reasoning and attested alongside it. */
   marketContext?: unknown;
   decision: Decision;
+  /** Prompt-injection attempts detected in this cycle's untrusted inputs, and any
+   *  policy violations found in the model's own output. Both live INSIDE the signed
+   *  blob so an attempted attack is attested on-chain, not just logged locally. */
+  guard?: { detections: unknown[]; violations: unknown[]; forcedEscalate: boolean };
   model: string;
   at: string;
 }

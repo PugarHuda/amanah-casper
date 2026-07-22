@@ -59,6 +59,26 @@ async function readBig(index: number, mappingKey: number[] = []): Promise<bigint
   return v;
 }
 
+/** SpendGate `max_per_tx` (Var field 2, U512 blob) — the live per-transaction cap.
+ *  Returns 0n when the seed isn't configured, which callers read as "no cap known"
+ *  rather than "cap is zero". */
+export async function readMaxPerTx(): Promise<bigint> {
+  const seed = process.env.SPENDGATE_STATE_SEED;
+  if (!seed) return 0n;
+  const srh = (await rpc("chain_get_state_root_hash", {})).result.state_root_hash;
+  const itemKey = hex(blake2b(new Uint8Array(be32(2)), undefined, 32));
+  const addr = hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+  const r = await rpc("state_get_dictionary_item", {
+    state_root_hash: srh,
+    dictionary_identifier: { Dictionary: `dictionary-${addr}` },
+  });
+  if (r.error) return 0n;
+  const arr: number[] = r.result.stored_value.CLValue.parsed ?? [];
+  let v = 0n;
+  for (let i = 0; i < (arr[0] ?? 0); i++) v += BigInt(arr[1 + i] ?? 0) << BigInt(8 * i);
+  return v;
+}
+
 export async function readVault(): Promise<{ holdings: Record<AssetId, bigint>; principal: bigint; total: bigint }> {
   const holdings = {} as Record<AssetId, bigint>;
   let total = 0n;

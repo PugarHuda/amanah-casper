@@ -257,7 +257,8 @@ async function getChanges24h(): Promise<Partial<Record<string, number>>> {
 // when available; otherwise an explicit "awaiting first cycle" empty state.
 export async function getAgentConsole() {
   // Local audit/ blob (dev) first; else fetch the latest from public IPFS (prod).
-  const latest = latestReasoningBlob() ?? (await latestBlobFromPinata());
+  // A Pinata hiccup must not blank the page — degrade to the empty state instead.
+  const latest = latestReasoningBlob() ?? (await latestBlobFromPinata().catch(() => null));
   if (!latest) {
     return {
       metrics: [], assets: [], guards: ["no published reasoning blob yet"],
@@ -274,13 +275,16 @@ export async function getAgentConsole() {
   const risk = d.riskScore != null ? (d.riskScore > 1 ? d.riskScore / 100 : d.riskScore) : null;
 
   // Parallel: latest attest deploy hash, attest count, vault state, reputation, spend gate, auditor verdict.
+  // Each read degrades to its own fallback: one transient RPC/REST failure renders "—"
+  // for that field, it does NOT reject the whole page into an error boundary (which
+  // would blank the nav too). Belt-and-braces even though most helpers catch internally.
   const [deploys, attestCount, vault, repScore, spendGate, audit] = await Promise.all([
-    live() ? getContractDeploys([ATTESTATION()], 1) : Promise.resolve([]),
-    live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
-    vaultReadable() ? getVaultState() : Promise.resolve(null),
-    reputationReadable() ? getReputationScore(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
-    spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
-    latestAuditVerdict(),
+    live() ? getContractDeploys([ATTESTATION()], 1).catch(() => []) : Promise.resolve([]),
+    live() ? getDeployCount(ATTESTATION()).catch(() => null) : Promise.resolve(null),
+    vaultReadable() ? getVaultState().catch(() => null) : Promise.resolve(null),
+    reputationReadable() ? getReputationScore(AGENT_ACCOUNT_HASH).catch(() => null) : Promise.resolve(null),
+    spendGateReadable() ? getSpendGateState().catch(() => null) : Promise.resolve(null),
+    latestAuditVerdict().catch(() => null),
   ]);
   const attestDeploy = deploys[0];
   const attestDeployHash = attestDeploy?.deploy_hash ?? "";
@@ -407,18 +411,21 @@ export async function getDashboard() {
 
   // All these on-chain reads are independent — fire them concurrently so the page is
   // one round-trip deep, not eight. (Was serial: ~2.3s cold; parallel ≈ slowest read.)
+  // Each carries its own .catch: a single transient RPC/REST failure degrades THAT field
+  // to its honest fallback rather than rejecting Promise.all and blanking the whole page
+  // (which took the nav with it under parallel test load).
   const [deploys, sg, cs, zkV, frozen, solvent, vault, audit, attestCnt, changes, activity] = await Promise.all([
-    live() ? getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10) : Promise.resolve([]),
-    spendGateReadable() ? getSpendGateState() : Promise.resolve(null),
-    complianceReadable() ? getComplianceState(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
-    zkReadable() ? getZkVerified(AGENT_ACCOUNT_HASH) : Promise.resolve(null),
-    vaultReadable() ? getVaultFrozen() : Promise.resolve(null),
-    getReservesSolvent(),
-    vaultReadable() ? getVaultState() : Promise.resolve(null),
-    latestAuditVerdict(),
-    live() ? getDeployCount(ATTESTATION()) : Promise.resolve(null),
-    getChanges24h(),
-    live() ? getActivity(VAULT(), 30) : Promise.resolve(null),
+    live() ? getContractDeploys([VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()], 10).catch(() => []) : Promise.resolve([]),
+    spendGateReadable() ? getSpendGateState().catch(() => null) : Promise.resolve(null),
+    complianceReadable() ? getComplianceState(AGENT_ACCOUNT_HASH).catch(() => null) : Promise.resolve(null),
+    zkReadable() ? getZkVerified(AGENT_ACCOUNT_HASH).catch(() => null) : Promise.resolve(null),
+    vaultReadable() ? getVaultFrozen().catch(() => null) : Promise.resolve(null),
+    getReservesSolvent().catch(() => null),
+    vaultReadable() ? getVaultState().catch(() => null) : Promise.resolve(null),
+    latestAuditVerdict().catch(() => null),
+    live() ? getDeployCount(ATTESTATION()).catch(() => null) : Promise.resolve(null),
+    getChanges24h().catch(() => ({}) as Partial<Record<string, number>>),
+    live() ? getActivity(VAULT(), 30).catch(() => null) : Promise.resolve(null),
   ]);
 
   if (deploys.length) { trail = deploys.map(deployToTrail); trailLive = true; }

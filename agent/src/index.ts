@@ -21,7 +21,8 @@ import { castQuorumVotes } from "./quorum.js";
 import { notifyCycle, type CycleReport } from "./notify.js";
 import { proveSolvency } from "./solvency.js";
 import { governanceContext } from "./governance.js";
-import { readVault } from "./read-vault.js";
+import { readVault, readMaxPerTx } from "./read-vault.js";
+import { scanForInjection, validateDecision, type Detection, type Violation } from "./guard.js";
 import type { ReasoningBlob } from "./types.js";
 
 function log(cycle: number, step: string, detail: unknown) {
@@ -73,8 +74,48 @@ async function runCycle(cycle: number): Promise<void> {
       ? { pair: dexQuote.pair, executionPrice: dexQuote.executionPrice, priceImpactPct: dexQuote.priceImpactPct }
       : null,
   };
-  const decision = await reason(cycle, prices, premiumSignal, marketContext);
+  // 3a. GUARD (input) — the signal and the MCP output come from parties we don't
+  // control. Scan them before the model sees them; the prompt fences them either way.
+  const detections: Detection[] = [
+    ...scanForInjection("premium-signal", premiumSignal),
+    ...scanForInjection("mcp-market-context", marketContext),
+    ...scanForInjection("price-feeds", prices),
+  ];
+  if (detections.length) {
+    log(cycle, "guard.injection-detected", detections);
+    console.log(`  ⚠  prompt-injection attempt in untrusted input: ${detections.map((d) => `${d.source}/${d.kind}`).join(", ")}`);
+  }
+
+  let decision = await reason(cycle, prices, premiumSignal, marketContext);
   log(cycle, "reason", decision);
+
+  // 3b. GUARD (output) — check the model's decision against the vault's real balances
+  // and the live spend cap. A decision that fails is forced to escalate: the on-chain
+  // gates would refuse it anyway, but a human should see it and we shouldn't burn gas
+  // proving it. Violations are attested below, so this is auditable after the fact.
+  const violations: Violation[] = await (async () => {
+    try {
+      const [v, maxPerTx] = await Promise.all([readVault(), readMaxPerTx()]);
+      return validateDecision(decision, { maxPerTx, holdings: v.holdings as Record<string, bigint> });
+    } catch {
+      return []; // vault unreadable: don't invent a violation we can't substantiate
+    }
+  })();
+  // Force escalate on EITHER a bad output OR a poisoned input. If an untrusted source
+  // tried to address the model, the whole cycle is tainted — a plausible-looking decision
+  // derived from it can't be trusted even if it happens to pass the numeric checks. So we
+  // refuse to act and hand it to a human, rather than betting the model saw through it.
+  const forcedEscalate = violations.length > 0 || detections.length > 0;
+  if (forcedEscalate) {
+    const reasons = [
+      ...violations.map((v) => `${v.rule} (${v.detail})`),
+      ...detections.map((d) => `injection:${d.source}/${d.kind}`),
+    ];
+    log(cycle, "guard.decision-rejected", { violations, detections });
+    console.log(`  ⚠  cycle tainted (${reasons.join(", ")}) — forcing escalate, no funds move`);
+    decision = { ...decision, action: "escalate", amount: 0, confidence: 0,
+      reasoningSteps: [...(decision.reasoningSteps ?? []), `GUARD: forced to escalate — ${reasons.join("; ")}`] };
+  }
 
   // 4. ATTEST — hash + sign + record reasoning on-chain.
   const blob: ReasoningBlob = {
@@ -84,6 +125,7 @@ async function runCycle(cycle: number): Promise<void> {
     premiumSignal,
     marketContext,
     decision,
+    guard: { detections, violations, forcedEscalate },
     // Recorded IN the signed blob so the attribution is attested on-chain with the
     // decision itself, not kept in a mutable side-channel.
     governance: governanceContext(),
