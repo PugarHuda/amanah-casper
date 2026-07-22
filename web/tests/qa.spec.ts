@@ -31,9 +31,10 @@ test.describe("Amanah manual-click QA", () => {
   });
 
   test("the agent console shows a real, live reasoning cycle", async ({ page }) => {
-    await gotoAndSettle(page, "/dashboard");
-    await page.getByRole("navigation").getByRole("link", { name: "How it works", exact: true }).click();
-    await page.waitForURL("**/agent");
+    // This is a CONTENT test — go straight to /agent (reliable under load) rather than
+    // client-nav from /dashboard, whose RSC fetch for the RPC-heavy agent page is what
+    // flakes. The nav-click path is covered by the dedicated nav test.
+    await gotoAndSettle(page, "/agent");
     // 15s: under parallel load these pages block on live testnet RPC reads, and the
     // default 5s expect timeout races a slow node rather than a real regression.
     await expect(page.getByRole("heading", { name: /agent console/i })).toBeVisible({ timeout: 15000 });

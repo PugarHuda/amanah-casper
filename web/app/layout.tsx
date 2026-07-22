@@ -1,6 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Newsreader, Manrope, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+
+// Ships <meta name="color-scheme" content="light"> so a phone's auto-dark-theme
+// doesn't overlay a dark tint on this light-only design.
+export const viewport: Viewport = { colorScheme: "light" };
 
 const newsreader = Newsreader({
   subsets: ["latin"],

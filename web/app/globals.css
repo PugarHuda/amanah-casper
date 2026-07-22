@@ -1,4 +1,9 @@
 :root {
+  /* This is a light-only design. Declare it, or mobile Chrome/Safari "auto dark
+     theme" overlays an algorithmic dark tint on top — which is the muddy dark-transparent
+     look reported on phones. A real dark theme is a separate feature; until then, opt out. */
+  color-scheme: light;
+
   /* surfaces */
   --bg: #ecebe3;
   --card: #ffffff;
