@@ -6,7 +6,7 @@
 // not address this. A controls layer therefore has to hand its customer that artifact.
 // Every row here is a real transaction; every claim links to cspr.live.
 import Nav from "@/components/Nav";
-import { getExceptions, getActivity, getContractDeploys } from "@/lib/cspr";
+import { getExceptions, getActivity, getContractDeploys, getPolicySignoff } from "@/lib/cspr";
 import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/data";
 
 export const revalidate = 60;
@@ -18,9 +18,9 @@ const when = (t: string | null) => (t ? new Date(t).toISOString().replace("T", "
 export default async function CompliancePage() {
   const configured = live();
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
-  const [exceptions, activity, recent] = configured
-    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40)])
-    : [[], null, []];
+  const [exceptions, activity, recent, policy] = configured
+    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null)])
+    : [[], null, [], null];
   const executed = recent.filter((d) => !d.error_message);
   const policyRefusals = exceptions.filter((e) => e.kind === "policy");
   const platformFaults = exceptions.filter((e) => e.kind === "platform");
@@ -57,6 +57,28 @@ export default async function CompliancePage() {
               style={{ padding: "11px 18px", border: "1px solid var(--border)", borderRadius: 12, fontSize: 14, fontWeight: 600, color: "var(--ink2)", textDecoration: "none" }}>
               Sources &amp; scope limits ↗
             </a>
+          </div>
+
+          {/* Policy sign-off (D4): the written policy the DORA-accountable body approves,
+              with on-chain evidence that the auditor quorum actually signed it off. */}
+          <div style={{ padding: "16px 18px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface-subtle)", marginBottom: 4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span className="mono" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--faint)" }}>POLICY SIGN-OFF · DORA ART. 5(2)(a)</span>
+              {policy && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: policy.approved ? "#e8f6ed" : "#fbeaea", color: policy.approved ? "var(--green-deep)" : "#b3382c" }}>
+                  {policy.approved ? `signed off on-chain · ${policy.approvals}/${policy.threshold}` : `awaiting sign-off · ${policy.approvals}/${policy.threshold}`}
+                </span>
+              )}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 14, color: "var(--body)", lineHeight: 1.55 }}>
+              <strong>Treasury Policy v1</strong> is the written mandate the accountable management body approves.
+              Its canonical hash is a decision the independent auditor quorum votes on, so the approval isn&apos;t a
+              claim — it&apos;s an on-chain fact. The agent embeds this policy version in every attested decision.
+            </div>
+            <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
+              <a href="https://github.com/PugarHuda/amanah-casper/blob/master/POLICY.md" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 600 }}>Read the policy ↗</a>
+              {policy && <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>hash {policy.hash.slice(0, 20)}…</span>}
+            </div>
           </div>
         </div>
 

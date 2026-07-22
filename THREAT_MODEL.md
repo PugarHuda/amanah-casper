@@ -91,6 +91,10 @@ actually check. Stating those assumptions is part of the design, not a disclaime
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's
   key and is human-interpretable. Attested inference (TEE) is unimplemented — our clearest
   honest limitation.
+- **The policy itself is signed off on-chain (D4).** The written treasury policy
+  ([`POLICY.md`](POLICY.md)) has a canonical hash the auditor quorum votes on, so the
+  DORA-accountable body's approval of the policy is an on-chain fact, not a claim — proven
+  live: v1 signed off 2/2 ([`bb6e0854`](https://testnet.cspr.live/deploy/bb6e0854a3cad63d6aace4c7f5625a05c4fabc2f811c69bfc265a290a2bea56c), [`c53f3051`](https://testnet.cspr.live/deploy/c53f30518e5d9f2b46ec5232bc61412f6a33e9be4ad55d9c3ec37f991a1f73bb), hash `6c357c64c137…`). The agent embeds the policy version in every attested decision.
 - **Legal liability is not transferred.** MiCA/MiFID II conduct and custody duties and DORA
   ICT responsibility attach to the authorised provider. These controls make oversight
   *provable*; they do not move the duty.

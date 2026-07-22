@@ -70,6 +70,7 @@ export const CONTRACT_ERRORS: Record<number, { name: string; control: string }> 
   16: { name: "NotApproved", control: "Separation of duties — auditor quorum has not approved" },
   17: { name: "SameAsset", control: "Value conservation — reallocation must move between assets" },
   18: { name: "TotalMismatch", control: "Proof-of-reserves — claimed total is not the vault's real balance" },
+  19: { name: "InsufficientStake", control: "Staking — auditor bond below the minimum, or nothing to withdraw" },
 };
 
 /**
@@ -607,6 +608,27 @@ export async function getQuorumVote(
     const a = approvals ?? 0;
     const t = threshold ?? 0;
     return { approvals: a, threshold: t, registered: registered === 1, approved: t > 0 && a >= t };
+  } catch {
+    return null;
+  }
+}
+
+// --- Policy sign-off (D4): is the current treasury policy version approved on-chain? ---
+// The blake2b of POLICY.md's body is a decision hash the auditor quorum votes on, so the
+// written policy the DORA-accountable body approves has on-chain evidence of that approval.
+const POLICY_HASH = (process.env.POLICY_BODY_HASH || "6c357c64c137d1597e5663466121ed8e88f00a43abb55dbf9939f0fcb7a064a8").toLowerCase();
+export async function getPolicySignoff(): Promise<{ hash: string; approvals: number; threshold: number; approved: boolean } | null> {
+  if (!QUORUM_V4_SEED) return null;
+  try {
+    const srh = await stateRootHash();
+    if (!srh) return null;
+    const hashKey = Array.from(Buffer.from(POLICY_HASH, "hex"));
+    const [approvals, threshold] = await Promise.all([
+      readByte(srh, QUORUM_V4_SEED, 4, hashKey),
+      readByte(srh, QUORUM_V4_SEED, 2, []),
+    ]);
+    const a = approvals ?? 0, t = threshold ?? 0;
+    return { hash: POLICY_HASH, approvals: a, threshold: t, approved: t > 0 && a >= t };
   } catch {
     return null;
   }
