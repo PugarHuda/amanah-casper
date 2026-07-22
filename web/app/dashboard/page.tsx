@@ -7,7 +7,7 @@ import { getDashboard } from "@/lib/data";
 export const revalidate = 30;
 
 export default async function Dashboard() {
-  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, audit, trailLive, vaultHash } = await getDashboard();
+  const { treasuryId, totalTreasury, banner, holdings, trail, compliance, audit, trailLive, vaultHash, treasuries } = await getDashboard();
 
   const explorerBase = "https://testnet.cspr.live";
   const accountUrl = `${explorerBase}/account/0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`;
@@ -64,6 +64,23 @@ export default async function Dashboard() {
             ))}
           </div>
         </div>
+
+        {/* Multi-treasury (B3): each is an independent vault instance under management. */}
+        {treasuries && treasuries.length > 1 && (
+          <div style={{ marginTop: 24, padding: "16px 20px", border: "1px solid var(--border2)", borderRadius: 16, background: "var(--surface-subtle)" }}>
+            <div className="mono" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--faint)" }}>MULTI-TREASURY · {treasuries.length} INDEPENDENT VAULTS</div>
+            <div style={{ marginTop: 10, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              {treasuries.map((t) => (
+                <div key={t.label} style={{ flex: "1 1 200px", padding: "12px 16px", border: "1px solid var(--border2)", borderRadius: 12, background: "var(--surface, #fff)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{t.label}</div>
+                  <div className="serif" style={{ fontSize: 24, color: "var(--ink)", marginTop: 2 }}>{t.total}</div>
+                  <div style={{ fontSize: 12, color: "var(--faint)" }}>{t.principal} principal locked</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, color: "var(--faint)" }}>Each treasury is its own on-chain vault + spend gate with its own principal — multi-tenant, not one hard-coded vault.</div>
+          </div>
+        )}
 
         <div className="two-col" style={{ marginTop: 40, alignItems: "start" }}>
           {/* LEFT: HOLDINGS */}

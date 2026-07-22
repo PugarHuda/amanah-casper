@@ -666,3 +666,39 @@ async function readU32(srh: string, seed: string, index: number): Promise<number
   for (let i = 0; i < 4; i++) v += (arr[i] ?? 0) << (8 * i);
   return v;
 }
+
+// --- Multi-treasury (B3): read any vault instance by its state seed -----------
+const VAULT_B_SEED = (process.env.VAULT_B_STATE_SEED || "").trim();
+function dictAddrSeed(seed: string, index: number, mappingKey: number[] = []): string {
+  const itemKey = hex(blake2b(new Uint8Array([...be32(index), ...mappingKey]), undefined, 32));
+  return hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+}
+async function readBigSeed(srh: string, seed: string, index: number, mk: number[] = []): Promise<bigint> {
+  const r = await rpc("state_get_dictionary_item", { state_root_hash: srh, dictionary_identifier: { Dictionary: `dictionary-${dictAddrSeed(seed, index, mk)}` } });
+  if (r.error) return 0n;
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  const len = arr[0] ?? 0; let v = 0n;
+  for (let i = 0; i < len; i++) v += BigInt(arr[1 + i] ?? 0) << BigInt(8 * i);
+  return v;
+}
+export async function getVaultStateBySeed(seed: string): Promise<{ total: bigint; principal: bigint } | null> {
+  if (!seed) return null;
+  try {
+    const srh = await stateRootHash();
+    if (!srh) return null;
+    const [g, t, w, c, principal] = await Promise.all([
+      readBigSeed(srh, seed, 1, [0]), readBigSeed(srh, seed, 1, [1]), readBigSeed(srh, seed, 1, [2]), readBigSeed(srh, seed, 1, [3]), readBigSeed(srh, seed, 2),
+    ]);
+    return { total: g + t + w + c, principal };
+  } catch { return null; }
+}
+
+/** All treasuries under management. Multi-tenant: each is an independent vault instance. */
+export async function getTreasuries(): Promise<{ label: string; total: bigint; principal: bigint }[]> {
+  const a = STATE_SEED ? await getVaultState().catch(() => null) : null;
+  const b = VAULT_B_SEED ? await getVaultStateBySeed(VAULT_B_SEED).catch(() => null) : null;
+  const out: { label: string; total: bigint; principal: bigint }[] = [];
+  if (a) out.push({ label: "Treasury A", total: a.total, principal: a.principal });
+  if (b) out.push({ label: "Treasury B", total: b.total, principal: b.principal });
+  return out;
+}

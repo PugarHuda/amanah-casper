@@ -11,6 +11,7 @@ import {
   getContractDeploys,
   getDeployCount,
   getVaultState,
+  getTreasuries,
   vaultReadable,
   getReputationScore,
   reputationReadable,
@@ -482,8 +483,14 @@ export async function getDashboard() {
     }
   }
 
+  // Multi-treasury (B3): every independent vault instance under management.
+  const treasuries = (await getTreasuries().catch(() => [])).map((t) => ({
+    label: t.label, total: fmtUsd(t.total), principal: fmtUsd(t.principal),
+  }));
+
   // `audit` (independent auditor's latest verdict) came from the parallel batch above.
   return {
+    treasuries,
     treasuryId: treasuryLive ? treasuryId : "REPRESENTATIVE · CASPER-TEST",
     totalTreasury,
     banner,
