@@ -121,6 +121,7 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | `e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f` |
 | ZkReserves v2 (on-chain ZK proof-of-reserves — Pedersen+Schnorr, **bound to live vault state**) | `5f57375f6187920b15f833d702121f591c9e4559fbd674a6704dd22c09b8f520` |
+| AuditorQuorum v4 (interactive quorum — cast a real auditor vote from your wallet, `vote_as_caller` + open registry) | `6e9ba8517d6541b2556698f4450d555d3ce02a53402b247f48291144471f241c` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`
 Custodian account (owns the gates, separate key): `0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197`

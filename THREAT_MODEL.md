@@ -61,6 +61,17 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   a **cryptographically valid** proof for $1.05M was refused because the vault holds $1.00M
   ([`3c114651`](https://testnet.cspr.live/deploy/3c114651e1a0008e81286016264c05dcc570959279d1964b86b54409e60ff1ee)).
   Residual assumption: the `vault` address configured at `init` is the right one.
+- **Auditors can vote from a browser now, not just the agent's panel.** The quorum gained a
+  caller-authenticated path (`vote_as_caller`) and an open registry (`open_register`): a human
+  auditor connects a wallet and casts a REAL on-chain vote — the wallet signs the deploy, the
+  contract counts the vote by the signing account, so no detached raw-message signature (which a
+  wallet can't produce in our format) is needed. Proven live: two independent wallets registered
+  and voted the same decision to a 2-of-N quorum
+  ([register](https://testnet.cspr.live/deploy/52d0a10ba216d41c2827cd7d4b9e07f0f1a225e32882bc373a93cf5424115302), [vote](https://testnet.cspr.live/deploy/bb921506ee62cc8e1d232f37a0c01496d96244af3e18714e450cb5e0d90fd2cb),
+  [vote](https://testnet.cspr.live/deploy/c7ebe71400c6a7c1064ec9c87776abb75ae893fbb353901154ee3779be53f2dd)). Registration is permissionless in this
+  deployment (a demo of the open-auditor-registry roadmap item — production gates it behind a
+  stake). This runs on a SEPARATE quorum (`6e9ba8517d65…`); the vault still enforces via the proven
+  signed-vote quorum, so the interactive path can't weaken the agent's own control.
 - **Custodian centralisation.** Segregation of duties currently rests on one custodian key.
   Progressive decentralisation to a governance quorum is on the roadmap.
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's

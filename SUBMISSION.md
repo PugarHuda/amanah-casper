@@ -53,6 +53,7 @@ principal) from commitments that **never reveal an individual amount**. 10 Odra 
 | **Circuit breaker** — reallocate blocked below reputation floor, then resumed | `82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350` |
 | **ZK proof-of-reserves** — solvency proven on-chain against the vault's real balances | `70318a98ecc37822aad441264931daa5712953deaec19c7fcd920e882d29b252` |
 | **REFUSED** — a valid ZK proof claiming $1.05M when the vault holds $1.00M (`TotalMismatch`) | `3c114651e1a0008e81286016264c05dcc570959279d1964b86b54409e60ff1ee` |
+| **Auditor vote from a browser** — a human auditor connects a wallet and casts a real on-chain vote (2 independent wallets → 2-of-N quorum) | `bb921506ee62cc8e1d232f37a0c01496d96244af3e18714e450cb5e0d90fd2cb` |
 | 🔒 **Auditor quorum ENFORCED by the vault** — unapproved decision refused (`NotApproved`) | `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7` |
 | **Approved decision executed** on the same vault | `e68d42184b6f7fac2e226bea10c6a3e0942a276da6d6065618ac0f2d6c533c8e` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
