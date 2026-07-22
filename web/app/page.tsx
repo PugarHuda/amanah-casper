@@ -63,7 +63,28 @@ export default function Landing() {
           <HeroWave />
         </div>
 
-        <div style={{ textAlign: "center", marginTop: 8, fontSize: 11, fontWeight: 600, letterSpacing: "2.4px", color: "var(--faint2)" }}>
+        {/* Don't trust us — check us. The three interactive proofs a reviewer can run in
+            minutes, made discoverable instead of buried in the nav. Each is a live action,
+            not a screenshot. */}
+        <div style={{ marginTop: 4, textAlign: "center", fontSize: 11, fontWeight: 600, letterSpacing: "2.4px", color: "var(--faint2)" }}>
+          DON&apos;T TRUST US — CHECK US, IN MINUTES
+        </div>
+        <div style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+          {[
+            { href: "/verify", tag: "RE-RUN THE PROOF", title: "Verify our cryptography in your browser", body: "Re-run the ZK proof-of-solvency on your machine, then tamper with it and watch it break. The agent's red team is here too — 7/7 prompt-injection attacks blocked." },
+            { href: "/connect", tag: "CAST A REAL VOTE", title: "Approve a decision on-chain yourself", body: "Connect a wallet, join the open auditor registry, and cast a real testnet vote. One approval is already in — yours reaches the quorum, live." },
+            { href: "/compliance", tag: "THE REGULATOR ARTIFACT", title: "The exception report a compliance officer asks for", body: "Every transaction a control refused, generated from the chain, with the policy-vs-platform split and scope limits stated plainly." },
+          ].map((c) => (
+            <Link key={c.href} href={c.href} style={{ textDecoration: "none", display: "block", padding: "18px 20px", border: "1px solid var(--border2)", borderRadius: 16, background: "var(--surface-subtle)", transition: "border-color .15s ease" }}>
+              <div className="mono" style={{ fontSize: 10.5, letterSpacing: "1.6px", color: "var(--faint)" }}>{c.tag}</div>
+              <div style={{ marginTop: 8, fontSize: 16, fontWeight: 700, color: "var(--ink)", lineHeight: 1.3 }}>{c.title}</div>
+              <div style={{ marginTop: 6, fontSize: 13, color: "var(--body)", lineHeight: 1.5 }}>{c.body}</div>
+              <div style={{ marginTop: 10, fontSize: 13, fontWeight: 600, color: "var(--blue, #2f6fdb)" }}>Try it →</div>
+            </Link>
+          ))}
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 44, fontSize: 11, fontWeight: 600, letterSpacing: "2.4px", color: "var(--faint2)" }}>
           BUILT ON THE CASPER TRUST LAYER
         </div>
         <div style={{ marginTop: 28, display: "flex", alignItems: "center", justifyContent: "center", gap: 62, flexWrap: "wrap", color: "#1d1a15" }}>
