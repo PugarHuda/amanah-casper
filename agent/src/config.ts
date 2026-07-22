@@ -64,6 +64,10 @@ export const config = {
   // Loop / thresholds
   cycleMs: num("CYCLE_MS", 60_000),
   confidenceThreshold: num("CONFIDENCE_THRESHOLD", 0.7),
+  // Simulation / paper-trading mode (C4): run the full real pipeline (ingest -> reason ->
+  // audit -> guard) but replace on-chain execution with a paper fill, tracking a price-
+  // exposed paper portfolio + equity curve. Nothing touches the chain. SIMULATE=true.
+  simulate: (process.env.SIMULATE ?? "").toLowerCase() === "true",
 
   // Dry-run: still ingest + pay + reason + SIGN (real Ed25519), but log the
   // on-chain submissions instead of sending them. Explicit DRY_RUN=true/false

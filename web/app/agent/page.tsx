@@ -1,4 +1,5 @@
 import Nav from "@/components/Nav";
+import SimulationCard from "@/components/SimulationCard";
 import { getAgentConsole } from "@/lib/data";
 
 // Read the newest reasoning blob + on-chain hashes at request time (not baked at build).
@@ -116,6 +117,11 @@ export default async function Agent() {
           <div className="mono" style={{ fontSize: 12, letterSpacing: "1.5px", color: "var(--gold-banner)" }}>{decision.caption}</div>
           <div className="serif" style={{ marginTop: 8, fontSize: 26, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.4px" }}>{decision.title}</div>
           <div style={{ marginTop: 6, fontSize: 14, color: "var(--body)" }}>{decision.sub}</div>
+        </div>
+
+        {/* Paper-trading equity curve — only renders if the agent has run in SIMULATE mode. */}
+        <div style={{ maxWidth: 720 }}>
+          <SimulationCard />
         </div>
       </div>
     </main>

@@ -1,0 +1,28 @@
+{
+  "startAt": "2026-07-22T04:06:03.121Z",
+  "startNav": 1000000,
+  "units": {
+    "Gold": 47.353490275,
+    "TBond": 4500,
+    "WTI": 1893.9393939393938,
+    "CSPR": 134259004.6986467
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "at": "2026-07-22T04:06:03.121Z",
+      "nav": 1000000,
+      "pnlPct": 0,
+      "action": "rebalance",
+      "note": "paper fill: $50 Gold->CSPR"
+    },
+    {
+      "cycle": 2,
+      "at": "2026-07-22T04:06:41.570Z",
+      "nav": 1000090,
+      "pnlPct": 0.01,
+      "action": "rebalance",
+      "note": "paper fill: $10000 Gold->CSPR"
+    }
+  ]
+}

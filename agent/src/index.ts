@@ -22,6 +22,7 @@ import { notifyCycle, type CycleReport } from "./notify.js";
 import { proveSolvency } from "./solvency.js";
 import { governanceContext } from "./governance.js";
 import { readVault, readMaxPerTx } from "./read-vault.js";
+import { simulateCycle } from "./simulate.js";
 import { scanForInjection, validateDecision, type Detection, type Violation } from "./guard.js";
 import type { ReasoningBlob } from "./types.js";
 
@@ -115,6 +116,21 @@ async function runCycle(cycle: number): Promise<void> {
     console.log(`  ⚠  cycle tainted (${reasons.join(", ")}) — forcing escalate, no funds move`);
     decision = { ...decision, action: "escalate", amount: 0, confidence: 0,
       reasoningSteps: [...(decision.reasoningSteps ?? []), `GUARD: forced to escalate — ${reasons.join("; ")}`] };
+  }
+
+  // 3c. SIMULATION / PAPER MODE (C4) — run the full real pipeline above, but instead of
+  // touching the chain, apply the decision to a price-exposed paper portfolio and record
+  // the equity curve. Nothing is signed or submitted. Returns before any on-chain step.
+  if (config.simulate) {
+    try {
+      const v = await readVault();
+      const paper = simulateCycle(cycle, prices, decision, v.holdings);
+      log(cycle, "simulate", paper ? { ...paper, action: decision.action } : { skipped: "incomplete prices this cycle" });
+      if (paper) console.log(`  📝 PAPER cycle #${cycle}: NAV $${paper.nav.toLocaleString()} (${paper.pnlPct >= 0 ? "+" : ""}${paper.pnlPct}%) · ${decision.action}`);
+    } catch (e) {
+      log(cycle, "simulate.error", { message: (e as Error).message });
+    }
+    return; // paper mode never goes on-chain
   }
 
   // 4. ATTEST — hash + sign + record reasoning on-chain.
