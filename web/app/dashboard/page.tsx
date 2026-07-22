@@ -1,4 +1,5 @@
 import Nav from "@/components/Nav";
+import SystemStatus from "@/components/SystemStatus";
 import LiveFeed from "@/components/LiveFeed";
 import { getDashboard } from "@/lib/data";
 
@@ -18,9 +19,11 @@ export default async function Dashboard() {
 
         <div style={{ marginTop: 44, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <span className="pulse-dot" />
               <span className="mono" style={{ fontSize: 12, letterSpacing: "2px", color: "var(--faint)" }}>{treasuryId}</span>
+              <span style={{ color: "var(--border)" }}>·</span>
+              <SystemStatus />
             </div>
             <h1 className="serif" style={{ margin: "10px 0 0", fontSize: 42, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.8px" }}>
               Audit dashboard
