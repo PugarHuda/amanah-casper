@@ -84,7 +84,10 @@ export const config = {
   // verifiable by anyone, not just someone holding the repo.
   pinataJwt: process.env.PINATA_JWT ?? "",
 
-  // Optional Telegram escalation
+  // Optional Telegram escalation (OPERATOR-facing)
   telegramToken: process.env.TELEGRAM_BOT_TOKEN ?? "",
   telegramChatId: process.env.TELEGRAM_CHAT_ID ?? "",
+  // Optional USER/client-facing alert webhook — POSTed a structured escalation event so the
+  // asset owner is notified when their agent escalates, not only the operator.
+  userWebhookUrl: process.env.USER_WEBHOOK_URL ?? "",
 } as const;

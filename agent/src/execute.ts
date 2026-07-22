@@ -77,4 +77,26 @@ export async function escalateToHuman(
       console.warn("[escalate] telegram notify failed:", (e as Error).message);
     }
   }
+
+  // USER-facing alert (distinct from the operator's Telegram): POST a structured event to
+  // the client's webhook so the asset OWNER — not just the operator — is told when their
+  // agent hands a decision to a human. Set USER_WEBHOOK_URL to enable.
+  if (config.userWebhookUrl) {
+    try {
+      await fetch(config.userWebhookUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          type: "escalation",
+          message: msg,
+          decision: { action: decision.action, amount: decision.amount, from: decision.fromAsset, to: decision.toAsset, confidence: decision.confidence },
+          reasoningHash: reasoningHashHex,
+          explorer: `https://testnet.cspr.live/deploy/${reasoningHashHex}`,
+          at: new Date().toISOString(),
+        }),
+      });
+    } catch (e) {
+      console.warn("[escalate] user webhook failed:", (e as Error).message);
+    }
+  }
 }
