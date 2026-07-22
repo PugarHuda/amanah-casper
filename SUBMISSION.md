@@ -52,6 +52,7 @@ principal) from commitments that **never reveal an individual amount**. 10 Odra 
 | **Auditor quorum** — 2-of-3 independent auditors signed APPROVE on-chain | `483f66cdbdc0803333f35c7f70ad8bde3bd32e275e66af7ba83aaf6c27f64ca2` |
 | **Circuit breaker** — reallocate blocked below reputation floor, then resumed | `82dc878b617a352f999d15577ce58660a8e107496d19ce7870dba0cde85e2350` |
 | **ZK proof-of-reserves** — solvency proven on-chain against the vault's real balances | `70318a98ecc37822aad441264931daa5712953deaec19c7fcd920e882d29b252` |
+| **Emergency stop** — custodian pauses the whole vault in one call; a valid quorum-approved reallocation is then blocked with `Expired`, then re-enabled | `9ed255984b014dc8abf3572d9c74e6bd141c087fbf9159bf36c97a3096538966` |
 | **REFUSED** — a valid ZK proof claiming $1.05M when the vault holds $1.00M (`TotalMismatch`) | `3c114651e1a0008e81286016264c05dcc570959279d1964b86b54409e60ff1ee` |
 | **Auditor vote from a browser** — a human auditor connects a wallet and casts a real on-chain vote (2 independent wallets → 2-of-N quorum) | `bb921506ee62cc8e1d232f37a0c01496d96244af3e18714e450cb5e0d90fd2cb` |
 | 🔒 **Auditor quorum ENFORCED by the vault** — unapproved decision refused (`NotApproved`) | `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7` |
