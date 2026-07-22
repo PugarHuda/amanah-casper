@@ -1,0 +1,109 @@
+{
+  "builtAt": "2026-07-22T05:09:43.182Z",
+  "root": "b5e8eb013edfe12fc8df88f5d22a16645c9f4cd8167781fd5f5262b6b2c50581",
+  "total": "800000000000",
+  "clientCount": 5,
+  "proofs": [
+    {
+      "id": "client:orion-dao",
+      "balance": "320000000000",
+      "nonce": "1111111111111111111111111111111111111111111111111111111111111111",
+      "leaf": "cae05b217dcaf3918d610d94ebc38ac3e3920592062de8becee71ca7e9bb8efd",
+      "path": [
+        {
+          "hash": "94712baa3538c3810421ce63f1403616d81b58b5b832786b8bd230b9cd6a742d",
+          "right": true
+        },
+        {
+          "hash": "4760b3bdb2d3c23128f4c1a918fb6657f0e7bb3cd00f917a67879e50d492b1dd",
+          "right": true
+        },
+        {
+          "hash": "abf255842b683c94fd64594e7b02d05669b1cd262bdcd843c45a40226f8ea525",
+          "right": true
+        }
+      ]
+    },
+    {
+      "id": "client:meridian-fund",
+      "balance": "210000000000",
+      "nonce": "2222222222222222222222222222222222222222222222222222222222222222",
+      "leaf": "94712baa3538c3810421ce63f1403616d81b58b5b832786b8bd230b9cd6a742d",
+      "path": [
+        {
+          "hash": "cae05b217dcaf3918d610d94ebc38ac3e3920592062de8becee71ca7e9bb8efd",
+          "right": false
+        },
+        {
+          "hash": "4760b3bdb2d3c23128f4c1a918fb6657f0e7bb3cd00f917a67879e50d492b1dd",
+          "right": true
+        },
+        {
+          "hash": "abf255842b683c94fd64594e7b02d05669b1cd262bdcd843c45a40226f8ea525",
+          "right": true
+        }
+      ]
+    },
+    {
+      "id": "client:atlas-treasury",
+      "balance": "150000000000",
+      "nonce": "3333333333333333333333333333333333333333333333333333333333333333",
+      "leaf": "2ae8573e3cef63c37140361a3bd83b4f8d7adf5a73b82f8975861ff701701b5c",
+      "path": [
+        {
+          "hash": "1fe90887bc7769932ffeba6ab9af45469492852d6ba9c991feea810031bdd464",
+          "right": true
+        },
+        {
+          "hash": "6caad061305475520ca73b4f9ca57fe56a5cd0c9cfc5e58be90266117d31cd87",
+          "right": false
+        },
+        {
+          "hash": "abf255842b683c94fd64594e7b02d05669b1cd262bdcd843c45a40226f8ea525",
+          "right": true
+        }
+      ]
+    },
+    {
+      "id": "client:vega-capital",
+      "balance": "80000000000",
+      "nonce": "4444444444444444444444444444444444444444444444444444444444444444",
+      "leaf": "1fe90887bc7769932ffeba6ab9af45469492852d6ba9c991feea810031bdd464",
+      "path": [
+        {
+          "hash": "2ae8573e3cef63c37140361a3bd83b4f8d7adf5a73b82f8975861ff701701b5c",
+          "right": false
+        },
+        {
+          "hash": "6caad061305475520ca73b4f9ca57fe56a5cd0c9cfc5e58be90266117d31cd87",
+          "right": false
+        },
+        {
+          "hash": "abf255842b683c94fd64594e7b02d05669b1cd262bdcd843c45a40226f8ea525",
+          "right": true
+        }
+      ]
+    },
+    {
+      "id": "client:nimbus-collective",
+      "balance": "40000000000",
+      "nonce": "5555555555555555555555555555555555555555555555555555555555555555",
+      "leaf": "115c0071091703dc0504a48cb35bcc96205a627ef9ebd2bc17e4ad4bd0fb3de8",
+      "path": [
+        {
+          "hash": "115c0071091703dc0504a48cb35bcc96205a627ef9ebd2bc17e4ad4bd0fb3de8",
+          "right": true
+        },
+        {
+          "hash": "c6793b4c49e6ae93dfc2ff1660d0ec832c6b16a74ea0e3b07336d7212ec5ff31",
+          "right": true
+        },
+        {
+          "hash": "813848623d5ac743df0024c1b1113b4e0c8d9bd6de0a83a52bd8c78a4de839fc",
+          "right": false
+        }
+      ]
+    }
+  ],
+  "note": "Solvency = reserves (ZK proof-of-reserves) >= this liabilities total. Each client verifies their own inclusion without seeing others' balances."
+}

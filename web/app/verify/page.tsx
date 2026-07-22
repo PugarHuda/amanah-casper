@@ -7,12 +7,18 @@ import { useEffect, useState } from "react";
 import Nav from "@/components/Nav";
 import { blake2b } from "blakejs";
 import { verifyReserves, bytesToHex, type ReservesProof } from "@/lib/zk-verify";
+import { computeLeaf, verifyInclusion } from "@/lib/merkle-verify";
 
 const EXPLORER = "https://testnet.cspr.live";
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: 11, wordBreak: "break-all" };
 
 type Reserves = ReservesProof & {
   labels?: string[]; total: string; principalFloor: string; deployHash: string; H: string; contractPackage: string;
+};
+
+type Liabilities = {
+  root: string; total: string; clientCount: number;
+  proofs: { id: string; balance: string; nonce: string; leaf: string; path: { hash: string; right: boolean }[] }[];
 };
 
 type RedTeam = {
@@ -102,6 +108,14 @@ export default function VerifyPage() {
   const [rt, setRt] = useState<RedTeam | null>(null);
   useEffect(() => {
     fetch("/redteam.json").then((r) => (r.ok ? r.json() : null)).then(setRt).catch(() => {});
+  }, []);
+
+  // --- proof-of-liabilities (Merkle) ----------------------------------------
+  const [liab, setLiab] = useState<Liabilities | null>(null);
+  const [pick, setPick] = useState(0);
+  const [liabTampered, setLiabTampered] = useState(false);
+  useEffect(() => {
+    fetch("/liabilities.json").then((r) => (r.ok ? r.json() : null)).then(setLiab).catch(() => {});
   }, []);
 
   const fmtUsd = (v: string) => "$" + (Number(v) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -293,6 +307,53 @@ export default function VerifyPage() {
             </div>
           </Card>
         )}
+
+        {/* 5 — proof-of-liabilities (the other half of a real solvency proof) */}
+        {liab && (() => {
+          const client = liab.proofs[pick];
+          const bal = liabTampered ? (BigInt(client.balance) + 1_000_000n).toString() : client.balance;
+          const leaf = computeLeaf(client.id, BigInt(bal), client.nonce);
+          const ok = verifyInclusion(leaf, client.path, liab.root);
+          const L = BigInt(liab.total);
+          const T = rv ? BigInt(rv.total) : null; // ZK-proven reserves total
+          const covers = T != null ? T >= L : null;
+          return (
+            <Card
+              title="5 · Proof-of-liabilities — reserves are meaningless without them"
+              sub="The classic criticism of any proof-of-reserves is that it says nothing about what you OWE — you can prove $1M in reserves while owing $10M. Solvency is reserves ≥ liabilities. Here the treasury commits to what it owes each client as a Merkle tree; you can pick any client and verify their balance is counted in the total, in your browser, without seeing anyone else's. Combined with the ZK reserves proof above, the full claim is checkable end to end."
+            >
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+                <Badge ok={ok} okText={`${client.id} is included in the root`} badText="inclusion proof failed" />
+                {covers != null && (
+                  <span style={{ fontSize: 13, fontWeight: 700, padding: "6px 13px", borderRadius: 999, background: covers ? "#e8f6ed" : "#fbeaea", color: covers ? "var(--green-deep)" : "#b3382c", border: `1px solid ${covers ? "#c9e7d5" : "#f0cdc9"}` }}>
+                    {covers ? "✓ reserves ≥ liabilities" : "✗ reserves < liabilities"}
+                  </span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 14, fontSize: 14 }}>
+                <span>Reserves (ZK-proven): <strong>{rv ? fmtUsd(String(rv.total)) : "—"}</strong></span>
+                <span>Liabilities (Merkle): <strong>{fmtUsd(liab.total)}</strong> across {liab.clientCount} clients</span>
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+                <label style={{ fontSize: 13, color: "var(--muted)" }}>Verify a client:</label>
+                <select value={pick} onChange={(e) => { setPick(Number(e.target.value)); setLiabTampered(false); }}
+                  style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid var(--border)", fontSize: 13, background: "var(--surface, #fff)" }}>
+                  {liab.proofs.map((p, i) => <option key={p.id} value={i}>{p.id} — {fmtUsd(p.balance)}</option>)}
+                </select>
+                <button onClick={() => setLiabTampered((t) => !t)}
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: liabTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
+                  {liabTampered ? "↺ restore the real balance" : "⚡ overstate this balance by $1"}
+                </button>
+              </div>
+              {liabTampered && (
+                <p style={{ fontSize: 13, color: "#b3382c", margin: "0 0 10px", fontWeight: 600 }}>
+                  Changing a client&apos;s balance changes their leaf, so the Merkle path no longer reaches the published root — the operator can&apos;t quietly inflate or drop a liability.
+                </p>
+              )}
+              <div className="mono" style={{ ...mono, color: "var(--faint)" }}>liabilities root {liab.root.slice(0, 34)}… · {client.path.length} path steps</div>
+            </Card>
+          );
+        })()}
 
         <p style={{ fontSize: 12.5, color: "var(--faint)", marginTop: 4, lineHeight: 1.6 }}>
           Source: <a href="https://github.com/PugarHuda/amanah-casper/blob/master/web/lib/zk-verify.ts" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>web/lib/zk-verify.ts</a> (this page&apos;s verifier) ·{" "}

@@ -228,6 +228,18 @@ test.describe("Amanah manual-click QA", () => {
     await expect(page.getByText("ESCALATED").first()).toBeVisible({ timeout: 20000 });
   });
 
+  test("proof-of-liabilities: reserves >= liabilities and per-client Merkle inclusion verifies", async ({ page }) => {
+    await gotoAndSettle(page, "/verify");
+    await expect(page.getByText(/Proof-of-liabilities/i)).toBeVisible({ timeout: 15000 });
+    // The complete solvency claim: reserves (ZK) >= liabilities (Merkle).
+    await expect(page.getByText(/reserves ≥ liabilities/i).first()).toBeVisible({ timeout: 15000 });
+    // A client's inclusion proof verifies against the published root.
+    await expect(page.getByText(/is included in the root/i)).toBeVisible();
+    // Overstating a balance breaks the Merkle path — the operator can't inflate a liability.
+    await page.getByRole("button", { name: /overstate this balance/i }).click();
+    await expect(page.getByText(/inclusion proof failed/i)).toBeVisible({ timeout: 10000 });
+  });
+
   test("the prompt-injection red team is published and every attack is blocked", async ({ page }) => {
     await gotoAndSettle(page, "/verify");
     const badge = page.getByText(/\d+ \/ \d+ attacks blocked/).first();

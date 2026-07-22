@@ -48,6 +48,13 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   We publish to the chain as a **public bulletin board** so the same commitment is shown to
   everyone, which removes the "different totals to different verifiers" attack but not the
   participation assumption.
+- **Solvency is now proven on BOTH sides — reserves AND liabilities.** A proof-of-reserves
+  alone is worthless (you can prove $1M held while owing $10M). The treasury commits to what
+  it owes each client as a Merkle tree (`agent/src/liabilities.ts`); every client verifies
+  their balance is counted, in-browser, without seeing anyone else's, and the published claim
+  is reserves (ZK-proven $1.00M) ≥ liabilities (Merkle $0.80M). Limit: balances are assumed
+  non-negative (no range proof yet), and the liabilities root is published + client-verifiable
+  but not yet anchored on-chain — both are stated openly, not hidden.
 - **What the solvency proof does and does not hide.** The commitments are perfectly hiding,
   so no individual allocation appears in the proof — but this vault stores `allocations` as a
   **public plaintext `Mapping` with a public getter**, so anyone can read the split straight
