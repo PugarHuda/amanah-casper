@@ -768,3 +768,29 @@ fn a_vote_signed_for_another_quorum_deployment_is_rejected() {
     assert!(q.approved(hash));
     assert_eq!(q.instance_id(), real, "instance id must be published for signers");
 }
+
+#[test]
+fn policy_engine_is_owner_gated_and_readable() {
+    use amanah_contracts::policy_engine::{PolicyEngine, PolicyEngineInitArgs};
+    let env = odra_test::env();
+    let owner = env.get_account(0);
+    let mut pe = PolicyEngine::deploy(&env, PolicyEngineInitArgs {
+        owner, confidence_threshold_bps: 7000, max_rebalance_bps: 800, min_reputation: 1, policy_version: [9u8; 32],
+    });
+    // Getters return the seeded policy.
+    assert_eq!(pe.confidence_threshold_bps(), 7000);
+    assert_eq!(pe.max_rebalance_bps(), 800);
+    assert_eq!(pe.min_reputation(), 1);
+    assert_eq!(pe.policy_version(), [9u8; 32]);
+
+    // A non-owner cannot change the policy.
+    env.set_caller(env.get_account(1));
+    assert_eq!(pe.try_set_confidence_threshold_bps(5000).unwrap_err(), Error::NotAuthorized.into());
+
+    // The owner (governance) can — and the change is visible.
+    env.set_caller(owner);
+    pe.set_confidence_threshold_bps(7500);
+    pe.set_policy_version([1u8; 32]);
+    assert_eq!(pe.confidence_threshold_bps(), 7500);
+    assert_eq!(pe.policy_version(), [1u8; 32]);
+}

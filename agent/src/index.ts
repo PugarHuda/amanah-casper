@@ -10,7 +10,6 @@ import { reason } from "./reason.js";
 import { attest } from "./attest.js";
 import {
   executeReallocation,
-  shouldEscalate,
   escalateToHuman,
 } from "./execute.js";
 import { recordPayment, slashAgent } from "./reputation.js";
@@ -21,7 +20,7 @@ import { castQuorumVotes } from "./quorum.js";
 import { notifyCycle, type CycleReport } from "./notify.js";
 import { proveSolvency } from "./solvency.js";
 import { governanceContext } from "./governance.js";
-import { readVault, readMaxPerTx } from "./read-vault.js";
+import { readVault, readMaxPerTx, readPolicyConfidenceThreshold } from "./read-vault.js";
 import { simulateCycle } from "./simulate.js";
 import { scanForInjection, validateDecision, type Detection, type Violation } from "./guard.js";
 import type { ReasoningBlob } from "./types.js";
@@ -203,7 +202,14 @@ async function runCycle(cycle: number): Promise<void> {
     });
 
   // 7. GUARDRAIL / CONFIDENCE / AUDITOR
-  if (shouldEscalate(decision)) {
+  // The escalation threshold is GOVERNED ON-CHAIN (PolicyEngine) — the agent reads it each
+  // cycle, so the policy that decides when it hands control to a human is a public, signed-
+  // off parameter, not a private env var. Falls back to the env threshold if unreadable.
+  const onchainThreshold = await readPolicyConfidenceThreshold().catch(() => null);
+  const threshold = onchainThreshold ?? config.confidenceThreshold;
+  if (onchainThreshold != null) log(cycle, "policy.onchain", { confidenceThreshold: onchainThreshold });
+  const belowThreshold = (decision.confidence ?? 0) < threshold;
+  if (decision.action === "escalate" || belowThreshold) {
     await escalateToHuman(decision, attestation.reasoningHash);
     await report("escalated");
     log(cycle, "escalate", { confidence: decision.confidence });

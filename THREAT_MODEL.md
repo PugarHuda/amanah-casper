@@ -104,6 +104,11 @@ actually check. Stating those assumptions is part of the design, not a disclaime
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's
   key and is human-interpretable. Attested inference (TEE) is unimplemented — our clearest
   honest limitation.
+- **The policy PARAMETERS live on-chain, not in a config file (B2).** The confidence
+  threshold the agent escalates below, the max rebalance size, and the reputation floor are
+  stored in an owner-gated `PolicyEngine` (`7b38cf88de66…`), versioned to the signed-off
+  POLICY.md hash. The agent reads the threshold on-chain every cycle, so the policy it runs
+  under is public and changeable only through a key-separated governance action.
 - **The policy itself is signed off on-chain (D4).** The written treasury policy
   ([`POLICY.md`](POLICY.md)) has a canonical hash the auditor quorum votes on, so the
   DORA-accountable body's approval of the policy is an on-chain fact, not a claim — proven

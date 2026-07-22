@@ -91,6 +91,25 @@ export async function readVault(): Promise<{ holdings: Record<AssetId, bigint>; 
   return { holdings, principal, total };
 }
 
+
+/** On-chain governed confidence threshold from PolicyEngine (Var field 2, u32 bps).
+ *  Returns 0..1, or null if the seed isn't configured — so the policy that decides when
+ *  the agent escalates lives on-chain, not just in an env var. */
+export async function readPolicyConfidenceThreshold(): Promise<number | null> {
+  const seed = process.env.POLICY_ENGINE_STATE_SEED;
+  if (!seed) return null;
+  const srh = (await rpc("chain_get_state_root_hash", {})).result?.state_root_hash;
+  if (!srh) return null;
+  const itemKey = hex(blake2b(new Uint8Array(be32(2)), undefined, 32));
+  const addr = hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+  const r = await rpc("state_get_dictionary_item", { state_root_hash: srh, dictionary_identifier: { Dictionary: `dictionary-${addr}` } });
+  if (r.error) return null;
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  let bps = 0;
+  for (let i = 0; i < 4; i++) bps += (arr[i] ?? 0) << (8 * i);
+  return bps > 0 ? bps / 10000 : null;
+}
+
 const { holdings, principal, total } = await readVault();
 for (const [a, v] of Object.entries(holdings)) console.log(`${a.padEnd(6)} ${v}`);
 console.log(`principal ${principal}`);

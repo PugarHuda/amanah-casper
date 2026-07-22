@@ -6,7 +6,7 @@
 // not address this. A controls layer therefore has to hand its customer that artifact.
 // Every row here is a real transaction; every claim links to cspr.live.
 import Nav from "@/components/Nav";
-import { getExceptions, getActivity, getContractDeploys, getPolicySignoff } from "@/lib/cspr";
+import { getExceptions, getActivity, getContractDeploys, getPolicySignoff, getPolicyParams } from "@/lib/cspr";
 import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/data";
 
 export const revalidate = 60;
@@ -18,9 +18,9 @@ const when = (t: string | null) => (t ? new Date(t).toISOString().replace("T", "
 export default async function CompliancePage() {
   const configured = live();
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
-  const [exceptions, activity, recent, policy] = configured
-    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null)])
-    : [[], null, [], null];
+  const [exceptions, activity, recent, policy, params] = configured
+    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null), getPolicyParams().catch(() => null)])
+    : [[], null, [], null, null];
   const executed = recent.filter((d) => !d.error_message);
   const policyRefusals = exceptions.filter((e) => e.kind === "policy");
   const platformFaults = exceptions.filter((e) => e.kind === "platform");
@@ -79,6 +79,14 @@ export default async function CompliancePage() {
               Its canonical hash is a decision the independent auditor quorum votes on, so the approval isn&apos;t a
               claim — it&apos;s an on-chain fact. The agent embeds this policy version in every attested decision.
             </div>
+            {params && (
+              <div style={{ marginTop: 10, display: "flex", gap: 18, flexWrap: "wrap", fontSize: 13, color: "var(--ink)" }}>
+                <span>Escalate below confidence <strong>{params.confidencePct.toFixed(0)}%</strong></span>
+                <span>Max rebalance <strong>{params.maxRebalancePct.toFixed(0)}%</strong> / move</span>
+                <span>Min reputation <strong>{params.minReputation}</strong></span>
+                <span style={{ color: "var(--faint)" }}>— read live from the on-chain PolicyEngine (B2)</span>
+              </div>
+            )}
             <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
               <a href="https://github.com/PugarHuda/amanah-casper/blob/master/POLICY.md" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 600 }}>Read the policy ↗</a>
               {policy && <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>hash {policy.hash.slice(0, 20)}…</span>}

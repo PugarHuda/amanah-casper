@@ -37,3 +37,7 @@ fqn = "amanah_contracts::auditor_quorum::AuditorQuorum"
 # ZkReserves: on-chain ZK proof-of-reserves (Pedersen + Schnorr, hides the split).
 [[contracts]]
 fqn = "amanah_contracts::zk_reserves::ZkReserves"
+
+# PolicyEngine: the agent's trading policy as on-chain, owner-gated, versioned parameters.
+[[contracts]]
+fqn = "amanah_contracts::policy_engine::PolicyEngine"

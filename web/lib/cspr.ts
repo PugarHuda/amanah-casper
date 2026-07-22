@@ -633,3 +633,36 @@ export async function getPolicySignoff(): Promise<{ hash: string; approvals: num
     return null;
   }
 }
+
+// --- PolicyEngine (B2): the trading policy as on-chain governed parameters ---
+// Field order (Odra 1-indexes): owner=1, confidence_threshold_bps=2, max_rebalance_bps=3,
+// min_reputation=4, policy_version=5.
+const POLICY_ENGINE_SEED = (process.env.POLICY_ENGINE_STATE_SEED || "").trim();
+export async function getPolicyParams(): Promise<{ confidencePct: number; maxRebalancePct: number; minReputation: number } | null> {
+  if (!POLICY_ENGINE_SEED) return null;
+  try {
+    const srh = await stateRootHash();
+    if (!srh) return null;
+    const [conf, reb, rep] = await Promise.all([
+      readU32(srh, POLICY_ENGINE_SEED, 2),
+      readU32(srh, POLICY_ENGINE_SEED, 3),
+      readByte(srh, POLICY_ENGINE_SEED, 4, []), // min_reputation small i64 -> first byte
+    ]);
+    if (conf == null) return null;
+    return { confidencePct: conf / 100, maxRebalancePct: (reb ?? 0) / 100, minReputation: rep ?? 0 };
+  } catch {
+    return null;
+  }
+}
+
+// Read a u32 Var (4 little-endian bytes) at a field index.
+async function readU32(srh: string, seed: string, index: number): Promise<number | null> {
+  const itemKey = hex(blake2b(new Uint8Array(be32(index)), undefined, 32));
+  const addr = hex(blake2b(Buffer.concat([Buffer.from(seed, "hex"), Buffer.from(itemKey, "utf8")]), undefined, 32));
+  const r = await rpc("state_get_dictionary_item", { state_root_hash: srh, dictionary_identifier: { Dictionary: `dictionary-${addr}` } });
+  if (r.error) return null;
+  const arr: number[] = r.result?.stored_value?.CLValue?.parsed ?? [];
+  let v = 0;
+  for (let i = 0; i < 4; i++) v += (arr[i] ?? 0) << (8 * i);
+  return v;
+}
