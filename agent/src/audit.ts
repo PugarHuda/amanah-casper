@@ -20,6 +20,9 @@ export interface AuditVerdict {
   approved: boolean;
   grade: number; // 0..1 confidence that the decision is sound + within policy
   concerns: string[];
+  /** The model that produced this verdict — a DIFFERENT family from the actor, so the
+   *  review isn't blind to the same failure modes. Recorded so the diversity is provable. */
+  model?: string;
 }
 
 const AUDIT_SYSTEM = `You are an INDEPENDENT risk auditor for an autonomous RWA \
@@ -72,23 +75,27 @@ On-chain market context: ${JSON.stringify(marketContext)}
 PROPOSED DECISION: ${JSON.stringify(decision)}
 
 Grade it and decide whether to approve or veto.`;
+  // A DIFFERENT model family from the actor (see config.auditorModel): if the actor's
+  // model has a blind spot, an independent family is less likely to share it. This is
+  // real model diversity, not just a stricter prompt on the same model.
+  const auditModel = config.auditorModel || config.model;
   try {
     const res = await fetch(`${config.veniceBaseUrl}/chat/completions`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${config.veniceKey}` },
       body: JSON.stringify({
-        model: config.model,
+        model: auditModel,
         temperature: 0.1, // the auditor is stricter / less creative than the actor
         max_tokens: 1500,
         messages: [{ role: "system", content: AUDIT_SYSTEM }, { role: "user", content: user }],
         venice_parameters: { include_venice_system_prompt: false },
       }),
     });
-    if (!res.ok) return { approved: false, grade: 0, concerns: [`auditor API ${res.status}`] };
+    if (!res.ok) return { approved: false, grade: 0, concerns: [`auditor API ${res.status}`], model: auditModel };
     const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    return parseVerdict(data.choices?.[0]?.message?.content ?? "");
+    return { ...parseVerdict(data.choices?.[0]?.message?.content ?? ""), model: auditModel };
   } catch (e) {
-    return { approved: false, grade: 0, concerns: [`auditor error: ${(e as Error).message}`] };
+    return { approved: false, grade: 0, concerns: [`auditor error: ${(e as Error).message}`], model: auditModel };
   }
 }
 

@@ -74,6 +74,10 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   signed-vote quorum, so the interactive path can't weaken the agent's own control.
 - **Custodian centralisation.** Segregation of duties currently rests on one custodian key.
   Progressive decentralisation to a governance quorum is on the roadmap.
+- **Independent model, not just an independent prompt.** The auditor that grades every
+  decision runs a DIFFERENT model family from the actor (actor `deepseek-v4-flash`, auditor
+  `llama-3.3-70b`), so a blind spot in one model is unlikely to be shared by its reviewer.
+  The auditor's model id is recorded inside its signed, on-chain-attested verdict.
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's
   key and is human-interpretable. Attested inference (TEE) is unimplemented — our clearest
   honest limitation.

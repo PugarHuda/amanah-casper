@@ -50,6 +50,11 @@ export const config = {
   // best strength/price for the decision step. (qwen-3-7-max also works but is the
   // premium tier at $2.7/$8.05 per Mtok — ~30x dearer.) Override with VENICE_MODEL.
   model: opt("VENICE_MODEL", "deepseek-v4-flash"),
+  // The INDEPENDENT auditor uses a DIFFERENT model family from the actor, so a blind
+  // spot in one model isn't shared by its reviewer — real model diversity, not just a
+  // different prompt. Defaults to a distinct model; override with AUDITOR_MODEL. Falls
+  // back to the actor model only if you deliberately set them equal.
+  auditorModel: opt("AUDITOR_MODEL", "llama-3.3-70b"),
 
   // Data source keys (optional — missing keys degrade gracefully)
   eiaKey: process.env.EIA_API_KEY ?? "",
