@@ -48,6 +48,12 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   We publish to the chain as a **public bulletin board** so the same commitment is shown to
   everyone, which removes the "different totals to different verifiers" attack but not the
   participation assumption.
+- **Range proofs close the wrap-around gap.** The sum-proof shows the commitments add up
+  to the total, but not that each hidden allocation is non-negative — a prover could use
+  values that are negative mod the curve order so garbage "sums" to the total. Each
+  allocation now carries a bit-decomposition + Chaum-Pedersen OR-proof that it lies in
+  [0, 2^48) (`agent/src/range-proof.ts`), bound to the same commitments and re-verified in
+  your browser on /verify. Sound, no trusted setup. 4 soundness tests.
 - **Solvency is now proven on BOTH sides — reserves AND liabilities.** A proof-of-reserves
   alone is worthless (you can prove $1M held while owing $10M). The treasury commits to what
   it owes each client as a Merkle tree (`agent/src/liabilities.ts`); every client verifies

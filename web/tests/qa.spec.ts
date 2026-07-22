@@ -208,6 +208,8 @@ test.describe("Amanah manual-click QA", () => {
     // The ZK proof-of-reserves and the attested reasoning blob both verify client-side.
     await expect(page.getByText(/✓ verified in [\d.]+ ms/)).toBeVisible({ timeout: 20000 });
     await expect(page.getByText(/✓ hash matches the attestation/)).toBeVisible({ timeout: 20000 });
+    // Range proofs verify client-side (each hidden allocation ∈ [0, 2^48)) — a few seconds.
+    await expect(page.getByText(/each allocation proven ≥ 0/i)).toBeVisible({ timeout: 25000 });
 
     // Soundness: claiming more reserves than the hidden amounts sum to must FAIL.
     await page.getByRole("button", { name: /claim \$1,000 more/ }).click();

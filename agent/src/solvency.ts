@@ -17,11 +17,13 @@ import { resolve } from "node:path";
 import { callEntryPoint } from "./casper.js";
 import { CLValue, CLTypeByteArray, Args } from "./sdk.js";
 import { proveReserves, verifyReserves, deriveH, hexToBytes, bytesToHex } from "./zk-reserves.js";
+import { proveRange, verifyRange, RANGE_BITS } from "./range-proof.js";
 import { config } from "./config.js";
 import { ed25519 } from "@noble/curves/ed25519";
 import type { PrivateKey, RpcClient } from "casper-js-sdk";
 
 const OUT = resolve(import.meta.dirname, "../../web/public/proofs/reserves.json");
+const RANGE_OUT = resolve(import.meta.dirname, "../../web/public/proofs/rangeproof.json");
 const LABELS = ["Gold", "US T-bond", "WTI crude", "CSPR reserve"];
 
 export interface SolvencyResult {
@@ -58,6 +60,12 @@ export async function proveSolvency(
   const proof = proveReserves(allocations, blindings);
   if (!verifyReserves(proof)) throw new Error("locally generated solvency proof failed to verify");
 
+  // Range proofs: prove each hidden allocation is a real non-negative number in [0, 2^N),
+  // so a prover can't use wrapped/negative values to fake the sum. Bound to the SAME
+  // commitments (same blindings), so /verify can check the sum AND the ranges together.
+  const rangeProofs = allocations.map((a, i) => proveRange(a, blindings[i]));
+  rangeProofs.forEach((rp, i) => { if (!verifyRange(proof.commitments[i], rp)) throw new Error(`range proof ${i} failed locally`); });
+
   const byteArray32 = new CLTypeByteArray(32);
   const { deployHash } = await callEntryPoint({
     rpc, key, contractHash: config.zkReservesHash, entryPoint: "prove_reserves",
@@ -92,6 +100,17 @@ export async function proveSolvency(
   } catch (e) {
     // Publishing is a convenience for the web app; the on-chain proof already stands.
     console.warn("  ⚠ could not write reserves.json:", (e as Error).message);
+  }
+  // Range proofs in a sibling file (they're large — ~90KB — so reserves.json stays lean).
+  try {
+    writeFileSync(RANGE_OUT, JSON.stringify({
+      note: "Each hidden allocation is proven to be a non-negative number in [0, 2^N) via a bit-decomposition + Chaum-Pedersen OR-proof, bound to the reserves-proof commitments. Verified in your browser on /verify.",
+      bits: RANGE_BITS,
+      byCommitment: Object.fromEntries(proof.commitments.map((c, i) => [c, rangeProofs[i]])),
+      provenAt: new Date().toISOString(),
+    }) + "\n");
+  } catch (e) {
+    console.warn("  ⚠ could not write rangeproof.json:", (e as Error).message);
   }
 
   return { deployHash, total, principal };

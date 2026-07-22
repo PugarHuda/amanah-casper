@@ -8,6 +8,7 @@ import Nav from "@/components/Nav";
 import { blake2b } from "blakejs";
 import { verifyReserves, bytesToHex, type ReservesProof } from "@/lib/zk-verify";
 import { computeLeaf, verifyInclusion } from "@/lib/merkle-verify";
+import { verifyRange } from "@/lib/range-verify";
 
 const EXPLORER = "https://testnet.cspr.live";
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono, ui-monospace, monospace)", fontSize: 11, wordBreak: "break-all" };
@@ -110,6 +111,20 @@ export default function VerifyPage() {
     fetch("/redteam.json").then((r) => (r.ok ? r.json() : null)).then(setRt).catch(() => {});
   }, []);
 
+  // --- range proofs (each hidden allocation ∈ [0, 2^N)) ---------------------
+  const [rangeOk, setRangeOk] = useState<boolean | null>(null);
+  const [rangeBits, setRangeBits] = useState(48);
+  useEffect(() => {
+    if (!rv) return;
+    fetch("/proofs/rangeproof.json").then((r) => (r.ok ? r.json() : null)).then((rp) => {
+      if (!rp?.byCommitment) { setRangeOk(null); return; }
+      setRangeBits(rp.bits ?? 48);
+      // Verify every commitment's range proof (they're bound to the reserves commitments).
+      const ok = rv.commitments.every((c) => rp.byCommitment[c] && verifyRange(c, rp.byCommitment[c]));
+      setRangeOk(ok);
+    }).catch(() => setRangeOk(null));
+  }, [rv]);
+
   // --- proof-of-liabilities (Merkle) ----------------------------------------
   const [liab, setLiab] = useState<Liabilities | null>(null);
   const [pick, setPick] = useState(0);
@@ -179,6 +194,9 @@ export default function VerifyPage() {
                   okText={`verified in ${rvMs} ms · covers principal`}
                   badText={rvOut && rvOut.ok && !coversPrincipal ? "proof valid, but reserves < principal" : "proof rejected"}
                 />
+                {/* Range proofs: each hidden allocation is proven ∈ [0, 2^48) so a prover
+                    can't use wrapped/negative values to fake the sum. */}
+                <Badge ok={rangeOk} okText={`each allocation proven ≥ 0 (${rangeBits}-bit range)`} badText="range proof failed" />
                 <button onClick={() => setRvTampered((t) => !t)}
                   style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: rvTampered ? "#fbeaea" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
                   {rvTampered ? "↺ restore the real total" : "⚡ claim $1,000 more than we hold"}
