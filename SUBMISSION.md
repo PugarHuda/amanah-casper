@@ -33,13 +33,22 @@ via a **Schnorr NIZK verified inside the contract** (curve25519-dalek) — the s
 never transmitted. Not a stored flag, not a toy: a genuine 256-bit zero-knowledge proof
 verified in the Casper WASM VM.
 
-**Four more differentiators, all live + proven on-chain:** (1) a **K-of-N auditor
-quorum** — multiple independent auditor keys must sign APPROVE (proven 2-of-3); (2) a
-**reputation-gated circuit breaker** — the vault benches the agent on-chain when its
-reputation drops below a floor, then resumes once it recovers; (3) a **dead-man's
-switch** — anyone can freeze the vault if the agent goes silent; (4) **ZK
-proof-of-reserves** (`ZkReserves`, Pedersen+Schnorr) — proves solvency (reserves ≥
-principal) from commitments that **never reveal an individual amount**. 10 Odra contracts, 111 automated tests.
+**More, all live + proven on-chain:** a **K-of-N auditor quorum** enforced by the vault
+(proven 2-of-3, and a human can now **cast a real vote from a browser wallet**); a
+**reputation-gated circuit breaker**; a **dead-man's switch**; a one-call **emergency stop**;
+**economic slashing** (auditors stake CSPR, a bad actor's bond burns); the **trading policy as
+on-chain governed parameters** (a `PolicyEngine` the agent reads each cycle) versioned to a
+policy the quorum **signs off on-chain**; a **human approval inbox** where escalated decisions
+get real on-chain sign-off; a **prompt-injection red team** (7/7 attacks blocked) with an
+**independent auditor on a different model family**; and **verifiable auditor selection** so the
+agent can't pick its own judges.
+
+**A COMPLETE, browser-verifiable ZK solvency proof** — the differentiator no rival has: the ZK
+proof-of-reserves proves the commitments **sum** to the total, **range proofs** prove each hidden
+allocation is non-negative, the total is **bound to the vault's real balance**, and a Merkle
+**proof-of-liabilities** proves reserves ≥ what's owed to clients. Re-run every check **in your
+own browser** at [/verify](https://amanah-casper-rwa.vercel.app/verify), then tamper and watch it
+break. 12 Odra contracts; 24 contract + 65 agent + 24 end-to-end tests.
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
