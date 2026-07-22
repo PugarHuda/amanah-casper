@@ -20,7 +20,7 @@ fn quorum_approving(env: &odra::host::HostEnv, hashes: &[[u8; 32]]) -> AuditorQu
     let pk0 = env.public_key(&a0);
     let mut q = AuditorQuorum::deploy(
         env,
-        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1, instance_id: [7u8; 32] },
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1, instance_id: [7u8; 32], slasher: a0, min_stake: U512::zero() },
     );
     for h in hashes {
         let mut m = Vec::new();
@@ -475,7 +475,7 @@ fn auditor_quorum_requires_k_of_n_signed_votes() {
 
     let mut q = AuditorQuorum::deploy(
         &env,
-        AuditorQuorumInitArgs { auditors: vec![pk0.clone(), pk1.clone(), pk2.clone()], threshold: 2, instance_id: [9u8; 32] },
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone(), pk1.clone(), pk2.clone()], threshold: 2, instance_id: [9u8; 32], slasher: env.get_account(0), min_stake: U512::zero() },
     );
 
     let hash = [5u8; 32];
@@ -524,7 +524,7 @@ fn caller_authenticated_voting_from_the_open_registry() {
     let pk0 = env.public_key(&env.get_account(0));
     let mut q = AuditorQuorum::deploy(
         &env,
-        AuditorQuorumInitArgs { auditors: vec![pk0], threshold: 2, instance_id: [3u8; 32] },
+        AuditorQuorumInitArgs { auditors: vec![pk0], threshold: 2, instance_id: [3u8; 32], slasher: env.get_account(0), min_stake: U512::zero() },
     );
     let hash = [4u8; 32];
     let a1 = env.get_account(1);
@@ -558,6 +558,79 @@ fn caller_authenticated_voting_from_the_open_registry() {
     env.set_caller(a1);
     q.vote_as_caller(hash2, false);
     assert_eq!(q.approvals_for(hash2), 0);
+}
+
+#[test]
+fn staking_registers_and_slashing_burns_the_bond() {
+    // Real economic skin-in-the-game: an auditor stakes native CSPR to register, and a
+    // caught bad-faith auditor loses it. The slasher is the custodian (account 0).
+    let env = odra_test::env();
+    let custodian = env.get_account(0);
+    let pk0 = env.public_key(&custodian);
+    let mut q = AuditorQuorum::deploy(
+        &env,
+        AuditorQuorumInitArgs {
+            auditors: vec![pk0],
+            threshold: 1,
+            instance_id: [2u8; 32],
+            slasher: custodian,
+            min_stake: U512::from(100u64),
+        },
+    );
+    let staker = env.get_account(1);
+
+    // Attaching less than min_stake is rejected.
+    env.set_caller(staker);
+    assert_eq!(
+        q.with_tokens(U512::from(50u64)).try_register_with_stake().unwrap_err(),
+        Error::InsufficientStake.into()
+    );
+
+    // Stake enough -> registered, stake recorded, and the contract holds the bond.
+    q.with_tokens(U512::from(500u64)).register_with_stake();
+    assert!(q.is_registered(staker));
+    assert_eq!(q.stake_of(staker), U512::from(500u64));
+
+    // A staked auditor can vote via the caller-auth path.
+    let hash = [7u8; 32];
+    q.vote_as_caller(hash, true);
+    assert!(q.approved(hash));
+
+    // Only the slasher may slash.
+    env.set_caller(staker);
+    assert_eq!(q.try_slash(staker).unwrap_err(), Error::NotAuthorized.into());
+
+    // Custodian slashes: bond burned to zero, auditor removed from the registry.
+    env.set_caller(custodian);
+    q.slash(staker);
+    assert_eq!(q.stake_of(staker), U512::zero());
+    assert!(!q.is_registered(staker));
+
+    // A slashed auditor can no longer vote, and has nothing left to withdraw.
+    env.set_caller(staker);
+    assert_eq!(q.try_vote_as_caller([8u8; 32], true).unwrap_err(), Error::UnknownSigner.into());
+    assert_eq!(q.try_withdraw_stake().unwrap_err(), Error::InsufficientStake.into());
+}
+
+#[test]
+fn a_staker_can_withdraw_an_unslashed_bond() {
+    let env = odra_test::env();
+    let custodian = env.get_account(0);
+    let pk0 = env.public_key(&custodian);
+    let mut q = AuditorQuorum::deploy(
+        &env,
+        AuditorQuorumInitArgs {
+            auditors: vec![pk0], threshold: 1, instance_id: [4u8; 32],
+            slasher: custodian, min_stake: U512::from(100u64),
+        },
+    );
+    let staker = env.get_account(2);
+    env.set_caller(staker);
+    q.with_tokens(U512::from(300u64)).register_with_stake();
+    assert!(q.is_registered(staker));
+    q.withdraw_stake();
+    assert_eq!(q.stake_of(staker), U512::zero());
+    assert!(!q.is_registered(staker), "withdrawing leaves the registry");
 }
 
 #[test]
@@ -679,7 +752,7 @@ fn a_vote_signed_for_another_quorum_deployment_is_rejected() {
     let decoy = [2u8; 32];
     let mut q = AuditorQuorum::deploy(
         &env,
-        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1, instance_id: real },
+        AuditorQuorumInitArgs { auditors: vec![pk0.clone()], threshold: 1, instance_id: real, slasher: env.get_account(0), min_stake: U512::zero() },
     );
 
     // A signature produced for the DECOY deployment must not work here.

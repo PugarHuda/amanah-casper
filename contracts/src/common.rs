@@ -82,6 +82,9 @@ pub enum Error {
     /// The total claimed by a proof-of-reserves does not equal the vault's real
     /// allocations. A sound proof about invented numbers is still worthless.
     TotalMismatch = 18,
+    /// A staked auditor registration attached less than `min_stake`, or a withdraw/slash
+    /// found no stake to move.
+    InsufficientStake = 19,
 }
 
 /// Widen a `U256` into a `U512` losslessly via big-endian bytes.

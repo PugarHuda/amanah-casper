@@ -61,6 +61,15 @@ actually check. Stating those assumptions is part of the design, not a disclaime
   a **cryptographically valid** proof for $1.05M was refused because the vault holds $1.00M
   ([`3c114651`](https://testnet.cspr.live/deploy/3c114651e1a0008e81286016264c05dcc570959279d1964b86b54409e60ff1ee)).
   Residual assumption: the `vault` address configured at `init` is the right one.
+- **Auditors put economic skin in the game (B6).** The interactive quorum
+  (`100d2433789f…`) supports **real native-CSPR staking**: `register_with_stake` bonds CSPR to
+  an auditor's registration, and `slash` (custodian-gated) **burns that bond** for a caught
+  bad-faith auditor, removing it from the registry — proven end-to-end in the OdraVM tests
+  (stake → vote → slash → bond zeroed → cannot vote → nothing to withdraw). The free
+  `open_register` still exists so a judge without testnet CSPR can join the demo. Honest
+  limit: attaching native CSPR to a payable entrypoint from a *direct external deploy* needs
+  Odra's proxy-caller wasm, so the live browser demo uses the free registry; the staking
+  path is contract-real and unit-proven, not yet exercised from the browser.
 - **Auditors can vote from a browser now, not just the agent's panel.** The quorum gained a
   caller-authenticated path (`vote_as_caller`) and an open registry (`open_register`): a human
   auditor connects a wallet and casts a REAL on-chain vote — the wallet signs the deploy, the

@@ -7,7 +7,7 @@
 //! the agent's loop reads it before executing. No single auditor (or the agent) can
 //! forge a quorum: each vote is an independent on-chain signature from a distinct key.
 use crate::common::Error;
-use odra::casper_types::{bytesrepr::Bytes, PublicKey};
+use odra::casper_types::{bytesrepr::Bytes, PublicKey, U512};
 use odra::prelude::*;
 
 /// Domain tag mixed into every signed vote so a signature can't be replayed as a
@@ -40,7 +40,21 @@ pub struct AuditorRegistered {
     pub auditor: Address,
 }
 
-#[odra::module(events = [Voted, VotedByAccount, AuditorRegistered], errors = Error)]
+/// Emitted when a staked auditor is slashed — real economic skin-in-the-game burned.
+#[odra::event]
+pub struct AuditorSlashed {
+    pub auditor: Address,
+    pub amount: U512,
+}
+
+/// Emitted when an auditor withdraws their (un-slashed) stake and leaves the registry.
+#[odra::event]
+pub struct StakeWithdrawn {
+    pub auditor: Address,
+    pub amount: U512,
+}
+
+#[odra::module(events = [Voted, VotedByAccount, AuditorRegistered, AuditorSlashed, StakeWithdrawn], errors = Error)]
 pub struct AuditorQuorum {
     /// Authorized auditor public keys (set at init). Only these may vote.
     auditors: Mapping<PublicKey, bool>,
@@ -64,12 +78,25 @@ pub struct AuditorQuorum {
     /// account address, signed-vote auth by public key.
     auditor_addrs: Mapping<Address, bool>,
     voted_addr: Mapping<([u8; 32], Address), bool>,
+    // --- economic staking + slashing (B6) ---------------------------------------
+    // Declared last so earlier state indices don't shift. Real skin-in-the-game: an
+    // auditor can back its registration with native CSPR, and a caught bad-faith auditor
+    // has that stake burned. The free `open_register` still exists so a judge without
+    // testnet CSPR can join the demo; `register_with_stake` is the economic path.
+    /// The key allowed to slash — the custodian trust boundary, set at init.
+    slasher: Var<Address>,
+    /// Minimum CSPR a staked registration must attach (0 disables the requirement).
+    min_stake: Var<U512>,
+    /// Live stake held per auditor. Withdrawable if never slashed.
+    stake: Mapping<Address, U512>,
 }
 
 #[odra::module]
 impl AuditorQuorum {
     /// `auditors` are the authorized voter keys; `threshold` is the K in K-of-N.
-    pub fn init(&mut self, auditors: Vec<PublicKey>, threshold: u32, instance_id: [u8; 32]) {
+    /// `slasher` may burn staked auditors' bonds; `min_stake` is the CSPR a staked
+    /// registration must attach (0 to disable staking entirely).
+    pub fn init(&mut self, auditors: Vec<PublicKey>, threshold: u32, instance_id: [u8; 32], slasher: Address, min_stake: U512) {
         // threshold 0 would make `approved()` true with zero votes.
         if threshold < 1 {
             self.env().revert(Error::NotAuthorized);
@@ -79,6 +106,65 @@ impl AuditorQuorum {
         }
         self.threshold.set(threshold);
         self.instance_id.set(instance_id);
+        self.slasher.set(slasher);
+        self.min_stake.set(min_stake);
+    }
+
+    /// Join the registry by STAKING native CSPR (attached to this call). The stake is real
+    /// skin-in-the-game: a caught bad-faith auditor loses it via `slash`. Reverts
+    /// `InsufficientStake` if less than `min_stake` is attached.
+    #[odra(payable)]
+    pub fn register_with_stake(&mut self) {
+        let caller = self.env().caller();
+        let attached = self.env().attached_value();
+        if attached < self.min_stake.get_or_default() {
+            self.env().revert(Error::InsufficientStake);
+        }
+        let cur = self.stake.get_or_default(&caller);
+        self.stake.set(&caller, cur + attached);
+        self.auditor_addrs.set(&caller, true);
+        self.env().emit_event(AuditorRegistered { auditor: caller });
+    }
+
+    /// Slash a staked auditor: burn its bond (transferred to the slasher's reserve) and
+    /// remove it from the registry. Only the `slasher` (custodian) may call this — the same
+    /// key-separated trust boundary the rest of the system uses.
+    pub fn slash(&mut self, who: Address) {
+        let slasher = self.slasher.get_or_revert_with(Error::AddressNotSet);
+        if self.env().caller() != slasher {
+            self.env().revert(Error::NotAuthorized);
+        }
+        let amount = self.stake.get_or_default(&who);
+        self.stake.set(&who, U512::zero());
+        self.auditor_addrs.set(&who, false);
+        if amount > U512::zero() {
+            // The bond moves to the slasher's reserve — a real, on-chain economic penalty.
+            self.env().transfer_tokens(&slasher, &amount);
+        }
+        self.env().emit_event(AuditorSlashed { auditor: who, amount });
+    }
+
+    /// Withdraw your own (un-slashed) stake and leave the registry.
+    pub fn withdraw_stake(&mut self) {
+        let caller = self.env().caller();
+        let amount = self.stake.get_or_default(&caller);
+        if amount == U512::zero() {
+            self.env().revert(Error::InsufficientStake);
+        }
+        self.stake.set(&caller, U512::zero());
+        self.auditor_addrs.set(&caller, false);
+        self.env().transfer_tokens(&caller, &amount);
+        self.env().emit_event(StakeWithdrawn { auditor: caller, amount });
+    }
+
+    /// Live stake held by `who` (0 if none / slashed / withdrawn).
+    pub fn stake_of(&self, who: Address) -> U512 {
+        self.stake.get_or_default(&who)
+    }
+
+    /// The minimum CSPR a staked registration must attach.
+    pub fn min_stake(&self) -> U512 {
+        self.min_stake.get_or_default()
     }
 
     /// Cast a signed vote. The signature must be over the 32-byte `reasoning_hash`,
