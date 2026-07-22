@@ -218,6 +218,16 @@ test.describe("Amanah manual-click QA", () => {
     await expect(page.getByText(/hash mismatch/)).toBeVisible({ timeout: 10000 });
   });
 
+  test("the approval inbox lists escalated decisions awaiting human on-chain sign-off", async ({ page }) => {
+    await gotoAndSettle(page, "/govern");
+    await expect(page.getByRole("heading", { name: /approval inbox/i })).toBeVisible({ timeout: 15000 });
+    // Art.14 human-oversight framing + the connect gate (read-only without a wallet).
+    await expect(page.getByText(/Article 14/i)).toBeVisible();
+    await expect(page.getByText(/connect a wallet/i).first()).toBeVisible();
+    // At least the seeded escalated decision shows (IPFS ones may lag).
+    await expect(page.getByText("ESCALATED").first()).toBeVisible({ timeout: 20000 });
+  });
+
   test("the prompt-injection red team is published and every attack is blocked", async ({ page }) => {
     await gotoAndSettle(page, "/verify");
     const badge = page.getByText(/\d+ \/ \d+ attacks blocked/).first();

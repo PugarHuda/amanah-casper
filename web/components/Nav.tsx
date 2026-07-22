@@ -20,6 +20,7 @@ const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/verify", label: "Verify" },
   { href: "/compliance", label: "Evidence" },
+  { href: "/govern", label: "Approvals" },
   { href: "/agent", label: "How it works" },
 ];
 

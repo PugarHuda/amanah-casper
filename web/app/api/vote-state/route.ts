@@ -9,10 +9,14 @@ export const dynamic = "force-dynamic";
 const PENDING_HASH = process.env.QUORUM_V4_PENDING_HASH || "7c409e7bfce729cea460c03d3557277ad14e12da2b5d1a82c35860b60fba2df4";
 
 export async function GET(req: Request) {
-  const pk = new URL(req.url).searchParams.get("pk") ?? "";
+  const url = new URL(req.url);
+  const pk = url.searchParams.get("pk") ?? "";
   const acct = accountHashOf(pk);
   if (!acct) return NextResponse.json({ error: "malformed public key" }, { status: 400 });
-  const state = await getQuorumVote(PENDING_HASH, acct);
+  // The inbox reads the quorum tally for any escalated decision; defaults to the demo one.
+  const hashParam = url.searchParams.get("hash");
+  const hash = hashParam && /^[0-9a-f]{64}$/i.test(hashParam) ? hashParam.toLowerCase() : PENDING_HASH;
+  const state = await getQuorumVote(hash, acct);
   if (!state) return NextResponse.json({ error: "quorum state unreadable" }, { status: 503 });
-  return NextResponse.json({ ...state, pendingHash: PENDING_HASH });
+  return NextResponse.json({ ...state, pendingHash: hash });
 }

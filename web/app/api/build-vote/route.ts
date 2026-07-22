@@ -14,7 +14,7 @@ const PENDING_HASH = process.env.QUORUM_V4_PENDING_HASH || "7c409e7bfce729cea460
 const CHAIN = "casper-test";
 
 export async function POST(req: Request) {
-  let body: { action?: string; pk?: string; approve?: boolean };
+  let body: { action?: string; pk?: string; approve?: boolean; hash?: string };
   try {
     body = await req.json();
   } catch {
@@ -27,6 +27,9 @@ export async function POST(req: Request) {
   if (action !== "register" && action !== "vote") {
     return NextResponse.json({ error: "action must be 'register' or 'vote'" }, { status: 400 });
   }
+  // A vote can target any decision hash (the human-approval inbox votes on escalated
+  // decisions); defaults to the seeded demo decision. Must be a 32-byte hex hash.
+  const hash = (body.hash && /^[0-9a-f]{64}$/i.test(body.hash) ? body.hash : PENDING_HASH).toLowerCase();
 
   try {
     const from = PublicKey.fromHex(pk);
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
     if (action === "register") {
       b.entryPoint("open_register").runtimeArgs(Args.fromMap({})).payment(2_500_000_000);
     } else {
-      const hashBytes = Uint8Array.from(Buffer.from(PENDING_HASH, "hex"));
+      const hashBytes = Uint8Array.from(Buffer.from(hash, "hex"));
       b.entryPoint("vote_as_caller")
         .runtimeArgs(
           Args.fromMap({
@@ -49,7 +52,7 @@ export async function POST(req: Request) {
     // buildFor1_5 = the legacy deploy format current testnet nodes accept; CSPR.click
     // signs and submits it. toJSON() is the exact shape send() expects.
     const tx = b.buildFor1_5();
-    return NextResponse.json({ transaction: tx.toJSON(), pendingHash: PENDING_HASH });
+    return NextResponse.json({ transaction: tx.toJSON(), pendingHash: hash });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
   }
