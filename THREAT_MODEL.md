@@ -104,6 +104,13 @@ actually check. Stating those assumptions is part of the design, not a disclaime
 - **We do not prove which model reasoned.** We prove a decision was signed by the agent's
   key and is human-interpretable. Attested inference (TEE) is unimplemented — our clearest
   honest limitation.
+- **Policy changes are time-locked, not instant (B4).** The PolicyEngine is owned by a
+  `GovernanceTimelock` (81c091bbe8d7…), so a parameter change must be QUEUED, wait a mandatory
+  delay (60s in the demo; 24-48h in production), and only then be EXECUTED — by anyone, so it
+  can't be buried either. Proven live: a confidence change was queued
+  ([83d5da5ad5](https://testnet.cspr.live/deploy/83d5da5ad51cda20b0e16dfe445553d48fcb3709610ded335bbb6fe569f4e7ad)) and, after the delay, executed by a
+  DIFFERENT key ([c7b78fff91](https://testnet.cspr.live/deploy/c7b78fff911e6284b2c1da1101aec427883e0e96f299a81d9258857abc13720f)), moving the on-chain
+  threshold to 0.75. A direct owner edit is now rejected.
 - **The policy PARAMETERS live on-chain, not in a config file (B2).** The confidence
   threshold the agent escalates below, the max rebalance size, and the reputation floor are
   stored in an owner-gated `PolicyEngine` (`7b38cf88de66…`), versioned to the signed-off

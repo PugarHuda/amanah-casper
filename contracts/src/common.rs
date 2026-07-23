@@ -85,6 +85,8 @@ pub enum Error {
     /// A staked auditor registration attached less than `min_stake`, or a withdraw/slash
     /// found no stake to move.
     InsufficientStake = 19,
+    /// A timelocked change was executed with nothing queued, or before its delay elapsed.
+    TimelockNotReady = 20,
 }
 
 /// Widen a `U256` into a `U512` losslessly via big-endian bytes.

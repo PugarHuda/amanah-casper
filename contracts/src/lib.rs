@@ -9,6 +9,7 @@ pub mod compliance_registry;
 pub mod common;
 pub mod payment_token;
 pub mod policy_engine;
+pub mod governance_timelock;
 pub mod reputation_registry;
 pub mod rwa_vault;
 pub mod spend_gate;

@@ -6,7 +6,7 @@
 // not address this. A controls layer therefore has to hand its customer that artifact.
 // Every row here is a real transaction; every claim links to cspr.live.
 import Nav from "@/components/Nav";
-import { getExceptions, getActivity, getContractDeploys, getPolicySignoff, getPolicyParams } from "@/lib/cspr";
+import { getExceptions, getActivity, getContractDeploys, getPolicySignoff, getPolicyParams, getTimelock } from "@/lib/cspr";
 import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/data";
 
 export const revalidate = 60;
@@ -18,9 +18,9 @@ const when = (t: string | null) => (t ? new Date(t).toISOString().replace("T", "
 export default async function CompliancePage() {
   const configured = live();
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
-  const [exceptions, activity, recent, policy, params] = configured
-    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null), getPolicyParams().catch(() => null)])
-    : [[], null, [], null, null];
+  const [exceptions, activity, recent, policy, params, timelock] = configured
+    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null), getPolicyParams().catch(() => null), getTimelock().catch(() => null)])
+    : [[], null, [], null, null, null];
   const executed = recent.filter((d) => !d.error_message);
   const policyRefusals = exceptions.filter((e) => e.kind === "policy");
   const platformFaults = exceptions.filter((e) => e.kind === "platform");
@@ -84,7 +84,7 @@ export default async function CompliancePage() {
                 <span>Escalate below confidence <strong>{params.confidencePct.toFixed(0)}%</strong></span>
                 <span>Max rebalance <strong>{params.maxRebalancePct.toFixed(0)}%</strong> / move</span>
                 <span>Min reputation <strong>{params.minReputation}</strong></span>
-                <span style={{ color: "var(--faint)" }}>— read live from the on-chain PolicyEngine (B2)</span>
+                <span style={{ color: "var(--faint)" }}>— live from the on-chain PolicyEngine{timelock ? `, changes time-locked ${timelock.delaySec}s (B4 governance)` : " (B2)"}</span>
               </div>
             )}
             <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>

@@ -702,3 +702,15 @@ export async function getTreasuries(): Promise<{ label: string; total: bigint; p
   if (b) out.push({ label: "Treasury B", total: b.total, principal: b.principal });
   return out;
 }
+
+// --- GovernanceTimelock (B4): governance changes are queued + time-delayed --------
+const TIMELOCK_SEED = (process.env.TIMELOCK_STATE_SEED || "").trim();
+export async function getTimelock(): Promise<{ delaySec: number; queued: boolean } | null> {
+  if (!TIMELOCK_SEED) return null;
+  try {
+    const srh = await stateRootHash();
+    if (!srh) return null;
+    const [delay, eta] = await Promise.all([readU32(srh, TIMELOCK_SEED, 3), readU32(srh, TIMELOCK_SEED, 5)]);
+    return { delaySec: Math.round((delay ?? 0) / 1000), queued: (eta ?? 0) > 0 };
+  } catch { return null; }
+}

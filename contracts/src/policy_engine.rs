@@ -53,6 +53,14 @@ impl PolicyEngine {
         }
     }
 
+    /// Hand governance to a new owner — e.g. a GovernanceTimelock, so parameter changes
+    /// must go through a queued, time-delayed process instead of an instant custodian edit.
+    pub fn set_owner(&mut self, new_owner: Address) {
+        self.assert_owner();
+        self.owner.set(new_owner);
+        self.env().emit_event(PolicyUpdated { field: "owner".into(), by: self.env().caller() });
+    }
+
     pub fn set_confidence_threshold_bps(&mut self, bps: u32) {
         self.assert_owner();
         self.confidence_threshold_bps.set(bps);

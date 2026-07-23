@@ -794,3 +794,38 @@ fn policy_engine_is_owner_gated_and_readable() {
     assert_eq!(pe.confidence_threshold_bps(), 7500);
     assert_eq!(pe.policy_version(), [1u8; 32]);
 }
+
+#[test]
+fn timelock_delays_governance_and_then_applies_it() {
+    use amanah_contracts::policy_engine::{PolicyEngine, PolicyEngineInitArgs};
+    use amanah_contracts::governance_timelock::{GovernanceTimelock, GovernanceTimelockInitArgs};
+    let env = odra_test::env();
+    let custodian = env.get_account(0);
+    let mut pe = PolicyEngine::deploy(&env, PolicyEngineInitArgs {
+        owner: custodian, confidence_threshold_bps: 7000, max_rebalance_bps: 800, min_reputation: 1, policy_version: [9u8; 32],
+    });
+    let mut tl = GovernanceTimelock::deploy(&env, GovernanceTimelockInitArgs {
+        owner: custodian, policy_engine: pe.contract_address(), delay_ms: 60_000,
+    });
+    // Hand the PolicyEngine's ownership to the timelock — now only the queue can change it.
+    pe.set_owner(tl.contract_address());
+
+    // A direct custodian change is now rejected (owner is the timelock).
+    env.set_caller(custodian);
+    assert_eq!(pe.try_set_confidence_threshold_bps(5000).unwrap_err(), Error::NotAuthorized.into());
+
+    // Executing with nothing queued fails.
+    assert_eq!(tl.try_execute_confidence().unwrap_err(), Error::TimelockNotReady.into());
+
+    // Queue a change; executing before the delay fails.
+    tl.queue_confidence(7500);
+    assert_eq!(tl.try_execute_confidence().unwrap_err(), Error::TimelockNotReady.into());
+
+    // Advance past the delay -> execute applies it on the PolicyEngine.
+    env.advance_block_time(61_000);
+    tl.execute_confidence();
+    assert_eq!(pe.confidence_threshold_bps(), 7500);
+    // A non-owner cannot queue.
+    env.set_caller(env.get_account(1));
+    assert_eq!(tl.try_queue_confidence(9000).unwrap_err(), Error::NotAuthorized.into());
+}

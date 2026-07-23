@@ -121,7 +121,9 @@ Contract **package hashes** (also in [`.env.deployed`](.env.deployed)):
 | PaymentToken (CEP-18 + CEP-3009) | `d784f72c17d143cd96e8bcd2b19fc893f003c1ce9ea29f059eb033bcbd347d79` |
 | ZkKycVerifier (on-chain Schnorr NIZK, real ZK KYC) | `e9394a31557d33a6f5f26e4d5d996f7cbd7e98138cef60cc5921eee2617dfd0f` |
 | ZkReserves v2 (on-chain ZK proof-of-reserves — Pedersen+Schnorr, **bound to live vault state**) | `5f57375f6187920b15f833d702121f591c9e4559fbd674a6704dd22c09b8f520` |
-| PolicyEngine (trading policy as on-chain, owner-gated, versioned parameters — B2) | `7b38cf88de66a6bc88fa9ce7f4abf589afa2a05bc76e048d7e1c4219322fbf6c` |
+| GovernanceTimelock (queued, time-delayed governance over the policy — B4) | `81c091bbe8d781ba3ebdd527373e4f0417eb3376ab66a05955b6f59455150abc` |
+| PolicyEngine v2 (owned by the timelock; the agent reads its confidence threshold each cycle) | `3ec02e03cccf3ea0c5fac410ab49d7bd0fc03d06e364b5af4a46dda5af783af4` |
+| PolicyEngine (superseded by v2) (trading policy as on-chain, owner-gated, versioned parameters — B2) | `7b38cf88de66a6bc88fa9ce7f4abf589afa2a05bc76e048d7e1c4219322fbf6c` |
 | AuditorQuorum v5 (interactive quorum — browser voting + open registry + **native-CSPR staking & slashing**) | `100d2433789f46243253615e6fe909412b7794c2d8cd47e4677adaabc98d9f72` |
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`

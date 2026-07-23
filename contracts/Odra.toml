@@ -41,3 +41,7 @@ fqn = "amanah_contracts::zk_reserves::ZkReserves"
 # PolicyEngine: the agent's trading policy as on-chain, owner-gated, versioned parameters.
 [[contracts]]
 fqn = "amanah_contracts::policy_engine::PolicyEngine"
+
+# GovernanceTimelock: queued, time-delayed governance over the PolicyEngine (B4).
+[[contracts]]
+fqn = "amanah_contracts::governance_timelock::GovernanceTimelock"
