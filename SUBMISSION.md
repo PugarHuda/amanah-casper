@@ -28,6 +28,14 @@ the score reflects its real audit track record — skin in the game. Prices are
 **cross-validated** across two independent feeds (CoinGecko + Coinpaprika) with a
 divergence signal, so a single stale/manipulated source is caught, not trusted.
 
+**A multi-model consensus panel decides — not one model:** every cycle the decision is polled
+across a panel of **different model families** (deepseek · llama · qwen), and funds move **only
+when a majority independently agree on the same action and direction**; a split panel **escalates**
+(no funds move). The trade size is the panel **median**, so no single model can inflate it, and the
+full panel is **signed into the on-chain reasoning blob** — the consensus is auditable, not asserted.
+Proven live: a 3-model panel split $5k / hold / $50k → acted on the agreed direction at the **median
+$27.5k**, rejecting both extremes.
+
 **Zero-knowledge KYC (real, on-chain):** the agent proves it holds its KYC credential
 via a **Schnorr NIZK verified inside the contract** (curve25519-dalek) — the secret is
 never transmitted. Not a stored flag, not a toy: a genuine 256-bit zero-knowledge proof
@@ -48,7 +56,18 @@ proof-of-reserves proves the commitments **sum** to the total, **range proofs** 
 allocation is non-negative, the total is **bound to the vault's real balance**, and a Merkle
 **proof-of-liabilities** proves reserves ≥ what's owed to clients. Re-run every check **in your
 own browser** at [/verify](https://amanah-casper-rwa.vercel.app/verify), then tamper and watch it
-break. 12 Odra contracts; 24 contract + 65 agent + 24 end-to-end tests.
+break. And a **per-client evidence pack** ([/api/evidence](https://amanah-casper-rwa.vercel.app/api/evidence/client:orion-dao)):
+the portable, offline-verifiable artifact a client hands their own auditor — just their Merkle
+inclusion proof + the reserves anchor, leaking no one else's balance.
+
+**Don't take our word for any of it:** paste **any** testnet deploy hash into
+[/verify](https://amanah-casper-rwa.vercel.app/verify) and it checks the chain — is it an Amanah
+contract, and did it execute or get **refused by which control**. A **chain-derived heartbeat**
+([/api/heartbeat](https://amanah-casper-rwa.vercel.app/api/heartbeat)) proves the hosted loop is
+live (the loop attests every cycle, so the last attestation *is* its heartbeat), and a
+**browser-alerting** bell raises a desktop notification on any new control event. An
+[agent-consumable manifest](https://amanah-casper-rwa.vercel.app/api/manifest) exposes it all so
+another agent can verify Amanah programmatically. 14 Odra contracts; 25 contract + 69 agent + 24 end-to-end tests.
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |

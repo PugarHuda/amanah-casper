@@ -60,6 +60,9 @@ export interface ReasoningBlob {
    *  policy violations found in the model's own output. Both live INSIDE the signed
    *  blob so an attempted attack is attested on-chain, not just logged locally. */
   guard?: { detections: unknown[]; violations: unknown[]; forcedEscalate: boolean };
+  /** The multi-model consensus panel for this cycle (C2): which model families agreed or
+   *  split on the decision. Signed alongside it so the consensus is verifiable on-chain. */
+  consensus?: { agreed: boolean; summary: string; agreeing: number; panelSize: number; votes: unknown[] };
   model: string;
   at: string;
 }

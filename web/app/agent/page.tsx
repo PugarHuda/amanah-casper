@@ -1,5 +1,6 @@
 import Nav from "@/components/Nav";
 import SimulationCard from "@/components/SimulationCard";
+import Heartbeat from "@/components/Heartbeat";
 import { getAgentConsole } from "@/lib/data";
 
 // Read the newest reasoning blob + on-chain hashes at request time (not baked at build).
@@ -31,6 +32,9 @@ export default async function Agent() {
         <h1 className="serif" style={{ margin: "10px 0 0", fontSize: 42, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.8px" }}>
           Agent console
         </h1>
+
+        {/* C3 — hosted-loop liveness, proven from the chain */}
+        <Heartbeat />
 
         {/* METRIC CARDS */}
         <div className="metric-row" style={{ marginTop: 28 }}>

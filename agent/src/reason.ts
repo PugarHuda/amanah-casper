@@ -19,6 +19,7 @@ export async function reason(
   prices: PriceSnapshot,
   premiumSignal: unknown,
   marketContext?: MarketContext,
+  model: string = config.model, // override lets the consensus panel poll diverse models
 ): Promise<Decision> {
   if (!config.veniceKey) throw new Error("Missing VENICE_API_KEY (see .env.example)");
   const user = buildUserPrompt(cycle, prices, premiumSignal, marketContext);
@@ -31,7 +32,7 @@ export async function reason(
         authorization: `Bearer ${config.veniceKey}`,
       },
       body: JSON.stringify({
-        model: config.model,
+        model,
         temperature: 0.2,
         max_tokens: 4000,
         messages: [

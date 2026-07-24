@@ -66,6 +66,8 @@ export async function GET() {
       governance: timelock ? { model: "timelock", delaySeconds: timelock.delaySec, changeQueued: timelock.queued } : null,
     },
     health: `${SITE}/api/health`,
+    heartbeat: `${SITE}/api/heartbeat`,
+    alerts: `${SITE}/api/alerts`,
     repo: "https://github.com/PugarHuda/amanah-casper",
   });
 }

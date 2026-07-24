@@ -55,6 +55,14 @@ export const config = {
   // different prompt. Defaults to a distinct model; override with AUDITOR_MODEL. Falls
   // back to the actor model only if you deliberately set them equal.
   auditorModel: opt("AUDITOR_MODEL", "llama-3.3-70b"),
+  // C2 — the CONSENSUS PANEL. The decision to move funds is polled across several
+  // DIFFERENT model families; funds only move when a majority independently agree on the
+  // same action (and, for a rebalance, the same direction). A lone model's blind spot or
+  // hallucinated trade can't reach the chain — a dissenting panel forces escalation. Set
+  // PANEL_MODELS to a comma-separated list; default = three distinct families we've
+  // verified serve on Venice. Empty/one model disables the panel (falls back to reason()).
+  panelModels: (process.env.PANEL_MODELS ?? "deepseek-v4-flash,llama-3.3-70b,qwen-3-7-max")
+    .split(",").map((m) => m.trim()).filter(Boolean),
 
   // Data source keys (optional — missing keys degrade gracefully)
   eiaKey: process.env.EIA_API_KEY ?? "",

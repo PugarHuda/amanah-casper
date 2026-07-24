@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+import AlertBell from "./AlertBell";
 
 const Logo = () => (
   <svg width="26" height="22" viewBox="0 0 26 22" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -55,6 +56,7 @@ export default function Nav() {
         <Link href="/connect" className="nav-cta" aria-current={cur("/connect")}>
           Connect wallet
         </Link>
+        {!marketing && <AlertBell />}
         <ThemeToggle />
       </div>
     </nav>

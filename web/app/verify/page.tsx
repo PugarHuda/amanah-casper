@@ -131,6 +131,20 @@ export default function VerifyPage() {
     }).catch(() => setRangeOk(null));
   }, [rv]);
 
+  // --- verify ANY transaction -----------------------------------------------
+  type TxResult = { error?: string; found?: boolean; isAmanah?: boolean; contract?: string; outcome?: string; explorer?: string; control?: { name: string; control: string } | null };
+  const [txHash, setTxHash] = useState("");
+  const [txResult, setTxResult] = useState<TxResult | null>(null);
+  const [txLoading, setTxLoading] = useState(false);
+  const checkTx = async () => {
+    setTxLoading(true); setTxResult(null);
+    try {
+      const r = await fetch(`/api/verify-tx?hash=${txHash}`);
+      setTxResult(await r.json());
+    } catch (e) { setTxResult({ error: (e as Error).message }); }
+    finally { setTxLoading(false); }
+  };
+
   // --- verifiable auditor assignment (B7) -----------------------------------
   const [assign, setAssign] = useState<Assignment | null>(null);
   useEffect(() => {
@@ -181,6 +195,47 @@ export default function VerifyPage() {
             watch the proof fail. See <a href="https://github.com/PugarHuda/amanah-casper/blob/master/RESEARCH.md" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>RESEARCH.md</a> for the sources behind each control.
           </p>
         </div>
+
+        {/* Verify ANY transaction — don't take our list on faith */}
+        <Card
+          title="0 · Verify any transaction yourself"
+          sub="Every hash on this page is a claim. Paste ANY Casper testnet deploy hash — one of ours, or any other — and this checks it against the chain: is it an Amanah contract, and did it execute or get refused by which control? You don't have to trust our list."
+        >
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <input value={txHash} onChange={(e) => setTxHash(e.target.value.trim())} placeholder="paste a 64-hex deploy hash"
+              className="mono" style={{ flex: "1 1 380px", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface, #fff)", color: "var(--ink)", fontSize: 12 }} />
+            <button onClick={checkTx} disabled={txLoading || !/^[0-9a-f]{64}$/i.test(txHash)}
+              className="btn-primary" style={{ padding: "10px 18px", fontSize: 14, cursor: txLoading ? "wait" : "pointer", opacity: txLoading || !/^[0-9a-f]{64}$/i.test(txHash) ? 0.6 : 1 }}>
+              {txLoading ? "checking…" : "Verify on-chain"}
+            </button>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+            <button onClick={() => { setTxHash("ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7"); }} style={{ fontSize: 12, color: "var(--blue)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>try a refusal ↗</button>
+            <button onClick={() => { setTxHash("3c114651e1a0008e81286016264c05dcc570959279d1964b86b54409e60ff1ee"); }} style={{ fontSize: 12, color: "var(--blue)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>try the ZK refusal ↗</button>
+          </div>
+          {txResult && (
+            <div style={{ marginTop: 14 }}>
+              {txResult.error ? (
+                <span style={{ fontSize: 13, color: "#b3382c" }}>{txResult.error}</span>
+              ) : !txResult.found ? (
+                <Badge ok={false} okText="" badText="no such deploy on testnet" />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <Badge ok={!!txResult.isAmanah} okText={`Amanah · ${txResult.contract}`} badText="not an Amanah contract" />
+                    <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999, background: txResult.outcome === "refused" ? "var(--bad-bg)" : "var(--ok-bg)", color: txResult.outcome === "refused" ? "#b3382c" : "var(--green-deep)" }}>{txResult.outcome}</span>
+                    <a href={txResult.explorer} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: "var(--blue)" }}>on cspr.live ↗</a>
+                  </div>
+                  {txResult.control && (
+                    <div style={{ fontSize: 13.5, color: "var(--body)" }}>
+                      {txResult.outcome === "refused" ? "Refused by: " : ""}<strong>{txResult.control.name}</strong> — {txResult.control.control}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
 
         {/* 1 — ZK proof-of-reserves */}
         <Card
@@ -399,7 +454,14 @@ export default function VerifyPage() {
                   style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--border)", background: liabTampered ? "var(--bad-bg)" : "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--ink2)" }}>
                   {liabTampered ? "↺ restore the real balance" : "⚡ overstate this balance by $1"}
                 </button>
+                <a href={`/api/evidence/${encodeURIComponent(client.id)}`} download
+                  style={{ padding: "8px 15px", borderRadius: 10, border: "1px solid var(--blue)", background: "var(--surface, #fff)", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "var(--blue)", textDecoration: "none" }}>
+                  ⬇ download this client&apos;s evidence pack
+                </a>
               </div>
+              <p style={{ fontSize: 12.5, color: "var(--muted)", margin: "0 0 12px", lineHeight: 1.55 }}>
+                The pack is the portable, offline-verifiable artifact a client hands their own auditor: just this client&apos;s row + Merkle path + the reserves anchor — nobody else&apos;s balance, and a step-by-step verify recipe.
+              </p>
               {liabTampered && (
                 <p style={{ fontSize: 13, color: "#b3382c", margin: "0 0 10px", fontWeight: 600 }}>
                   Changing a client&apos;s balance changes their leaf, so the Merkle path no longer reaches the published root — the operator can&apos;t quietly inflate or drop a liability.

@@ -714,3 +714,43 @@ export async function getTimelock(): Promise<{ delaySec: number; queued: boolean
     return { delaySec: Math.round((delay ?? 0) / 1000), queued: (eta ?? 0) > 0 };
   } catch { return null; }
 }
+
+// --- C3 hosted-loop heartbeat ----------------------------------------------
+// Proof the agent is actually running 24/7, derived PURELY from the chain: the loop
+// attests its reasoning on-chain every cycle, so the most-recent deploy to the
+// AttestationLog package IS its last heartbeat — a timestamp nobody can forge or
+// backdate. If the hosted process stops, this goes stale on its own. No status
+// endpoint the agent could lie to; the chain is the witness.
+export type Heartbeat = {
+  configured: boolean;
+  alive: boolean;
+  lastCycleAt: string | null;
+  agoSeconds: number | null;
+  expectedIntervalSec: number;
+  recent: { at: string; deploy: string; ok: boolean }[];
+};
+
+export async function getHeartbeat(): Promise<Heartbeat> {
+  const pkg = (process.env.NEXT_PUBLIC_ATTESTATION_HASH || "").trim();
+  const expectedIntervalSec = Math.round(Number(process.env.NEXT_PUBLIC_CYCLE_MS || 60_000) / 1000);
+  const base: Heartbeat = { configured: !!pkg && cloudConfigured(), alive: false, lastCycleAt: null, agoSeconds: null, expectedIntervalSec, recent: [] };
+  if (!base.configured) return base;
+  try {
+    const d = await cloudGet<{ data?: RawDeploy[] }>(`/deploys?contract_package_hash=${pkg}&page=1&page_size=8`);
+    const rows = (d.data ?? []).filter((r) => r.timestamp);
+    if (!rows.length) return base;
+    const lastAt = rows[0].timestamp!;
+    const agoSeconds = Math.max(0, Math.round((Date.now() - Date.parse(lastAt)) / 1000));
+    // Stale after ~3.5 missed cycles — a hosted loop that's healthy attests well inside this.
+    const alive = agoSeconds <= expectedIntervalSec * 3.5;
+    return {
+      ...base,
+      alive,
+      lastCycleAt: lastAt,
+      agoSeconds,
+      recent: rows.slice(0, 6).map((r) => ({ at: r.timestamp!, deploy: r.deploy_hash ?? "", ok: !r.error_message })),
+    };
+  } catch {
+    return base;
+  }
+}

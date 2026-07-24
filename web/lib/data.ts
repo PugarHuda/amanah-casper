@@ -182,6 +182,7 @@ type AgentBlob = {
   pubkey?: string;
   prices?: { goldUsd?: number | null; tbondYieldPct?: number | null; wtiUsd?: number | null; csprUsd?: number | null; notes?: string[] };
   decision?: { action?: string; fromAsset?: string; toAsset?: string; amount?: number; confidence?: number; riskScore?: number; reasoningSteps?: string[] };
+  consensus?: { agreed?: boolean; summary?: string; agreeing?: number; panelSize?: number; votes?: { model?: string; action?: string }[] };
   model?: string;
   at?: string;
 };
@@ -334,21 +335,36 @@ export async function getAgentConsole() {
     return { name: v.name, price: assetPrices[a], weight: pct, color: v.color };
   });
 
+  // Sequential step numbering — each later step advances a counter so inserting the
+  // optional panel/auditor steps can't collide or leave gaps.
+  let n = 1;
+  const num = () => String(n++).padStart(2, "0");
+  const hasPanel = !!(blob.consensus?.panelSize && blob.consensus.panelSize > 1);
   const steps = [
-    { n: "01", text: `Ingested live RWA prices — gold $${p.goldUsd ?? "?"} /oz, T-bond ${p.tbondYieldPct ?? "?"}%, WTI $${p.wtiUsd ?? "?"} /bbl.`, tag: `INGEST · ${dataSources(p.notes)}`, tagColor: "var(--faint)" },
-    ...(d.reasoningSteps ?? []).slice(0, 4).map((s, i) => ({
-      n: String(i + 2).padStart(2, "0"), text: s,
+    { n: num(), text: `Ingested live RWA prices — gold $${p.goldUsd ?? "?"} /oz, T-bond ${p.tbondYieldPct ?? "?"}%, WTI $${p.wtiUsd ?? "?"} /bbl.`, tag: `INGEST · ${dataSources(p.notes)}`, tagColor: "var(--faint)" },
+    ...(d.reasoningSteps ?? []).slice(0, 4).map((s) => ({
+      n: num(), text: s,
       tag: `REASON · ${blob.model ?? "Venice"}`, tagColor: "var(--faint)",
     })),
+    // C2 — the consensus panel: several model families voted on this exact cycle; funds
+    // move only on a majority (a split escalates). Shown so the multi-model check is visible.
+    ...(hasPanel ? [{
+      n: num(),
+      text: blob.consensus!.agreed
+        ? `Consensus panel: ${blob.consensus!.summary}. Independent model families reached the same call — funds may move.`
+        : `Consensus panel SPLIT (${blob.consensus!.summary}) — no majority, so the cycle escalates and no funds move.`,
+      tag: `PANEL · ${(blob.consensus!.votes ?? []).map((v) => v.model).filter(Boolean).join(", ") || `${blob.consensus!.panelSize} models`}`,
+      tagColor: blob.consensus!.agreed ? "var(--green)" : "var(--gold-deep)",
+    }] : []),
     {
-      n: String((d.reasoningSteps?.slice(0, 4).length ?? 0) + 2).padStart(2, "0"),
+      n: num(),
       text: d.action === "rebalance"
         ? `Decision: move ${Number((d.amount ?? 0) / 1_000_000).toLocaleString("en-US")} from ${d.fromAsset} to ${d.toAsset}.`
         : `Decision: ${d.action} (no funds move).`,
       tag: `DECISION · confidence ${d.confidence ?? "?"}`, tagColor: "var(--gold-deep)",
     },
     {
-      n: String((d.reasoningSteps?.slice(0, 4).length ?? 0) + 3).padStart(2, "0"),
+      n: num(),
       text: "Signed reasoning (Ed25519), attested & verified on-chain.",
       tag: attestDeployHash ? `ATTEST · ${shortHash(attestDeployHash)} ✓` : "ATTEST · on-chain ✓",
       tagColor: "var(--green)",
@@ -357,7 +373,7 @@ export async function getAgentConsole() {
     // blocks the reallocate and slashes reputation. Surfaced so the two-agent
     // separation of duties is visible, not just on-chain.
     ...(audit ? [{
-      n: String((d.reasoningSteps?.slice(0, 4).length ?? 0) + 4).padStart(2, "0"),
+      n: num(),
       text: audit.approved
         ? `Independent auditor APPROVED the decision (grade ${audit.grade}). Reallocate allowed.`
         : `Independent auditor VETOED — reallocate blocked, reputation slashed.${audit.concerns[0] ? " " + audit.concerns[0] : ""}`,

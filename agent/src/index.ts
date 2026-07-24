@@ -7,6 +7,7 @@ import { loadPrivateKey, makeRpcClient } from "./casper.js";
 import { ingest } from "./ingest.js";
 import { payForSignal } from "./x402.js";
 import { reason } from "./reason.js";
+import { reasonConsensus } from "./consensus.js";
 import { attest } from "./attest.js";
 import {
   executeReallocation,
@@ -86,7 +87,13 @@ async function runCycle(cycle: number): Promise<void> {
     console.log(`  ⚠  prompt-injection attempt in untrusted input: ${detections.map((d) => `${d.source}/${d.kind}`).join(", ")}`);
   }
 
-  let decision = await reason(cycle, prices, premiumSignal, marketContext);
+  // C2 — CONSENSUS PANEL: poll several DIFFERENT model families and only act when a
+  // majority independently reach the same call. A split panel escalates (no funds move).
+  // Degrades to a single-model decision if PANEL_MODELS has one entry.
+  const consensus = await reasonConsensus(cycle, prices, premiumSignal, marketContext);
+  let decision = consensus.decision;
+  log(cycle, "consensus", { agreed: consensus.agreed, summary: consensus.summary, agreeing: consensus.agreeing, panelSize: consensus.panelSize, votes: consensus.votes });
+  console.log(`  🧠 panel ${consensus.agreed ? "AGREED" : "SPLIT"}: ${consensus.summary}`);
   log(cycle, "reason", decision);
 
   // 3b. GUARD (output) — check the model's decision against the vault's real balances
@@ -140,6 +147,9 @@ async function runCycle(cycle: number): Promise<void> {
     premiumSignal,
     marketContext,
     decision,
+    // The full panel is signed WITH the decision, so the on-chain record shows which
+    // models agreed (or split) on this exact cycle — the consensus is auditable, not asserted.
+    consensus: { agreed: consensus.agreed, summary: consensus.summary, agreeing: consensus.agreeing, panelSize: consensus.panelSize, votes: consensus.votes },
     guard: { detections, violations, forcedEscalate },
     // Recorded IN the signed blob so the attribution is attested on-chain with the
     // decision itself, not kept in a mutable side-channel.

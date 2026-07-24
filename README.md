@@ -89,6 +89,8 @@ See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
 ```
 ingest live RWA prices  →  enrich via the official CSPR.cloud + CSPR.trade MCP servers
   →  pay multi-asset premium signal via x402 (CEP-3009 settle, real tx)
+  →  CONSENSUS PANEL: poll several DIFFERENT model families; act only on a MAJORITY
+       agreeing (same action + direction), median trade size — a split panel escalates
   →  LLM reasons over all of it: risk score + decision + reasoning steps
   →  blake2b256(reasoning) + Ed25519 sign  →  AttestationLog.attest (verifies sig ON-CHAIN)
        + publish blob to IPFS  →  ReputationRegistry.record_payment (authority-gated)
