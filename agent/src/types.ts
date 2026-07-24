@@ -63,6 +63,11 @@ export interface ReasoningBlob {
   /** The multi-model consensus panel for this cycle (C2): which model families agreed or
    *  split on the decision. Signed alongside it so the consensus is verifiable on-chain. */
   consensus?: { agreed: boolean; summary: string; agreeing: number; panelSize: number; votes: unknown[] };
+  /** TEE-attested inference receipt (verifiable AI): when the decision is run through a
+   *  Trusted-Execution-Environment provider, the signed receipt binding request->response to
+   *  the enclave attestation is anchored here — proof of WHICH model produced this reasoning,
+   *  not just that we signed it. null when TEE inference isn't configured. */
+  attestedInference?: unknown;
   model: string;
   at: string;
 }

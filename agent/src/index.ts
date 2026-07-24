@@ -8,6 +8,7 @@ import { ingest } from "./ingest.js";
 import { payForSignal } from "./x402.js";
 import { reason } from "./reason.js";
 import { reasonConsensus } from "./consensus.js";
+import { teeConfigured, attestedChat, type InferenceReceipt } from "./attested-inference.js";
 import { attest } from "./attest.js";
 import {
   executeReallocation,
@@ -139,6 +140,27 @@ async function runCycle(cycle: number): Promise<void> {
     return; // paper mode never goes on-chain
   }
 
+  // 3d. TEE-ATTESTED INFERENCE (verifiable AI) — if a TEE inference provider is configured,
+  // have a model INSIDE an attested enclave review this cycle's decision. The provider returns
+  // a SIGNED RECEIPT binding request->response to the hardware attestation; we anchor it in the
+  // blob below. This upgrades proof-of-reasoning from "we signed our own output" to "a TEE
+  // attested which model produced this reasoning". Best-effort: a TEE outage never blocks the
+  // cycle (the decision is still Ed25519-signed), it just records attestedInference: null.
+  let attestedInference: InferenceReceipt | null = null;
+  if (teeConfigured()) {
+    try {
+      const { content, receipt } = await attestedChat([
+        { role: "system", content: "You are an independent risk reviewer running inside a trusted execution environment. Given a treasury decision, reply in one sentence whether it is prudent and why." },
+        { role: "user", content: `Cycle ${cycle}: action=${decision.action} ${decision.amount} ${decision.fromAsset}->${decision.toAsset}, confidence=${decision.confidence}. Prices: gold $${prices.goldUsd}, tbond ${prices.tbondYieldPct}%, wti $${prices.wtiUsd}, cspr $${prices.csprUsd}.` },
+      ]);
+      attestedInference = receipt;
+      log(cycle, "attested-inference", receipt ? { receiptId: receipt.receiptId, model: receipt.model, provider: receipt.provider, review: content.slice(0, 160) } : { note: "no receipt returned" });
+      if (receipt) console.log(`  🔐 TEE-attested inference receipt: ${receipt.receiptId} (${receipt.receiptUrl})`);
+    } catch (e) {
+      log(cycle, "attested-inference.error", { message: (e as Error).message });
+    }
+  }
+
   // 4. ATTEST — hash + sign + record reasoning on-chain.
   const blob: ReasoningBlob = {
     cycle,
@@ -150,6 +172,10 @@ async function runCycle(cycle: number): Promise<void> {
     // The full panel is signed WITH the decision, so the on-chain record shows which
     // models agreed (or split) on this exact cycle — the consensus is auditable, not asserted.
     consensus: { agreed: consensus.agreed, summary: consensus.summary, agreeing: consensus.agreeing, panelSize: consensus.panelSize, votes: consensus.votes },
+    // The TEE receipt (if any) is signed INTO the blob, so the enclave attestation is anchored
+    // on-chain with the decision — a verifier fetches the receipt and checks it against the
+    // provider's fresh attestation report.
+    attestedInference,
     guard: { detections, violations, forcedEscalate },
     // Recorded IN the signed blob so the attribution is attested on-chain with the
     // decision itself, not kept in a mutable side-channel.

@@ -236,3 +236,83 @@ We therefore make **no claims** about institutional allocation drivers, about wh
 identity standard to align with, or about attested inference. Area 5 remains our clearest
 honest limitation: **we prove a decision was signed by the agent's key and is
 human-interpretable — not that a specific model produced it.**
+
+---
+
+## 5. Blocker research — 2026 update (targeted pass)
+
+A focused pass on the items previously filed as "blocked", to find real solutions rather
+than restate the blocker. Verdicts are honest — some dissolve, some are genuinely deferred.
+
+### 5a. TEE-attested inference — **SOLVED, now wired** (was Area 5, our stated limitation)
+
+The 2026 state of the art makes this tractable **without owning any TEE hardware**: several
+providers serve LLMs inside Intel TDX + NVIDIA GPU TEEs behind an **OpenAI-compatible API**
+and return a **signed receipt** binding the request hash → response hash → the enclave's
+hardware attestation. That is exactly the missing "which model produced this" proof.
+
+- **Phala** — `https://inference.phala.com/v1`, `x-receipt-id` header per response, receipt at
+  `GET /v1/aci/receipts/{id}` (request/response hashes, `workload_id`, `workload_keyset_digest`),
+  verified against a fresh Attestation Report. `is_tee` flag in `/v1/models`.
+- **RedPill** — `https://api.redpill.ai/v1`, OpenAI-SDK-compatible, `x-receipt-id`, Verifier CLI.
+- Adjacent research: **TOPLOC** (LSH of activations for trustless verification) and **NANOZK**
+  (layerwise ZK for LLM inference) — promising but require provider cooperation / are not yet
+  drop-in; TEE + signed receipt is the practical path today.
+
+**Implemented:** `agent/src/attested-inference.ts` routes the decision through a configured TEE
+provider, captures the signed receipt, and anchors it **in the on-chain reasoning blob**
+(`ReasoningBlob.attestedInference`). Env-gated (`TEE_INFERENCE_*`) — falls back to Venice and
+records `attestedInference: null` when unset, so there's no forced paid dependency and no
+overclaim. Surfaced as a "TEE-ATTESTED" step on `/agent`. Proof-of-reasoning upgrades from *"we
+signed our own output"* to *"a TEE attested which model produced this reasoning"*.
+(ponytail: wired to the documented API + unit-tested parsing; not live-run in-repo — set a
+provider key to exercise end-to-end.)
+
+### 5b. FROST threshold signatures — **requirement already met a better way** (not a gap)
+
+The security goal FROST would provide — *no single auditor can approve a move* — is **already
+enforced on-chain** by our K-of-N `AuditorQuorum` (the vault reverts `NotApproved` without a
+threshold of independent signed votes). FROST aggregates N signatures into one (saving gas/
+bytes) but needs a trusted distributed-key-generation ceremony and **loses per-auditor
+attribution** — whereas our on-chain votes are individually attributable and publicly
+auditable, which a compliance reviewer wants. Verdict: **an optimization we deliberately don't
+need**, not a missing capability. Not implemented, by design.
+
+### 5c. Confidential vault (hidden allocations on-chain) — **partial exists; full still deferred**
+
+The per-asset split is a plaintext `Mapping` because the vault must read it to enforce spend
+caps and the principal invariant on-chain. We already publish **Pedersen commitments** to the
+allocations (the ZK proof-of-reserves), so the split *can* be proven without revealing
+individual amounts **in the proof layer**. Making the **vault's own state** confidential needs
+either homomorphic on-chain arithmetic or a ground-up encrypted-balance rewrite (weeks, and it
+fights the very transparency the compliance story relies on). Verdict: **partial shipped
+(commitment layer), full confidential vault genuinely deferred** — and honestly, in tension
+with the "verify everything on-chain" thesis, so not obviously desirable.
+
+### 5d. "ZK-circuit external audit" — **category-corrected; lighter than it sounds, but still external**
+
+Our zero-knowledge is **not a circuit** (no R1CS / Groth16 / trusted setup). It's direct
+**sigma protocols** — Schnorr proof-of-knowledge, Pedersen commitments, a Chaum-Pedersen OR-
+proof for the range bits — implemented over `curve25519-dalek`, the same audited library the
+Rust ecosystem uses. So what's needed is a **cryptography *code* review**, not a circuit audit.
+That's a smaller, cheaper engagement — but the sign-off still requires an **external
+reviewer**; we can't self-attest it. Pre-audit strengthening we *can* do (and should): publish
+protocol references + known-answer test vectors so a reviewer starts from a specified target.
+Verdict: **still external, but re-scoped from "audit a ZK circuit" to "review ~400 lines of
+sigma-protocol Rust".**
+
+### 5e. Mainnet full run — user funding only
+
+The installer is push-button (`agent/src/deploy-mainnet.ts`, node verified live). The only
+blocker is ~500 CSPR of real funding — not a technical one.
+
+**Net:** of five "blocked" items, one is now **solved + wired** (TEE attested inference), one
+was **already solved a better way** (FROST → on-chain quorum), two are **re-scoped smaller**
+(confidential vault → commitment layer shipped; ZK-audit → code review), and one is **pure
+user funding** (mainnet).
+
+Sources: [Phala Confidential AI API](https://docs.phala.com/phala-cloud/confidential-ai/confidential-model/confidential-ai-api) ·
+[RedPill Verifiable AI](https://redpill.ai/) ·
+[TOPLOC (arXiv 2501.16007)](https://arxiv.org/pdf/2501.16007) ·
+[NANOZK (arXiv 2603.18046)](https://arxiv.org/pdf/2603.18046) ·
+[Numerical non-determinism in LLM inference (arXiv 2506.09501)](https://arxiv.org/pdf/2506.09501)

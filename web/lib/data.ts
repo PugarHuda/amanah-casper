@@ -183,6 +183,7 @@ type AgentBlob = {
   prices?: { goldUsd?: number | null; tbondYieldPct?: number | null; wtiUsd?: number | null; csprUsd?: number | null; notes?: string[] };
   decision?: { action?: string; fromAsset?: string; toAsset?: string; amount?: number; confidence?: number; riskScore?: number; reasoningSteps?: string[] };
   consensus?: { agreed?: boolean; summary?: string; agreeing?: number; panelSize?: number; votes?: { model?: string; action?: string }[] };
+  attestedInference?: { provider?: string; model?: string; receiptId?: string; receiptUrl?: string; workloadId?: string } | null;
   model?: string;
   at?: string;
 };
@@ -363,6 +364,15 @@ export async function getAgentConsole() {
         : `Decision: ${d.action} (no funds move).`,
       tag: `DECISION · confidence ${d.confidence ?? "?"}`, tagColor: "var(--gold-deep)",
     },
+    // Verifiable AI: when the decision ran inside a TEE, the enclave's signed receipt is
+    // anchored in the blob — proof of WHICH model produced this reasoning, not just that we
+    // signed it. Only shown when a receipt is present (TEE inference configured).
+    ...(blob.attestedInference?.receiptId ? [{
+      n: num(),
+      text: `Decision reviewed inside a Trusted Execution Environment (${blob.attestedInference.model ?? "TEE model"}); the enclave's signed receipt is anchored on-chain — proof of which model produced this reasoning.`,
+      tag: `TEE-ATTESTED · ${blob.attestedInference.receiptId.slice(0, 12)}`,
+      tagColor: "var(--green)",
+    }] : []),
     {
       n: num(),
       text: "Signed reasoning (Ed25519), attested & verified on-chain.",

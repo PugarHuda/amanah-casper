@@ -55,6 +55,17 @@ export const config = {
   // different prompt. Defaults to a distinct model; override with AUDITOR_MODEL. Falls
   // back to the actor model only if you deliberately set them equal.
   auditorModel: opt("AUDITOR_MODEL", "llama-3.3-70b"),
+  // TEE-ATTESTED INFERENCE (verifiable AI). Optional: route the decision through a
+  // Trusted-Execution-Environment inference provider (Phala / RedPill — both OpenAI-
+  // compatible) that returns a SIGNED RECEIPT binding request-hash -> response-hash to a
+  // hardware TEE attestation. We anchor that receipt in the on-chain reasoning blob, so
+  // proof-of-reasoning becomes "a TEE attested WHICH model produced this decision", not just
+  // "we signed our own output". You rent the hardware via an API — no local SGX/H100 needed.
+  // Unset => falls back to Venice (the blob's attestedInference is null, honestly). Set all
+  // three to enable. Phala base = https://inference.phala.com/v1, RedPill = https://api.redpill.ai/v1.
+  teeInferenceBaseUrl: process.env.TEE_INFERENCE_BASE_URL ?? "",
+  teeInferenceKey: process.env.TEE_INFERENCE_API_KEY ?? "",
+  teeInferenceModel: opt("TEE_INFERENCE_MODEL", "phala/deepseek-chat-v3"),
   // C2 — the CONSENSUS PANEL. The decision to move funds is polled across several
   // DIFFERENT model families; funds only move when a majority independently agree on the
   // same action (and, for a rebalance, the same direction). A lone model's blind spot or
