@@ -46,3 +46,4 @@ scripts/video/out/
 .env.vaultv7
 .env.quorumv3
 .env.vaultv8
+.env.stake

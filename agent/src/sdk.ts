@@ -22,4 +22,7 @@ export const {
   CLTypePublicKey,
   CLTypeByteArray,
   Key,
+  makeAuctionManagerDeploy,
+  AuctionManagerEntryPoint,
+  CasperNetworkName,
 } = csp;

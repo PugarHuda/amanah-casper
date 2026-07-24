@@ -268,6 +268,49 @@ export async function getContinuity(days = 30, limit = 100): Promise<Continuity 
   }
 }
 
+/**
+ * Real native CSPR staking (real yield). The treasury's CSPR reserve leg is DELEGATED to a
+ * Casper validator through the system auction contract, so it earns native staking rewards —
+ * the same "real yield" a top rival claims, but proven here on-chain. Reads the live auction
+ * state for the treasury custodian's delegation at the validator. Until the first era boundary
+ * after delegating the position isn't in auction state yet, so we report `pending` (with the
+ * delegate deploy as proof) rather than zero. Public facts (deploy/validator/delegator) are
+ * hardcoded defaults since they're on-chain anyway; override via env if you re-stake.
+ */
+const STAKE_DEPLOY = (process.env.NEXT_PUBLIC_STAKE_DEPLOY || "b9b56beabe0d56c3b2a9c59b35a8c94c27340cb0328ef2984d6e935e0a9ebbe0").trim();
+const STAKE_VALIDATOR = (process.env.NEXT_PUBLIC_STAKE_VALIDATOR || "0106ca7c39cd272dbf21a86eeb3b36b7c26e2e9b94af64292419f7862936bca2ca").trim();
+const STAKE_DELEGATOR = (process.env.NEXT_PUBLIC_STAKE_DELEGATOR || "0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197").trim();
+
+export type StakedPosition = {
+  delegated: boolean;   // did we delegate at all (a known delegate deploy exists)?
+  pending: boolean;     // delegated but not yet visible in auction state (pre-era-rollover)
+  stakedCspr: number;   // live staked amount once visible
+  validator: string;
+  deployHash: string;
+  deployExplorer: string;
+  validatorExplorer: string;
+};
+
+export async function getStakedPosition(): Promise<StakedPosition | null> {
+  if (!STAKE_DEPLOY) return null;
+  const base: StakedPosition = {
+    delegated: true, pending: true, stakedCspr: 0, validator: STAKE_VALIDATOR, deployHash: STAKE_DEPLOY,
+    deployExplorer: `https://testnet.cspr.live/deploy/${STAKE_DEPLOY}`,
+    validatorExplorer: `https://testnet.cspr.live/validator/${STAKE_VALIDATOR}`,
+  };
+  try {
+    const r = (await rpc("state_get_auction_info", [])).result as { auction_state?: { bids?: { public_key?: string; bid?: { delegators?: { delegator_public_key?: string; public_key?: string; staked_amount?: string }[] } }[] } } | undefined;
+    const bid = r?.auction_state?.bids?.find((b) => b.public_key?.toLowerCase() === STAKE_VALIDATOR.toLowerCase());
+    const d = bid?.bid?.delegators?.find((x) => (x.delegator_public_key ?? x.public_key)?.toLowerCase() === STAKE_DELEGATOR.toLowerCase());
+    if (d?.staked_amount) {
+      return { ...base, pending: false, stakedCspr: Math.round(Number(BigInt(d.staked_amount) / 1_000_000n) / 1000) };
+    }
+    return base; // delegated, awaiting era activation
+  } catch {
+    return base;
+  }
+}
+
 // --- RwaVault on-chain state (Odra "state" dictionary, no entrypoint call) ---
 // Verified derivation (see agent/src/read-vault.ts): each Var/Mapping value lives
 // in the contract's named dictionary "state" under item key

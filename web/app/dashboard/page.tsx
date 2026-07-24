@@ -2,12 +2,14 @@ import Nav from "@/components/Nav";
 import SystemStatus from "@/components/SystemStatus";
 import LiveFeed from "@/components/LiveFeed";
 import { getDashboard } from "@/lib/data";
+import { getStakedPosition } from "@/lib/cspr";
 
 // Revalidate dashboard every 30 seconds so live vault + trail stay fresh.
 export const revalidate = 30;
 
 export default async function Dashboard() {
   const { treasuryId, totalTreasury, banner, holdings, trail, compliance, audit, trailLive, vaultHash, treasuries } = await getDashboard();
+  const staked = await getStakedPosition().catch(() => null);
 
   const explorerBase = "https://testnet.cspr.live";
   const accountUrl = `${explorerBase}/account/0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`;
@@ -79,6 +81,26 @@ export default async function Dashboard() {
               ))}
             </div>
             <div style={{ marginTop: 8, fontSize: 12, color: "var(--faint)" }}>Each treasury is its own on-chain vault + spend gate with its own principal — multi-tenant, not one hard-coded vault.</div>
+          </div>
+        )}
+
+        {/* Real native staking yield — the CSPR reserve leg is delegated to a validator and
+            earns real Casper staking rewards. Not simulated: a real on-chain delegation. */}
+        {staked?.delegated && (
+          <div style={{ marginTop: 16, padding: "16px 20px", border: "1px solid #bfe6cd", borderRadius: 16, background: "var(--ok-bg)" }}>
+            <div className="mono" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--green-deep)" }}>REAL NATIVE STAKING YIELD · ON-CHAIN</div>
+            <div style={{ marginTop: 8, fontSize: 14.5, color: "var(--ink)", lineHeight: 1.55 }}>
+              The treasury&apos;s <strong>CSPR reserve</strong> doesn&apos;t sit idle — it&apos;s <strong>delegated to a Casper validator</strong> and earns
+              real native staking rewards every era. {staked.pending
+                ? "500 CSPR was just delegated on-chain; the position activates at the next era boundary, then rewards accrue."
+                : <>Currently <strong>{staked.stakedCspr.toLocaleString()} CSPR</strong> staked and earning.</>}{" "}
+              Principal is preserved — delegation is fully recoverable (undelegate).
+            </div>
+            <div style={{ marginTop: 8, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13 }}>
+              <a href={staked.deployExplorer} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 600 }}>Delegation deploy ↗</a>
+              <a href={staked.validatorExplorer} target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)", fontWeight: 600 }}>Validator ↗</a>
+              <span style={{ color: "var(--faint)" }}>same &ldquo;real native yield&rdquo; a top rival claims — here it&apos;s on-chain and checkable</span>
+            </div>
           </div>
         )}
 

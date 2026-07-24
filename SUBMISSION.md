@@ -67,7 +67,7 @@ contract, and did it execute or get **refused by which control**. A **chain-deri
 live (the loop attests every cycle, so the last attestation *is* its heartbeat), and a
 **browser-alerting** bell raises a desktop notification on any new control event. An
 [agent-consumable manifest](https://amanah-casper-rwa.vercel.app/api/manifest) exposes it all so
-another agent can verify Amanah programmatically. 14 Odra contracts; 25 contract + 69 agent + 24 end-to-end tests.
+another agent can verify Amanah programmatically. 14 Odra contracts; 25 contract + 73 agent + 24 end-to-end tests. The CSPR reserve earns REAL native staking yield (delegated on-chain, deploy b9b56bea).
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
@@ -86,6 +86,7 @@ another agent can verify Amanah programmatically. 14 Odra contracts; 25 contract
 | 🔒 **Auditor quorum ENFORCED by the vault** — unapproved decision refused (`NotApproved`) | `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7` |
 | **Approved decision executed** on the same vault | `e68d42184b6f7fac2e226bea10c6a3e0942a276da6d6065618ac0f2d6c533c8e` |
 | **Zero-knowledge KYC** — Schnorr NIZK verified ON-CHAIN (secret never sent) | `da738fc1b49bea83988956dae45543785a71279be5a6dcb5582ddab5c0882ed4` |
+| 💰 **REAL native staking yield** — the CSPR reserve delegated 500 CSPR to a validator via the auction contract; real Casper rewards accrue, principal recoverable | `b9b56beabe0d56c3b2a9c59b35a8c94c27340cb0328ef2984d6e935e0a9ebbe0` |
 | **Verified identity** — `set_url` on MAKE's Account Info contract → "Amanah" on cspr.live | `ce60f0e4ddf288b208c33075793f2093c022255538226cc62c629561039db364` |
 | Attestation — reasoning signed + verified on-chain | `a87e10c77a873ace20d580b13d4b0c2a31e6899ed0ac5fe92412f3145dd870e8` |
 | x402 settlement — CEP-3009 transfer_with_authorization | `391274dcad1ebd7dd2641bd94aa17893084adf76f58b5603d7d69c0c4cce4398` |

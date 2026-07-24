@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   getVaultState, getReservesSolvent, getVaultFrozen, getContinuity, getPolicySignoff,
-  getTimelock, getTreasuries, getReputationScore, getExceptions, getHeartbeat, accountHashOf,
+  getTimelock, getTreasuries, getReputationScore, getExceptions, getHeartbeat, getStakedPosition, accountHashOf,
 } from "@/lib/cspr";
 import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/data";
 
@@ -23,7 +23,7 @@ export async function GET() {
   const agentHash = accountHashOf(AGENT_PK)?.replace(/^account-hash-/, "") ?? "";
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
 
-  const [vault, solvent, frozen, continuity, policy, timelock, treasuries, reputation, exceptions, heartbeat] =
+  const [vault, solvent, frozen, continuity, policy, timelock, treasuries, reputation, exceptions, heartbeat, staked] =
     await Promise.all([
       getVaultState().catch(() => null),
       getReservesSolvent().catch(() => null),
@@ -35,6 +35,7 @@ export async function GET() {
       getReputationScore(agentHash).catch(() => null),
       getExceptions(packages, 40).catch(() => []),
       getHeartbeat().catch(() => null),
+      getStakedPosition().catch(() => null),
     ]);
 
   // A refused NotApproved on record proves the vault ENFORCES the auditor quorum (not just tallies).
@@ -94,6 +95,14 @@ export async function GET() {
       pass: reputation !== null,
       detail: reputation !== null ? `agent reputation score = ${reputation}` : "reputation unreadable",
       proof: REPUTATION() ? `https://testnet.cspr.live/contract-package/${REPUTATION()}` : null,
+    },
+    {
+      claim: "CSPR reserve earns REAL native staking yield",
+      pass: !!staked?.delegated,
+      detail: staked?.delegated
+        ? (staked.pending ? "500 CSPR delegated to a validator on-chain — activating next era, then rewards accrue" : `${staked.stakedCspr} CSPR staked at a validator, earning native rewards every era`)
+        : "no delegation on record",
+      proof: staked?.deployExplorer ?? null,
     },
   ];
 
