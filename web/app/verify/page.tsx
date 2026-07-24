@@ -5,6 +5,7 @@
 // and lets you tamper with the inputs to watch the proofs fail.
 import { useEffect, useState } from "react";
 import Nav from "@/components/Nav";
+import ScoreCard from "@/components/ScoreCard";
 import { blake2b } from "blakejs";
 import { verifyReserves, bytesToHex, type ReservesProof } from "@/lib/zk-verify";
 import { computeLeaf, verifyInclusion } from "@/lib/merkle-verify";
@@ -195,6 +196,9 @@ export default function VerifyPage() {
             watch the proof fail. See <a href="https://github.com/PugarHuda/amanah-casper/blob/master/RESEARCH.md" target="_blank" rel="noopener noreferrer" style={{ color: "var(--blue)" }}>RESEARCH.md</a> for the sources behind each control.
           </p>
         </div>
+
+        {/* One-click self-audit — the whole system, checked live, at a glance */}
+        <ScoreCard />
 
         {/* Verify ANY transaction — don't take our list on faith */}
         <Card
