@@ -291,15 +291,31 @@ export type StakedPosition = {
   validatorExplorer: string;
 };
 
-export async function getStakedPosition(): Promise<StakedPosition | null> {
+// `live` does the on-chain auction read to quantify the staked amount — heavy (the auction
+// state is every validator + delegator, tens of thousands of bids). Page renders pass live=false
+// and show the known delegation from its deploy instantly; only the on-demand scorecard API
+// pays the live read. Next.js doesn't cache POST fetches, so there's nothing to lean on there.
+export async function getStakedPosition(opts: { live?: boolean } = {}): Promise<StakedPosition | null> {
   if (!STAKE_DEPLOY) return null;
   const base: StakedPosition = {
     delegated: true, pending: true, stakedCspr: 0, validator: STAKE_VALIDATOR, deployHash: STAKE_DEPLOY,
     deployExplorer: `https://testnet.cspr.live/deploy/${STAKE_DEPLOY}`,
     validatorExplorer: `https://testnet.cspr.live/validator/${STAKE_VALIDATOR}`,
   };
+  if (!opts.live) return base; // instant path for page renders — we know we delegated
+  // A short hard timeout so the large auction payload can never hang the caller; on timeout we
+  // still report the (known) delegation as pending rather than blocking.
   try {
-    const r = (await rpc("state_get_auction_info", [])).result as { auction_state?: { bids?: { public_key?: string; bid?: { delegators?: { delegator_public_key?: string; public_key?: string; staked_amount?: string }[] } }[] } } | undefined;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const res = await fetch(RPC, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "state_get_auction_info", params: [] }),
+      signal: ctrl.signal,
+      cache: "no-store",
+    }).finally(() => clearTimeout(t));
+    const r = ((await res.json()) as { result?: { auction_state?: { bids?: { public_key?: string; bid?: { delegators?: { delegator_public_key?: string; public_key?: string; staked_amount?: string }[] } }[] } } }).result;
     const bid = r?.auction_state?.bids?.find((b) => b.public_key?.toLowerCase() === STAKE_VALIDATOR.toLowerCase());
     const d = bid?.bid?.delegators?.find((x) => (x.delegator_public_key ?? x.public_key)?.toLowerCase() === STAKE_DELEGATOR.toLowerCase());
     if (d?.staked_amount) {

@@ -16,12 +16,23 @@ type Score = {
 
 export default function ScoreCard() {
   const [s, setS] = useState<Score | null>(null);
+  const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState(true);
   useEffect(() => {
-    fetch("/api/scorecard").then((r) => r.json()).then(setS).catch(() => {});
+    fetch("/api/scorecard").then((r) => r.json()).then(setS).catch(() => setFailed(true));
   }, []);
 
-  if (!s || !s.configured || !s.score) return null;
+  // Show a live "running" state while the checks read the chain, so the flagship feature never
+  // renders as a blank gap. Disappears once data arrives (or on a hard failure).
+  if (!s && !failed) {
+    return (
+      <section style={{ border: "1px solid var(--border2)", borderRadius: 18, padding: "18px 22px", background: "var(--surface-subtle)", marginBottom: 18, display: "flex", alignItems: "center", gap: 12 }}>
+        <span className="pulse-dot" style={{ flexShrink: 0 }} />
+        <span style={{ fontSize: 14.5, color: "var(--body)" }}>Running the live self-audit — checking every claim against the chain…</span>
+      </section>
+    );
+  }
+  if (failed || !s || !s.configured || !s.score) return null;
   const { passed, total, allGreen } = s.score;
   const pct = Math.round((passed / total) * 100);
   const green = "var(--green-deep)";

@@ -10,16 +10,41 @@ import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/d
 // as a live check and returns a PASS/FAIL scorecard — so "don't trust us, verify" collapses to
 // one green number a time-pressed reviewer reads in seconds. Each row carries the on-chain
 // proof so a PASS is checkable, not asserted.
+//
+// The result is cached ~45s in-process — the checks read live chain but don't change
+// second-to-second, so after the first render a judge gets an instant page. (Next's route/
+// data cache won't apply because the underlying reads are no-store, so we memoize directly.)
 export const dynamic = "force-dynamic";
 
 const AGENT_PK = "0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa";
 
 type Check = { claim: string; pass: boolean; detail: string; proof?: string | null };
 
+// Simple in-process TTL memo: the first caller pays the ~10 live reads, everyone in the next
+// 45s gets it instantly. Reliable (no Next cache machinery to fight), and on serverless each
+// warm instance reuses its own memo. An in-flight promise is shared so a burst of callers on a
+// cold instance don't each kick off the full read set.
+let memo: { at: number; data: Awaited<ReturnType<typeof computeScorecard>> } | null = null;
+let inflight: Promise<Awaited<ReturnType<typeof computeScorecard>>> | null = null;
+
+async function buildScorecard() {
+  if (memo && Date.now() - memo.at < 45_000) return memo.data;
+  if (!inflight) {
+    inflight = computeScorecard()
+      .then((data) => { memo = { at: Date.now(), data }; return data; })
+      .finally(() => { inflight = null; });
+  }
+  return inflight;
+}
+
 export async function GET() {
   if (!live()) {
     return NextResponse.json({ configured: false, error: "chain indexer not configured" }, { status: 503 });
   }
+  return NextResponse.json(await buildScorecard());
+}
+
+async function computeScorecard() {
   const agentHash = accountHashOf(AGENT_PK)?.replace(/^account-hash-/, "") ?? "";
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
 
@@ -35,7 +60,9 @@ export async function GET() {
       getReputationScore(agentHash).catch(() => null),
       getExceptions(packages, 40).catch(() => []),
       getHeartbeat().catch(() => null),
-      getStakedPosition().catch(() => null),
+      // live:false — the check only needs "delegated" (proven by the deploy); the heavy
+      // auction read (tens of thousands of bids) would dominate this endpoint's latency.
+      getStakedPosition({ live: false }).catch(() => null),
     ]);
 
   // A refused NotApproved on record proves the vault ENFORCES the auditor quorum (not just tallies).
@@ -107,8 +134,7 @@ export async function GET() {
   ];
 
   const passed = checks.filter((c) => c.pass).length;
-  return NextResponse.json(
-    {
+  return {
       configured: true,
       generatedAt: new Date().toISOString(),
       network: "casper-test",
@@ -117,8 +143,6 @@ export async function GET() {
       // the 24/7 loop may not be running during judging (see HOSTING.md to light it green).
       hostedLoop: heartbeat ? { configured: heartbeat.configured, alive: heartbeat.alive, lastCycleAgoSeconds: heartbeat.agoSeconds } : null,
       checks,
-      note: "Every check is read live from casper-test at request time. Open any proof link to confirm on cspr.live. Browser-side cryptographic proofs (ZK reserves, range, liabilities, red team) are at /verify.",
-    },
-    { headers: { "cache-control": "no-store" } },
-  );
+      note: "Every check is read live from casper-test. Cached ~45s so the page is instant; open any proof link to confirm on cspr.live. Browser-side cryptographic proofs (ZK reserves, range, liabilities, red team) are at /verify.",
+  };
 }

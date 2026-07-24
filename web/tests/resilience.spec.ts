@@ -87,3 +87,44 @@ test.describe("control evidence", () => {
     for (const f of body.platformFaults) expect(f.note).toMatch(/not a policy control/i);
   });
 });
+
+test.describe("live self-audit scorecard", () => {
+  test("scorecard API runs every claim live and each PASS carries a proof", async ({ request }) => {
+    const res = await request.get("/api/scorecard");
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body.configured).toBe(true);
+    expect(Array.isArray(body.checks)).toBe(true);
+    expect(body.checks.length).toBeGreaterThanOrEqual(9);
+    expect(body.score.total).toBe(body.checks.length);
+    // The headline claims must be present AND passing against the live chain.
+    const byClaim = Object.fromEntries(body.checks.map((c: { claim: string; pass: boolean }) => [c.claim, c.pass]));
+    expect(byClaim["Treasury is live on-chain"]).toBe(true);
+    expect(byClaim["Auditor quorum ENFORCED by the vault"]).toBe(true);
+    expect(byClaim["CSPR reserve earns REAL native staking yield"]).toBe(true);
+    // A passing check that cites a proof must cite a real explorer link.
+    for (const c of body.checks) {
+      if (c.proof) expect(c.proof).toMatch(/^https:\/\//);
+    }
+  });
+
+  test("scorecard mounts on /verify and never renders a blank gap", async ({ page }) => {
+    // The scorecard's DATA correctness is asserted by the API test above; here we only verify
+    // the component mounts and always shows a state (running → verdict), never a blank — the
+    // one thing that must hold regardless of how slow the live node is on the day.
+    await page.goto("/verify", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByText(/Running the live self-audit|claims verified live, on-chain, right now/i),
+    ).toBeVisible({ timeout: 15000 });
+  });
+});
+
+test.describe("real native staking", () => {
+  test("dashboard shows the delegated CSPR reserve with an on-chain deploy", async ({ page }) => {
+    await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+    await expect(page.getByText(/REAL NATIVE STAKING YIELD/i)).toBeVisible({ timeout: 20000 });
+    // The delegation deploy link must be a real explorer deep link, not a placeholder.
+    const link = page.getByRole("link", { name: /Delegation deploy/i });
+    await expect(link).toHaveAttribute("href", /testnet\.cspr\.live\/deploy\/[0-9a-f]{64}/);
+  });
+});
