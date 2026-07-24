@@ -1,0 +1,34 @@
+# C3 — host the autonomous loop 24/7 on Fly.io. The loop cycles forever (CYCLE_MS) and
+# attests every cycle on-chain, so once this is up the web /api/heartbeat goes green on
+# its own. Deploy from the REPO ROOT (the Dockerfile copies agent/ + contracts/wasm):
+#
+#   fly launch --no-deploy --copy-config --dockerfile agent/Dockerfile   # first time
+#   # set every secret (strings + the two PEM keys AS strings — see HOSTING.md):
+#   fly secrets set VENICE_API_KEY=... CSPR_CLOUD_KEY=... EIA_API_KEY=... METALS_API_KEY=... \
+#       ATTESTATION_LOG_HASH=... RWA_VAULT_HASH=... REPUTATION_REGISTRY_HASH=... \
+#       AUDITOR_LOG_HASH=... AUDITOR_QUORUM_HASH=... ZK_RESERVES_HASH=... \
+#       AGENT_KEY_PEM="$(cat agent/secret/agent_key.pem)" \
+#       CUSTODIAN_KEY_PEM="$(cat agent/secret/custodian_key.pem)"
+#   fly deploy
+app = "amanah-agent"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# Non-public worker: no ports, no HTTP service — it only makes OUTBOUND calls (RPC,
+# Venice, CSPR.cloud). One always-on machine; the loop is the process.
+[env]
+  CASPER_RPC_URL = "https://node.testnet.casper.network/rpc"
+  CASPER_CHAIN_NAME = "casper-test"
+  CYCLE_MS = "60000"
+  # PANEL_MODELS / CONFIDENCE_THRESHOLD / SIMULATE default in code; override with a secret if needed.
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# Keep exactly one instance running — the loop is stateful-per-cycle and idempotent, so a
+# crash just restarts and resumes cycling. No autoscaling, no scale-to-zero.
+[deploy]
+  strategy = "immediate"

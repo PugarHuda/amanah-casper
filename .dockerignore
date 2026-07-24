@@ -1,0 +1,20 @@
+# Keep the image lean AND keep secrets out of it. Key material and .env files are passed
+# to the hosted loop as runtime secrets (fly secrets set / railway variables), NEVER baked.
+**/node_modules
+**/.next
+**/dist
+**/.git
+**/secret
+**/*.pem
+**/.env
+**/.env.*
+!**/.env.example
+**/audit
+web
+mcp
+bot
+signal-service
+_design_import
+contracts/target
+contracts/src
+**/*.orig.wasm

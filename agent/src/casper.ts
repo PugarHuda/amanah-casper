@@ -18,9 +18,14 @@ import { config } from "./config.js";
 
 let drySeq = 0;
 
-export function loadPrivateKey(pemPath: string): PrivateKeyT {
+export function loadPrivateKey(pemOrPath: string): PrivateKeyT {
+  // Accept either a file path (local dev) or the PEM itself (hosted containers set the
+  // key as a secret ENV var — Fly/Railway secrets are strings, not files, so this lets
+  // `AGENT_KEY_PEM="$(cat key.pem)"` work with no file materialization). Detect the PEM
+  // by its header so no extra flag is needed.
+  const pem = pemOrPath.includes("-----BEGIN") ? pemOrPath : readFileSync(pemOrPath, "utf8");
   // ponytail: assumes Ed25519. Use KeyAlgorithm.SECP256K1 if your key is secp256k1.
-  return PrivateKey.fromPem(readFileSync(pemPath, "utf8"), KeyAlgorithm.ED25519);
+  return PrivateKey.fromPem(pem, KeyAlgorithm.ED25519);
 }
 
 export function makeRpcClient(rpcUrl: string): RpcClientT {

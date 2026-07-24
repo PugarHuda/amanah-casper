@@ -226,10 +226,15 @@ cd agent && npx tsx src/stream.ts     # prints "Attested" the instant terminal B
 ```
 
 Watch the agent log emit, in order: `ingest` (real prices) → `x402.settle` (a real
-settlement tx hash) → `reason` (decision using the paid signal) → `attest` (a real
-AttestationLog tx hash). Paste either hash into [testnet.cspr.live](https://testnet.cspr.live)
-to confirm it executed. The dashboard's treasury figures read the same vault state
-on-chain (`agent/src/read-vault.ts` is the standalone reader).
+settlement tx hash) → `🧠 panel AGREED/SPLIT` (the multi-model consensus vote) → `reason`
+(decision using the paid signal) → `attest` (a real AttestationLog tx hash). Paste either
+hash into [testnet.cspr.live](https://testnet.cspr.live) to confirm it executed. The
+dashboard's treasury figures read the same vault state on-chain
+(`agent/src/read-vault.ts` is the standalone reader).
+
+**Run it 24/7:** the loop is a container (`agent/Dockerfile` + `agent/fly.toml`). One command
+to a host and the web [heartbeat](https://amanah-casper-rwa.vercel.app/api/heartbeat) goes
+green on its own — see [HOSTING.md](HOSTING.md).
 
 ### Configuration
 
