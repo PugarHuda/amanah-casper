@@ -12,7 +12,7 @@
 // checked on cspr.live. Nothing here is computed from a database we own.
 //
 // Sources for the obligation are documented in RESEARCH.md.
-import { getExceptions, getActivity, getContractDeploys } from "@/lib/cspr";
+import { getExceptions, getActivity, getContractDeploys, getContinuity } from "@/lib/cspr";
 import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -26,10 +26,11 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
-  const [exceptions, vaultActivity, recent] = await Promise.all([
+  const [exceptions, vaultActivity, recent, continuity] = await Promise.all([
     getExceptions(packages),
     getActivity(VAULT(), days),
     getContractDeploys(packages, 50),
+    getContinuity(days).catch(() => null),
   ]);
 
   const executed = recent.filter((d) => !d.error_message);
@@ -71,6 +72,19 @@ export async function GET(req: Request): Promise<Response> {
         error: e.name,
         raw: e.error,
       })),
+
+      // Operating effectiveness OVER A PERIOD (SOC-2 Type II / DORA) — the solvency control
+      // did not fire once; it ran every cycle. Derived from the ZkReserves deploy history.
+      operatingEffectiveness: continuity && continuity.proofs > 0 ? {
+        basis: "SOC 2 Type II / DORA — a control's effectiveness is judged over a period, not at a point in time.",
+        onChainSolvencyProofs: continuity.proofs,
+        inflatedClaimsRefused: continuity.refusals,
+        firstProofAt: continuity.firstAt,
+        lastProofAt: continuity.lastAt,
+        spanHours: continuity.spanHours,
+        typicalCadenceMinutes: continuity.medianGapMin,
+        longestGapMinutes: continuity.maxGapMin,
+      } : null,
 
       // Evidence that authorised activity is itself recorded on-chain.
       recentAuthorisedActivity: executed.slice(0, 25).map((d) => ({

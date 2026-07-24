@@ -215,6 +215,59 @@ export async function getContractDeploys(
   }
 }
 
+/**
+ * Proof-of-CONTINUITY (SOC-2 Type II / DORA evidence). A point-in-time solvency proof says
+ * nothing about the periods around it — an auditor of *operating effectiveness* wants
+ * evidence the control ran over a PERIOD, not once. The agent proves solvency on-chain every
+ * cycle, so the ZkReserves package's deploy history IS that evidence: each successful call is
+ * a solvency proof at that timestamp; each `TotalMismatch` refusal is the control catching a
+ * bad claim. This reads that history and reports the span, the cadence, and any gap.
+ */
+export type Continuity = {
+  package: string;
+  proofs: number;        // successful on-chain solvency proofs
+  refusals: number;      // TotalMismatch (control caught an inflated claim) — control WORKING
+  firstAt: string | null;
+  lastAt: string | null;
+  spanHours: number | null;
+  medianGapMin: number | null; // typical minutes between proofs (cadence)
+  maxGapMin: number | null;    // longest silence — a coverage gap if large
+  recent: { at: string; deploy: string; ok: boolean }[];
+};
+
+export async function getContinuity(days = 30, limit = 100): Promise<Continuity | null> {
+  const pkg = (process.env.NEXT_PUBLIC_ZK_RESERVES_HASH || process.env.ZK_RESERVES_HASH || "5f57375f6187920b15f833d702121f591c9e4559fbd674a6704dd22c09b8f520").trim();
+  if (!pkg || !cloudConfigured()) return null;
+  try {
+    const d = await cloudGet<{ data?: RawDeploy[] }>(`/deploys?contract_package_hash=${pkg}&page=1&page_size=${limit}`);
+    const cutoff = Date.now() - days * 86_400_000;
+    const rows = (d.data ?? [])
+      .filter((r) => r.timestamp && Date.parse(r.timestamp) >= cutoff)
+      .sort((a, b) => (a.timestamp ?? "").localeCompare(b.timestamp ?? "")); // chronological
+    if (!rows.length) return { package: pkg, proofs: 0, refusals: 0, firstAt: null, lastAt: null, spanHours: null, medianGapMin: null, maxGapMin: null, recent: [] };
+
+    const ts = rows.map((r) => Date.parse(r.timestamp!));
+    const gapsMin: number[] = [];
+    for (let i = 1; i < ts.length; i++) gapsMin.push((ts[i] - ts[i - 1]) / 60_000);
+    const sortedGaps = [...gapsMin].sort((a, b) => a - b);
+    const median = sortedGaps.length ? sortedGaps[Math.floor(sortedGaps.length / 2)] : null;
+
+    return {
+      package: pkg,
+      proofs: rows.filter((r) => !r.error_message).length,
+      refusals: rows.filter((r) => !!r.error_message).length,
+      firstAt: rows[0].timestamp ?? null,
+      lastAt: rows[rows.length - 1].timestamp ?? null,
+      spanHours: ts.length ? Math.round(((ts[ts.length - 1] - ts[0]) / 3_600_000) * 10) / 10 : null,
+      medianGapMin: median != null ? Math.round(median * 10) / 10 : null,
+      maxGapMin: gapsMin.length ? Math.round(Math.max(...gapsMin) * 10) / 10 : null,
+      recent: rows.slice(-8).reverse().map((r) => ({ at: r.timestamp!, deploy: r.deploy_hash ?? "", ok: !r.error_message })),
+    };
+  } catch {
+    return null;
+  }
+}
+
 // --- RwaVault on-chain state (Odra "state" dictionary, no entrypoint call) ---
 // Verified derivation (see agent/src/read-vault.ts): each Var/Mapping value lives
 // in the contract's named dictionary "state" under item key

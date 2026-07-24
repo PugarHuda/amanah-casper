@@ -6,7 +6,7 @@
 // not address this. A controls layer therefore has to hand its customer that artifact.
 // Every row here is a real transaction; every claim links to cspr.live.
 import Nav from "@/components/Nav";
-import { getExceptions, getActivity, getContractDeploys, getPolicySignoff, getPolicyParams, getTimelock } from "@/lib/cspr";
+import { getExceptions, getActivity, getContractDeploys, getPolicySignoff, getPolicyParams, getTimelock, getContinuity } from "@/lib/cspr";
 import { VAULT, ATTESTATION, AUDITOR, ZK, X402, REPUTATION, live } from "@/lib/data";
 
 export const revalidate = 60;
@@ -18,9 +18,9 @@ const when = (t: string | null) => (t ? new Date(t).toISOString().replace("T", "
 export default async function CompliancePage() {
   const configured = live();
   const packages = [VAULT(), ATTESTATION(), AUDITOR(), ZK(), X402(), REPUTATION()].filter(Boolean);
-  const [exceptions, activity, recent, policy, params, timelock] = configured
-    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null), getPolicyParams().catch(() => null), getTimelock().catch(() => null)])
-    : [[], null, [], null, null, null];
+  const [exceptions, activity, recent, policy, params, timelock, continuity] = configured
+    ? await Promise.all([getExceptions(packages), getActivity(VAULT(), 30), getContractDeploys(packages, 40), getPolicySignoff().catch(() => null), getPolicyParams().catch(() => null), getTimelock().catch(() => null), getContinuity(30).catch(() => null)])
+    : [[], null, [], null, null, null, null];
   const executed = recent.filter((d) => !d.error_message);
   const policyRefusals = exceptions.filter((e) => e.kind === "policy");
   const platformFaults = exceptions.filter((e) => e.kind === "platform");
@@ -92,6 +92,44 @@ export default async function CompliancePage() {
               {policy && <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>hash {policy.hash.slice(0, 20)}…</span>}
             </div>
           </div>
+
+          {/* Proof-of-CONTINUITY (SOC-2 Type II / DORA): a snapshot proves solvency ONCE; an
+              auditor of operating effectiveness wants evidence the control ran over a PERIOD.
+              The agent proves solvency on-chain every cycle, so the ZkReserves history is that
+              evidence — span, cadence, and the largest gap, read live from the chain. */}
+          {continuity && continuity.proofs > 0 && (
+            <div style={{ padding: "16px 18px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface-subtle)", marginTop: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <span className="mono" style={{ fontSize: 11, letterSpacing: "1.4px", color: "var(--faint)" }}>OPERATING EFFECTIVENESS · SOC-2 TYPE II / DORA — OVER A PERIOD</span>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "var(--ok-bg)", color: "var(--green-deep)" }}>
+                  {continuity.proofs} on-chain solvency proofs
+                </span>
+              </div>
+              <div style={{ marginTop: 8, fontSize: 14, color: "var(--body)", lineHeight: 1.55 }}>
+                A point-in-time proof says nothing about the periods around it. The agent proves reserves ≥ liabilities
+                <strong> every cycle</strong>, so the ZkReserves contract&apos;s history evidences the control operated
+                <strong> continuously</strong> — not as a one-off snapshot. This is the Type&nbsp;II distinction: <em>operating
+                effectiveness over a period</em>, read live from the chain.
+              </div>
+              <div style={{ marginTop: 10, display: "flex", gap: 18, flexWrap: "wrap", fontSize: 13, color: "var(--ink)" }}>
+                {continuity.spanHours != null && <span>Span <strong>{continuity.spanHours >= 48 ? `${Math.round(continuity.spanHours / 24)} days` : `${continuity.spanHours} h`}</strong></span>}
+                {continuity.medianGapMin != null && <span>Typical cadence <strong>{continuity.medianGapMin < 90 ? `${continuity.medianGapMin} min` : `${Math.round(continuity.medianGapMin / 60)} h`}</strong></span>}
+                {continuity.maxGapMin != null && <span>Longest gap <strong>{continuity.maxGapMin < 90 ? `${continuity.maxGapMin} min` : `${Math.round(continuity.maxGapMin / 60)} h`}</strong></span>}
+                {continuity.refusals > 0 && <span style={{ color: "var(--green-deep)" }}>{continuity.refusals} inflated claim{continuity.refusals > 1 ? "s" : ""} refused</span>}
+              </div>
+              {continuity.recent.length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {continuity.recent.map((r) => (
+                    <a key={r.deploy} href={`${EXPLORER}/${r.deploy}`} target="_blank" rel="noopener noreferrer"
+                      title={`${r.at} — ${r.ok ? "solvency proven" : "claim refused"}`}
+                      style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 8px", borderRadius: 999, textDecoration: "none", background: r.ok ? "var(--ok-bg)" : "var(--bad-bg)", color: r.ok ? "var(--green-deep)" : "#b3382c" }}>
+                      {r.ok ? "✓" : "✗"} {r.at.slice(5, 16).replace("T", " ")}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {!configured ? (
