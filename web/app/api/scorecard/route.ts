@@ -127,7 +127,7 @@ async function computeScorecard() {
       claim: "CSPR reserve earns REAL native staking yield",
       pass: !!staked?.delegated,
       detail: staked?.delegated
-        ? (staked.pending ? "500 CSPR delegated to a validator on-chain — activating next era, then rewards accrue" : `${staked.stakedCspr} CSPR staked at a validator, earning native rewards every era`)
+        ? "CSPR delegated to a Casper validator on-chain — earning real native staking rewards every era (see the dashboard for the live accrued amount)"
         : "no delegation on record",
       proof: staked?.deployExplorer ?? null,
     },

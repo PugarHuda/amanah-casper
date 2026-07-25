@@ -281,10 +281,14 @@ const STAKE_DEPLOY = (process.env.NEXT_PUBLIC_STAKE_DEPLOY || "b9b56beabe0d56c3b
 const STAKE_VALIDATOR = (process.env.NEXT_PUBLIC_STAKE_VALIDATOR || "0106ca7c39cd272dbf21a86eeb3b36b7c26e2e9b94af64292419f7862936bca2ca").trim();
 const STAKE_DELEGATOR = (process.env.NEXT_PUBLIC_STAKE_DELEGATOR || "0109cd12284a8fe4cde3be32b28bd1c6f71ca80f7455571fd127f55573b74bb197").trim();
 
+const STAKE_ORIGINAL_CSPR = Number(process.env.NEXT_PUBLIC_STAKE_AMOUNT || "500"); // originally delegated
+
 export type StakedPosition = {
   delegated: boolean;   // did we delegate at all (a known delegate deploy exists)?
   pending: boolean;     // delegated but not yet visible in auction state (pre-era-rollover)
-  stakedCspr: number;   // live staked amount once visible
+  stakedCspr: number;   // live total staked (original + auto-compounded rewards)
+  originalCspr: number; // what we first delegated
+  rewardsCspr: number;  // accrued native staking rewards = staked - original (real yield)
   validator: string;
   deployHash: string;
   deployExplorer: string;
@@ -298,7 +302,8 @@ export type StakedPosition = {
 export async function getStakedPosition(opts: { live?: boolean } = {}): Promise<StakedPosition | null> {
   if (!STAKE_DEPLOY) return null;
   const base: StakedPosition = {
-    delegated: true, pending: true, stakedCspr: 0, validator: STAKE_VALIDATOR, deployHash: STAKE_DEPLOY,
+    delegated: true, pending: true, stakedCspr: 0, originalCspr: STAKE_ORIGINAL_CSPR, rewardsCspr: 0,
+    validator: STAKE_VALIDATOR, deployHash: STAKE_DEPLOY,
     deployExplorer: `https://testnet.cspr.live/deploy/${STAKE_DEPLOY}`,
     validatorExplorer: `https://testnet.cspr.live/validator/${STAKE_VALIDATOR}`,
   };
@@ -315,11 +320,18 @@ export async function getStakedPosition(opts: { live?: boolean } = {}): Promise<
       signal: ctrl.signal,
       cache: "no-store",
     }).finally(() => clearTimeout(t));
-    const r = ((await res.json()) as { result?: { auction_state?: { bids?: { public_key?: string; bid?: { delegators?: { delegator_public_key?: string; public_key?: string; staked_amount?: string }[] } }[] } } }).result;
+    // A delegator's staked_amount lives at delegator.delegator.staked_amount (nested), with a
+    // flat fallback across node versions. It includes auto-compounded rewards, so the amount
+    // above what we first delegated is the real native yield earned so far.
+    type Del = { delegator_public_key?: string; public_key?: string; staked_amount?: string; delegator?: { staked_amount?: string } };
+    const r = ((await res.json()) as { result?: { auction_state?: { bids?: { public_key?: string; bid?: { delegators?: Del[] } }[] } } }).result;
     const bid = r?.auction_state?.bids?.find((b) => b.public_key?.toLowerCase() === STAKE_VALIDATOR.toLowerCase());
-    const d = bid?.bid?.delegators?.find((x) => (x.delegator_public_key ?? x.public_key)?.toLowerCase() === STAKE_DELEGATOR.toLowerCase());
-    if (d?.staked_amount) {
-      return { ...base, pending: false, stakedCspr: Math.round(Number(BigInt(d.staked_amount) / 1_000_000n) / 1000) };
+    const d = bid?.bid?.delegators?.find((x) => (x.delegator_public_key ?? x.public_key ?? x.delegator?.["delegator_public_key" as keyof typeof x.delegator])?.toString().toLowerCase() === STAKE_DELEGATOR.toLowerCase());
+    const rawStaked = d?.delegator?.staked_amount ?? d?.staked_amount;
+    if (rawStaked) {
+      const staked = Number(BigInt(rawStaked)) / 1e9; // motes → CSPR (keep decimals for rewards)
+      const rewards = Math.max(0, staked - STAKE_ORIGINAL_CSPR);
+      return { ...base, pending: false, stakedCspr: Math.round(staked * 1000) / 1000, rewardsCspr: Math.round(rewards * 1e6) / 1e6 };
     }
     return base; // delegated, awaiting era activation
   } catch {
