@@ -92,6 +92,10 @@ src/migrate-custody.ts` (resumable). A 30s read-only demo: `./scripts/demo.ps1`.
 
 ## 3. Video script (~2.5 min, screen-recording)
 
+> 📹 **A polished, word-for-word voiceover script — leading with the live scorecard and closing
+> on real staking yield — is in [DEMO_SCRIPT.md](DEMO_SCRIPT.md). Use that one to record.** The
+> outline below is kept for reference.
+
 Record at 1080p. Have two things open: the **live dashboard**
 (https://amanah-casper-rwa.vercel.app) and a terminal in `agent/`. Keep
 **testnet.cspr.live** in a third tab to paste hashes. Read the **bold** lines aloud.
