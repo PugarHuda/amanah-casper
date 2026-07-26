@@ -60,18 +60,19 @@ export function useCsprClick() {
         .catch(() => {});
     };
 
-    // The demo template app-id only initializes on localhost; on a real domain the
-    // SDK never creates window.csprclick / fires csprclick:loaded. Don't spin
-    // forever — surface a clear reason after a few seconds.
+    // The demo template app-id only initializes on localhost; on a real domain the SDK never
+    // creates window.csprclick. Surface a clear, non-alarming reason quickly (5s) — this is a
+    // one-time config step (a domain-bound app-id), not a fault, and everything on the page is
+    // fully usable read-only without connecting.
     timer = setTimeout(() => {
       if (!window.csprclick) {
         setError(
           APP_ID === "csprclick-template"
-            ? "CSPR.click didn't initialize — the demo template app-id only works on localhost. Create your own app-id at console.cspr.build (add this domain) and set NEXT_PUBLIC_CSPR_CLICK_APP_ID."
-            : "CSPR.click didn't initialize for this app-id — check the app-id and that this domain is allowlisted in console.cspr.build.",
+            ? "Wallet connect needs a domain-specific CSPR.click app-id (free at console.cspr.build — add this domain, then set NEXT_PUBLIC_CSPR_CLICK_APP_ID). Everything here is fully readable and verifiable without connecting."
+            : "Wallet connect is initialising — if it doesn't appear, confirm this domain is allowlisted for the app-id at console.cspr.build. Everything here is fully readable and verifiable without connecting.",
         );
       }
-    }, 9000);
+    }, 5000);
 
     // The hosted script reads these globals on load and builds window.csprclick.
     window.clickSDKOptions = {

@@ -26,6 +26,7 @@ import {
   getActivity,
   shortHash,
   relTime,
+  describeRevert,
   type RawDeploy,
 } from "./cspr";
 import type { Holding } from "./view-types";
@@ -66,13 +67,24 @@ function deployToTrail(d: RawDeploy): TrailRow {
   } else if (pkg && pkg === ZK().toLowerCase()) {
     icon = "🔒"; kind = "ZK KYC · zero-knowledge proof"; bg = "#e6f6ec";
   }
+  // A revert is not always a "failure": a policy control refusing a bad move is the system
+  // WORKING (show it as such, not scary red), while an Odra/VM error is infrastructure noise
+  // (label it honestly and de-emphasise it). Only a genuine success is "Confirmed".
+  let status: string, statusColor: string;
+  if (ok) {
+    status = "Confirmed"; statusColor = "var(--green)";
+  } else {
+    const desc = describeRevert(d.error_message ?? null);
+    if (desc?.kind === "policy") { status = `Refused · ${desc.name}`; statusColor = "var(--gold-deep)"; }
+    else { status = "Platform fault"; statusColor = "var(--faint)"; }
+  }
   return {
     icon,
     kind,
     hash: shortHash(d.deploy_hash),
     fullHash: d.deploy_hash,
-    status: ok ? "Confirmed" : "Failed",
-    statusColor: ok ? "var(--green)" : "var(--red)",
+    status,
+    statusColor,
     time: relTime(d.timestamp),
     bg,
   };
