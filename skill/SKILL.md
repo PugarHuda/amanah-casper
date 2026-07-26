@@ -19,7 +19,7 @@ AttestationLog contract itself** before it is recorded. It only reallocates *yie
 — principal is locked by a vault invariant — and every spend passes an on-chain
 SpendGate (cap + daily limit + allowlist) and ComplianceRegistry (KYC status) check.
 
-Amanah runs a full on-chain fiduciary stack (10 Odra contracts): an **independent
+Amanah runs a full on-chain fiduciary stack (14 Odra contracts): an **independent
 auditor** (and a K-of-N **AuditorQuorum**) must approve each move; **circuit breakers**
 bench the agent when its reputation drops below a floor or freeze the vault if it goes
 silent (dead-man's switch); and it uses real zero-knowledge — **ZkKycVerifier** (Schnorr

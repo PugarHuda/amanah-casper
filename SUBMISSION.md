@@ -69,7 +69,7 @@ contract, and did it execute or get **refused by which control**. A **chain-deri
 live (the loop attests every cycle, so the last attestation *is* its heartbeat), and a
 **browser-alerting** bell raises a desktop notification on any new control event. An
 [agent-consumable manifest](https://amanah-casper-rwa.vercel.app/api/manifest) exposes it all so
-another agent can verify Amanah programmatically. 14 Odra contracts; 25 contract + 73 agent + 24 end-to-end tests. The CSPR reserve earns REAL native staking yield (delegated on-chain, deploy b9b56bea).
+another agent can verify Amanah programmatically. 14 Odra contracts; 81 agent + 4 integration + 27 E2E + 25 contract = 137 tests. The CSPR reserve earns REAL native staking yield (delegated on-chain, deploy b9b56bea).
 
 ## Live proof transactions (testnet.cspr.live/deploy/<hash>)
 | What | Hash |
@@ -102,7 +102,7 @@ Live dashboard: https://amanah-casper-rwa.vercel.app
 Repo (public): https://github.com/PugarHuda/amanah-casper
 
 ## Partner tools used (all genuinely integrated)
-Casper L1 (Odra, 10 contracts) · x402 / CEP-3009 (two-sided: pays *and* earns) ·
+Casper L1 (Odra, 14 contracts) · x402 / CEP-3009 (two-sided: pays *and* earns) ·
 CSPR.cloud REST + **Streaming API** + hosted **MCP server (consumed)** · **CSPR.trade
 DEX MCP (consumed)** · CSPR.click wallet · **Casper Account Info** (verified "Amanah"
 identity on cspr.live via `set_url`) · IPFS/Pinata · our own MCP server · an
@@ -135,7 +135,7 @@ engineering one. And the CSPR reserve already earns **real native staking yield*
 
 ## Long-term launch plan
 Amanah is a real project, not a throwaway. Testnet proves the hard part — a complete
-on-chain fiduciary-controls stack (10 contracts). Next: security audit → mainnet core →
+on-chain fiduciary-controls stack (14 contracts). Next: security audit → mainnet core →
 first real tokenized RWA + real KYC issuer → an open, staked auditor network + an Amanah
 SDK/MCP that turns our controls into shared Casper primitives. Revenue: management-fee
 bps on AUM, pay-per-proof (x402 earn side already live), and controls-as-a-service to

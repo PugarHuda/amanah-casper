@@ -54,8 +54,8 @@ quorum: multiple independent signers must agree.
 Too many vetoed decisions → the vault auto-benches the agent on-chain. Agent goes silent →
 anyone can freeze the vault (dead-man's switch). Only the custodian can unfreeze.
 
-**6/** All of it is real: 10 Odra contracts live on casper-test, every claim a public tx
-hash, 79 automated tests, deployed dashboard.
+**6/** All of it is real: 14 Odra contracts live on casper-test, every claim a public tx
+hash, 137 automated tests, deployed dashboard.
 
 Repo: github.com/PugarHuda/amanah-casper
 Roadmap: mainnet + real RWA + an open auditor network. #Casper #RWA #x402
@@ -69,7 +69,7 @@ Roadmap: mainnet + real RWA + an open auditor network. #Casper #RWA #x402
 The on-chain fiduciary-controls layer for AI-run RWA treasuries on Casper. Every decision
 is signed and verified by the contract itself (proof, not a diary); an independent auditor
 quorum must approve each move; KYC and proof-of-reserves are zero-knowledge; reputation
-slashing + on-chain circuit breakers bench a misbehaving agent automatically. 10 contracts
+slashing + on-chain circuit breakers bench a misbehaving agent automatically. 14 contracts
 live on testnet, every step a public tx hash. Roadmap: security audit → mainnet → real
 tokenized RWA + an open, staked auditor network.
 

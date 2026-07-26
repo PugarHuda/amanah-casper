@@ -51,7 +51,7 @@ owns SpendGate/Compliance, allowlisted the agent, and set its KYC — the agent 
 authorize itself (`agent/src/migrate-custody.ts`).
 
 Agent account: `0147ebe715f3fb6d387ae2f102e55032ba54c8c4557293d7800cad11561496fdaa`.
-Ten contract package hashes are in [`.env.deployed`](.env.deployed) / the README.
+The contract package hashes are in [`.env.deployed`](.env.deployed) / the README.
 
 ---
 
@@ -160,7 +160,7 @@ thesis in one transaction.
 ## 5. Integration & roadmap (honest status)
 
 **Live now (partner tools, all real):**
-- **Casper L1** — Odra 2.8.1, 10 contracts, an on-chain tx every loop step.
+- **Casper L1** — Odra 2.8.1, 14 contracts, an on-chain tx every loop step.
 - **x402 Facilitator** — CEP-3009 `transfer_with_authorization`, settled on-chain.
   **Genuinely two-sided (distinct payee per route)**: Amanah *pays a separate signal
   provider* — the custodian account — for alpha (`GET /alpha`, `X402_ALPHA_PAY_TO`;

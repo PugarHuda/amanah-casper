@@ -14,7 +14,7 @@ Tokenized RWA is projected into the trillions on-chain, but institutions can't h
 AI agent real money without controls a compliance officer can defend. Amanah is that
 control layer: proof-of-reasoning, a two-agent auditor quorum, custody separation,
 zero-knowledge KYC + proof-of-reserves, reputation-slashing, and on-chain circuit
-breakers — **all already built and proven on Casper testnet (10 contracts).** We don't
+breakers — **all already built and proven on Casper testnet (14 contracts).** We don't
 need to invent the controls; we need to point them at real assets.
 
 ---
@@ -22,11 +22,11 @@ need to invent the controls; we need to point them at real assets.
 ## Milestones
 
 ### ✅ Phase 0 — Testnet proof (done, Jul 2026)
-10 Odra contracts live on casper-test; the full fiduciary stack proven with public tx
-hashes; live dashboard + agent loop; 79 automated tests. See README proof table.
+14 Odra contracts live on casper-test; the full fiduciary stack proven with public tx
+hashes; live dashboard + agent loop; 137 automated tests. See README proof table.
 
 ### Phase 1 — Harden & mainnet core (Q3 2026)
-- **Third-party security audit** of the 10 contracts (the ZK verifiers + the vault
+- **Third-party security audit** of the 14 contracts (the ZK verifiers + the vault
   invariant + the custody gates are the priority).
 - **Mainnet deploy** of the core: RwaVault, AttestationLog, AuditorLog/Quorum,
   SpendGate, ComplianceRegistry, ReputationRegistry, ZkKycVerifier, ZkReserves.

@@ -7,7 +7,7 @@ Casper. This guide gets you from clone to a green build.
 
 | Path | What |
 |------|------|
-| `contracts/` | Rust · Odra 2.8.1 → WASM (10 contracts). Tests: `cargo odra test`. |
+| `contracts/` | Rust · Odra 2.8.1 → WASM (14 contracts). Tests: `cargo odra test`. |
 | `agent/` | TypeScript agent loop, deploy/migration scripts, on-chain state codec. |
 | `mcp/` | Amanah MCP server (reads live chain state). |
 | `web/` | Next.js dashboard (live on-chain reads) + Playwright E2E. |
@@ -23,7 +23,7 @@ Casper. This guide gets you from clone to a green build.
 
 ```bash
 # contracts
-cd contracts && cargo odra test           # 16 OdraVM tests
+cd contracts && cargo odra test           # 25 OdraVM tests
 
 # TypeScript packages
 cd agent && npm ci && npx tsc --noEmit && npm test
@@ -31,7 +31,7 @@ cd web   && npm ci && npx tsc --noEmit && npm run build && npx playwright test
 ```
 
 Integration tests (`agent: npm run test:integration`) read **live** casper-test state
-and need network access. The full suite is **79 automated tests**.
+and need network access. The full suite is **137 automated tests**.
 
 ## Pull requests
 

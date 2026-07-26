@@ -49,5 +49,5 @@ verifier vs a TS-generated golden vector) + issuer-gated credential registration
 
 ## Totals
 
-69 unit/regression + 4 integration + 12 E2E + 17 contract = **111 automated tests**,
+81 agent unit + 4 integration + 27 E2E + 25 OdraVM contract = **137 automated tests**,
 plus `tsc --noEmit` across all four TS packages.
