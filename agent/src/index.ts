@@ -5,7 +5,7 @@
 import { config } from "./config.js";
 import { loadPrivateKey, makeRpcClient } from "./casper.js";
 import { ingest } from "./ingest.js";
-import { payForSignal } from "./x402.js";
+import { payForSignal, verifySettlement } from "./x402.js";
 import { reason } from "./reason.js";
 import { reasonConsensus } from "./consensus.js";
 import { teeConfigured, attestedChat, type InferenceReceipt } from "./attested-inference.js";
@@ -57,15 +57,23 @@ async function runCycle(cycle: number): Promise<void> {
   // 2. PAY (x402) — buy the premium signal; capture settlement deploy hash.
   let premiumSignal: unknown = null;
   let x402DeployHash: string | null = null;
+  let x402Settled = false; // VERIFIED on-chain, not just "a hash came back"
   try {
     const paid = await payForSignal(config.signalUrl, key);
     premiumSignal = paid.data;
     x402DeployHash = paid.deployHash;
-    log(cycle, "x402.settle", {
-      deployHash: x402DeployHash,
-      signal: premiumSignal,
-    });
-    if (x402DeployHash) console.log(`  ⛓  x402 settle deploy: ${x402DeployHash}`);
+    // A returned settlement hash is a claim. Confirm it executed before treating the payment as
+    // real (and before crediting reputation on it below) — the same "verify, don't trust the log"
+    // discipline the whole system is built on, applied to our own payment path.
+    if (x402DeployHash && !config.dryRun) {
+      const v = await verifySettlement(config.rpcUrl, x402DeployHash, 60_000);
+      x402Settled = v.ok;
+      if (!v.ok) log(cycle, "x402.settle.reverted", { deployHash: x402DeployHash, error: v.error });
+    } else {
+      x402Settled = !!x402DeployHash; // dry-run: nothing to verify on-chain
+    }
+    log(cycle, "x402.settle", { deployHash: x402DeployHash, settled: x402Settled, signal: premiumSignal });
+    if (x402DeployHash) console.log(`  ⛓  x402 settle deploy: ${x402DeployHash}${x402Settled ? " ✓" : " (REVERTED — not credited)"}`);
   } catch (e) {
     log(cycle, "x402.error", { message: (e as Error).message });
   }
@@ -216,10 +224,11 @@ async function runCycle(cycle: number): Promise<void> {
   log(cycle, "attest", attestation);
   console.log(`  ⛓  attest deploy: ${attestation.deployHash}`);
 
-  // 5. REPUTATION — credit the settled x402 payment. This happens on EVERY paid
-  // cycle (the payment is real regardless of the hold/escalate/rebalance outcome),
-  // so it runs before the branches below — not only on reallocation cycles.
-  if (x402DeployHash) {
+  // 5. REPUTATION — credit the x402 payment, but ONLY if it VERIFIABLY settled on-chain. A
+  // reverted settlement must never earn reputation — that would be crediting a payment that
+  // didn't happen. Runs on every paid cycle (regardless of hold/escalate/rebalance), before
+  // the branches below.
+  if (x402DeployHash && x402Settled) {
     // Signed by the CUSTODIAN — record_payment is authority-only so the agent cannot
     // credit itself past the vault's reputation floor. Payer is still the agent.
     const repHash = await recordPayment(

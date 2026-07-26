@@ -69,3 +69,33 @@ async function safeJson(res: Response): Promise<unknown> {
     return null;
   }
 }
+
+/**
+ * Verify an x402 settlement ACTUALLY executed on-chain — a returned hash is a claim, not a
+ * receipt. A CEP-3009 `transfer_with_authorization` settles as a V1 transaction; we poll that
+ * first, then fall back to a legacy deploy. This is the point of Amanah: don't trust that a
+ * payment settled because a header came back — confirm it didn't revert.
+ */
+export async function verifySettlement(
+  rpcUrl: string,
+  hash: string,
+  timeoutMs = 120_000,
+): Promise<{ ok: boolean; error?: string }> {
+  const deadline = Date.now() + timeoutMs;
+  const call = (method: string, params: unknown) =>
+    fetch(rpcUrl, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) })
+      .then((r) => r.json() as Promise<{ result?: { execution_info?: { execution_result?: Record<string, { error_message?: string | null }> } } }>)
+      .catch(() => ({} as { result?: undefined }));
+
+  while (Date.now() < deadline) {
+    for (const params of [{ transaction_hash: { Version1: hash } }, { deploy_hash: hash }]) {
+      const info = (await call(params && "transaction_hash" in params ? "info_get_transaction" : "info_get_deploy", params)).result?.execution_info?.execution_result;
+      if (info) {
+        const v2 = (info.Version2 ?? info) as { error_message?: string | null };
+        return v2.error_message ? { ok: false, error: v2.error_message } : { ok: true };
+      }
+    }
+    await new Promise((r) => setTimeout(r, 4000));
+  }
+  return { ok: false, error: "settlement not confirmed before timeout" };
+}
