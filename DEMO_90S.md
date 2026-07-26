@@ -38,7 +38,13 @@ Paste: `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7`
 [SCREEN: point at the "native rewards earned" number, then click **Delegation deploy ↗**]
 > "Real yield, real delegation, verifiable like everything else."
 
-### 1:08–1:30 · Close  ·  [SCREEN: back to the /verify scorecard, 10/10 green]
+### 1:08–1:16 · You can approve it yourself  ·  *(OPTIONAL — adds ~8s; skip for a hard 90s)*
+[SCREEN: go to **/govern** (the "Approvals" nav), click **"Connect wallet"** → the real CSPR.click
+modal opens with Casper Wallet / Ledger / social options. Don't sign — just show it opened, then close it.]
+> "And it's not just watchable — a human auditor can **approve a decision themselves**, with a real
+> wallet, cast as an on-chain vote. The human-in-the-loop the EU AI Act asks for — made clickable."
+
+### 1:16–1:30 · Close  ·  [SCREEN: back to the /verify scorecard, 10/10 green]
 > "Autonomous, compliant, and provable. Every other agent in this field does **one** of these.
 > Amanah is the **whole trust stack** — proof-of-reasoning, zero-knowledge solvency, an enforced
 > auditor quorum, a multi-model consensus panel, real staking yield — and **every single claim is
@@ -54,6 +60,9 @@ Paste: `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7`
 - **If you fluff a line:** stop, breathe, restart that scene. Short retakes > one perfect take.
 - **Do NOT** run the live terminal cycle in a 90s cut — too risky on camera. The scorecard +
   tamper + refusal + staking already prove the whole thesis.
+- **Wallet beat (optional):** only clicking Connect to show the modal *opens* — do NOT attempt a full
+  sign-in on camera (needs a funded wallet, too slow). The modal appearing is the whole point. Verified
+  working on prod. Skip this beat entirely if you want a tight 90s.
 - Every hash/number here was verified live before this file was written. Nothing on screen will
   contradict you.
 
