@@ -89,9 +89,9 @@ function persistCid(hashHex: string, cid: string): void {
 }
 
 function decisionLabel(d: Decision): string {
-  return d.action === "rebalance"
-    ? `rebalance ${d.amount} ${d.fromAsset}->${d.toAsset} (conf ${d.confidence})`
-    : `${d.action} (conf ${d.confidence})`;
+  if (d.action === "rebalance") return `rebalance ${d.amount} ${d.fromAsset}->${d.toAsset} (conf ${d.confidence})`;
+  if (d.action === "stake") return `stake ${d.amount} CSPR for native yield (conf ${d.confidence})`;
+  return `${d.action} (conf ${d.confidence})`;
 }
 
 // Pin the reasoning blob to public IPFS via Pinata (pinJSONToIPFS, bearer JWT) so

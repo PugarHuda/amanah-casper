@@ -30,6 +30,33 @@ const state: Record<string, string> = {};
 if (existsSync(STATE)) for (const l of readFileSync(STATE, "utf8").split("\n")) { const m = l.match(/^([A-Za-z0-9_]+)=(.+)$/); if (m) state[m[1]] = m[2].trim(); }
 const save = (k: string, v: string) => { state[k] = v; writeFileSync(STATE, Object.entries(state).map(([a, b]) => `${a}=${b}`).join("\n") + "\n"); };
 
+/** Read an account's liquid (undelegated) CSPR balance in whole CSPR. */
+export async function readIdleCspr(publicKeyHex: string): Promise<number> {
+  const srh = (await fetch(config.rpcUrl, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "chain_get_state_root_hash", params: [] }) }).then((x) => x.json()) as { result?: { state_root_hash?: string } }).result?.state_root_hash;
+  const acct = (await fetch(config.rpcUrl, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "state_get_account_info", params: { public_key: publicKeyHex } }) }).then((x) => x.json()) as { result?: { account?: { main_purse?: string } } }).result?.account?.main_purse;
+  if (!srh || !acct) return 0;
+  const bal = (await fetch(config.rpcUrl, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "state_get_balance", params: { state_root_hash: srh, purse_uref: acct } }) }).then((x) => x.json()) as { result?: { balance_value?: string } }).result?.balance_value;
+  return bal ? Number(BigInt(bal) / 1_000_000_000n) : 0;
+}
+
+/** Delegate `amountCspr` from `signer` to `validator` via the auction contract. Returns the
+ *  delegate deploy hash on success (waits for on-chain confirmation). Min 500 CSPR enforced. */
+export async function delegate(signer: ReturnType<typeof loadPrivateKey>, amountCspr: number, validator = VALIDATOR): Promise<string> {
+  if (amountCspr < 500) throw new Error("minimum delegation is 500 CSPR");
+  const deploy = makeAuctionManagerDeploy({
+    contractEntryPoint: AuctionManagerEntryPoint.delegate,
+    delegatorPublicKeyHex: signer.publicKey.toHex(),
+    validatorPublicKeyHex: validator,
+    amount: (BigInt(amountCspr) * MOTES).toString(),
+    paymentAmount: (PAYMENT_CSPR * MOTES).toString(),
+    chainName: CasperNetworkName.Testnet,
+  });
+  deploy.sign(signer);
+  const hash = (await rpc.putDeploy(deploy)).deployHash.toHex();
+  await waitForDeploy(hash);
+  return hash;
+}
+
 async function waitForDeploy(hash: string): Promise<void> {
   const deadline = Date.now() + 240_000;
   while (Date.now() < deadline) {
@@ -94,4 +121,8 @@ async function main() {
   console.log("verify:  state_get_auction_info → bids[validator].delegators[custodian]");
 }
 
-main().catch((e) => { console.error("FAILED:", e instanceof Error ? e.message : e); process.exit(1); });
+// Only run the delegation CLI when invoked directly — importing this module (autostake.ts uses
+// readIdleCspr/delegate) must NOT fire a real delegation.
+if (/stake\.(ts|js|mts)$/.test(process.argv[1] ?? "") && !/autostake\./.test(process.argv[1] ?? "")) {
+  main().catch((e) => { console.error("FAILED:", e instanceof Error ? e.message : e); process.exit(1); });
+}

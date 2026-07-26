@@ -12,7 +12,7 @@ export const ASSET_INDEX: Record<AssetId, number> = {
   CSPR: 3,
 };
 
-export type AgentAction = "rebalance" | "hold" | "escalate";
+export type AgentAction = "rebalance" | "hold" | "escalate" | "stake";
 
 /** Real RWA price snapshot. A field is `null` when its data source is
  *  unavailable (e.g. missing API key) — never faked. */
