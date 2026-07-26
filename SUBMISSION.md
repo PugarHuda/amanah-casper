@@ -1,6 +1,6 @@
 # Amanah — DoraHacks submission (ready to paste)
 
-**▶️ Demo video:** https://youtu.be/lqG0nfVifA8 · **Live:** https://amanah-casper-rwa.vercel.app · **Repo:** https://github.com/PugarHuda/amanah-casper
+**▶️ Demo video:** https://youtu.be/lqG0nfVifA8 · **🖥️ Pitch deck + walkthrough:** https://amanah-casper-rwa.vercel.app/deck · **Live:** https://amanah-casper-rwa.vercel.app · **Repo:** https://github.com/PugarHuda/amanah-casper
 
 ## One-liner
 Most AI money-agents ask you to **trust** them. Amanah is the autonomous, compliant
