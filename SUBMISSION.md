@@ -3,10 +3,12 @@
 **▶️ Demo video:** https://youtu.be/lqG0nfVifA8 · **Live:** https://amanah-casper-rwa.vercel.app · **Repo:** https://github.com/PugarHuda/amanah-casper
 
 ## One-liner
-Amanah is an autonomous, compliant RWA-treasury agent on Casper: every AI decision
-is Ed25519-signed and **verified on-chain by the contract itself** before it moves a
-token — proof, not a diary. Principal is locked, spending is custodian-gated, and the
-agent both pays and earns via x402.
+Most AI money-agents ask you to **trust** them. Amanah is the autonomous, compliant
+RWA-treasury agent on Casper that **proves every decision on-chain — and lets you verify
+the entire system yourself, in one click** ([10/10 live](https://amanah-casper-rwa.vercel.app/verify)).
+Every decision is Ed25519-signed and verified *inside the contract* before it moves a token;
+principal is locked, spending is custodian-gated, an independent quorum must approve, and the
+CSPR reserve earns real native staking yield. Proof, not a diary.
 
 ## Elevator pitch
 Tokenized real-world assets are moving on-chain at scale, and that capital needs
@@ -117,8 +119,19 @@ installable **AI Agent Skill** · Venice (reasoning).
 - **AI Agent Skill**: `skill/SKILL.md` lets any coding agent inspect + verify the treasury.
 
 ## Testing
-111 automated tests: 69 unit/regression + 4 live-testnet integration + 20 Playwright
-E2E + 20 OdraVM contract tests. See TESTING.md.
+137 automated tests: **81** agent unit/regression + 4 live-testnet integration + **27**
+Playwright E2E + **25** OdraVM contract tests — all green. A one-click **live self-audit**
+([/verify](https://amanah-casper-rwa.vercel.app/verify)) re-checks 10 headline claims against
+the chain at request time (currently **10/10**). See TESTING.md.
+
+## Why testnet (and why that's the right call)
+A controls product must prove its kill-switch, its K-of-N quorum enforcement, and its circuit
+breakers **before** real assets ever touch it — you don't test a fuse with the house wired
+live. So the hard part is done and proven on testnet: the vault *refusing* an unapproved move,
+freezing on command, blocking a below-floor agent. Mainnet is **push-button ready** (installer
+verified against the live mainnet node, runbook in `MAINNET.md`) — a funding step, not an
+engineering one. And the CSPR reserve already earns **real native staking yield** on-chain
+(delegated to a validator, rewards accruing), so "real value at work" isn't a mainnet-only claim.
 
 ## Long-term launch plan
 Amanah is a real project, not a throwaway. Testnet proves the hard part — a complete

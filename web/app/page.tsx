@@ -25,8 +25,10 @@ export default function Landing() {
             <br />
             for every asset
           </h1>
-          <p style={{ margin: "26px auto 0", maxWidth: 760, fontSize: 19, fontWeight: 500, color: "var(--body)", letterSpacing: "0.1px" }}>
-            Autonomous, compliant RWA treasury — every decision proven on-chain, 24/7
+          <p style={{ margin: "26px auto 0", maxWidth: 720, fontSize: 19, fontWeight: 500, color: "var(--body)", letterSpacing: "0.1px" }}>
+            Most AI money-agents ask you to trust them. Amanah is the autonomous RWA
+            treasury agent that <strong>proves every decision on-chain — and lets you verify
+            the whole system yourself, in one click.</strong>
           </p>
 
           <div style={{ marginTop: 34, display: "flex", gap: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
