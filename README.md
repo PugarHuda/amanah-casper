@@ -84,6 +84,18 @@ reputation, live event feed, and **guardrail limits read live from chain**; the 
 console renders the latest published reasoning blob + its on-chain attestation.
 See [Live deployment](#live-on-casper-test) for addresses + proof hashes.
 
+**More, all live:** a **multi-model consensus panel** — the decision is polled across three
+different model families and funds move only on a majority (a split escalates), signed into the
+blob; **real native staking yield** — the CSPR reserve is delegated to a Casper validator and
+earns real rewards on-chain, decided **autonomously** by the agent within a reserve buffer;
+**TEE-attested inference** (verifiable AI) — route the decision through a Trusted-Execution-
+Environment provider and anchor the signed receipt on-chain; a **one-click live self-audit
+scorecard** ([`/verify`](https://amanah-casper-rwa.vercel.app/verify)) that re-checks 10 headline
+claims against the chain at request time (**10/10**); **proof-of-continuity** (SOC-2 Type II —
+solvency proven every cycle, over a period); **per-client evidence packs**; a **verify-any-tx**
+tool; a **pitch deck + walkthrough** at [`/deck`](https://amanah-casper-rwa.vercel.app/deck); and
+**real on-chain auditor voting from a browser wallet**.
+
 ## Cycle (every `CYCLE_MS`, default 60s — all steps real, no mock)
 
 ```
@@ -183,7 +195,7 @@ verify the live vault any time with `agent/src/read-vault.ts`.
 
 | Module | Stack | What it is |
 |---|---|---|
-| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | 10 contracts: RwaVault (**v6 — enforces the auditor quorum on-chain + circuit breakers**), **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), **AuditorQuorum** (K-of-N signed votes), SpendGate (v2, `check` gated to the vault), ComplianceRegistry, ReputationRegistry (**v4** — `record_payment` *and* `adjust` authority-only), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC), **ZkReserves** (ZK proof-of-reserves — Pedersen+Schnorr). On-chain Ed25519 + ZK verification is the heart. 20/20 OdraVM tests pass. |
+| [`contracts/`](contracts) | Rust · **Odra 2.8.1** → WASM | **14 contract modules**: RwaVault (**enforces the auditor quorum on-chain + circuit breakers**), **AttestationLog** (proof-of-reasoning), **AuditorLog** (2nd agent's on-chain verdict), **AuditorQuorum** (K-of-N signed votes + staking/slashing), SpendGate (`check` gated to the vault), ComplianceRegistry, ReputationRegistry (`record_payment` *and* `adjust` authority-only), PaymentToken, **ZkKycVerifier** (on-chain Schnorr NIZK — real ZK KYC), **ZkReserves** (ZK proof-of-reserves — Pedersen+Schnorr), **PolicyEngine** (on-chain governed risk params), **GovernanceTimelock** (time-locked policy changes), + a 2nd Treasury vault. On-chain Ed25519 + ZK verification is the heart. **25/25 OdraVM tests pass.** |
 | [`agent/`](agent) | TypeScript · casper-js-sdk v5 · Venice · MCP client | The autonomous loop: ingest → **enrich via CSPR.cloud MCP + CSPR.trade DEX MCP** → x402 → reason → attest (+ **pin blob to IPFS**) → guardrail → execute → reputation. `npm run deploy` installs all contracts; `npm run dev` runs the loop. Demos: `npx tsx src/cspr-mcp.ts` (official MCP), `npx tsx src/trade-mcp.ts` (DEX MCP), `npx tsx src/stream.ts` (live events). |
 | [`signal-service/`](signal-service) | TypeScript · Express · casper-x402 | Two-sided x402 commerce (distinct payee per route), both directions proven on-chain: `GET /alpha` (Amanah **pays a separate provider** — the custodian — proof `785ceb25`) and `GET /verified-reasoning` (the **earn** side — a buyer paid Amanah, proof `cf48c91d`). |
 | [`mcp/`](mcp) | TypeScript · MCP SDK | Read-only MCP server so a judge or LLM can ask "why did it rebalance?". **All 4 tools live**: `get_vault_state` + `get_reputation` decode on-chain state, `get_attestation` verifies the published reasoning blob against its on-chain hash, `get_audit_trail` lists real deploys via CSPR.cloud. `npx tsx src/smoke.ts` checks all four. |
@@ -246,18 +258,20 @@ and the deployed hashes (written by `npm run deploy` to `.env.deployed`). Secret
 
 ## Testing
 
-**111 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
+**133 automated tests** across the pyramid (details + commands in [TESTING.md](TESTING.md)):
 
-- **69 unit + regression** (`node:test`, offline): the on-chain codec (dict-address
+- **81 agent unit + regression** (`node:test`, offline): the on-chain codec (dict-address
   golden vectors, U256/U512 blob + **i64 little-endian-array** decode), the reasoning
-  `normalize` (**riskScore 0..100→0..1 regression**) + tolerant JSON parser, the
-  escalation safety gate, the auditor verdict parser, **the ZK-KYC Schnorr NIZK**
-  (soundness + TS↔Rust golden vector), price cross-validation, the web formatters, MCP
-  attestation round-trip. Every fixed bug has a regression test.
+  `normalize` + tolerant JSON parser, the escalation safety gate, the auditor verdict
+  parser, **the multi-model consensus tally** (median amount, abstentions can't reach
+  majority), **the autonomous-staking guard** (reserve buffer / minimum / cap), **the
+  TEE-attested-inference receipt parser**, **the ZK-KYC Schnorr NIZK** (soundness + TS↔Rust
+  golden vector), price cross-validation, the web formatters. Every fixed bug has a regression test.
 - **4 integration** (live casper-test): vault decodes to **$1M / $800K principal**,
-  reputation ≥ 1, compliance Valid, and every published blob hashes to its filename.
-- **12 E2E** (Playwright manual-click): live data, real deep links, no stale fakes.
-- **11 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant.
+  reputation tracked, compliance Valid, and every published blob hashes to its filename.
+- **27 E2E** (Playwright manual-click): live data, the 10/10 self-audit scorecard, the
+  real staking card, real deep links, no stale fakes.
+- **25 smart-contract** (OdraVM `cargo odra test`): incl. the principal invariant + quorum enforcement.
 
 `./scripts/test-all.ps1` runs the offline layers; `tsc --noEmit` is clean on all
 four TS packages.

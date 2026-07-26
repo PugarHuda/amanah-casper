@@ -152,7 +152,10 @@ const SLIDES: Slide[] = [
       <H>Don&apos;t trust us. Verify us.</H>
       <Lead>The whole system, checked live against the chain — then watch a full walkthrough, or open the site and break a proof yourself.</Lead>
       <div style={{ marginTop: 24, width: "100%", maxWidth: 760, borderRadius: 16, overflow: "hidden", border: "1px solid var(--border2)", background: "#000" }}>
-        <video src="/walkthrough.webm" controls playsInline preload="metadata" poster="" style={{ width: "100%", display: "block" }} />
+        <video controls playsInline preload="metadata" style={{ width: "100%", display: "block" }}>
+          <source src="/walkthrough.mp4" type="video/mp4" />
+          <source src="/walkthrough.webm" type="video/webm" />
+        </video>
       </div>
       <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
         <a href={`${SITE}/verify`} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ padding: "12px 22px", borderRadius: 999, fontSize: 15, fontWeight: 700, textDecoration: "none", background: "#15120e", color: "#fff" }}>Open the live proof lab ↗</a>
