@@ -184,6 +184,7 @@ type AgentBlob = {
   decision?: { action?: string; fromAsset?: string; toAsset?: string; amount?: number; confidence?: number; riskScore?: number; reasoningSteps?: string[] };
   consensus?: { agreed?: boolean; summary?: string; agreeing?: number; panelSize?: number; votes?: { model?: string; action?: string }[] };
   attestedInference?: { provider?: string; model?: string; receiptId?: string; receiptUrl?: string; workloadId?: string } | null;
+  staking?: { idleCspr?: number; action?: string; amountCspr?: number; executed?: string | null; reasoningSteps?: string[] };
   model?: string;
   at?: string;
 };
@@ -371,6 +372,16 @@ export async function getAgentConsole() {
       n: num(),
       text: `Decision reviewed inside a Trusted Execution Environment (${blob.attestedInference.model ?? "TEE model"}); the enclave's signed receipt is anchored on-chain — proof of which model produced this reasoning.`,
       tag: `TEE-ATTESTED · ${blob.attestedInference.receiptId.slice(0, 12)}`,
+      tagColor: "var(--green)",
+    }] : []),
+    // Autonomous yield: the agent evaluates whether idle CSPR should be delegated for native
+    // staking each cycle, respecting a liquid reserve buffer. Shown when the blob carries it.
+    ...(blob.staking?.action ? [{
+      n: num(),
+      text: blob.staking.action === "stake"
+        ? `Autonomous staking: delegated ${blob.staking.amountCspr?.toLocaleString()} idle CSPR for native yield${blob.staking.executed ? " (executed on-chain)" : ""}.`
+        : `Autonomous staking: idle CSPR ${blob.staking.idleCspr?.toLocaleString()} — held for liquidity (below the delegation minimum after the reserve buffer).`,
+      tag: `YIELD · ${blob.staking.action.toUpperCase()}`,
       tagColor: "var(--green)",
     }] : []),
     {

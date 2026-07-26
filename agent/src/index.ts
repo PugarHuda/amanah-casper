@@ -9,6 +9,8 @@ import { payForSignal } from "./x402.js";
 import { reason } from "./reason.js";
 import { reasonConsensus } from "./consensus.js";
 import { teeConfigured, attestedChat, type InferenceReceipt } from "./attested-inference.js";
+import { evaluateStakingRule, guardStaking } from "./autostake.js";
+import { readIdleCspr, delegate } from "./stake.js";
 import { attest } from "./attest.js";
 import {
   executeReallocation,
@@ -161,6 +163,30 @@ async function runCycle(cycle: number): Promise<void> {
     }
   }
 
+  // 3e. AUTONOMOUS STAKING — evaluate whether idle treasury CSPR should be delegated for native
+  // yield this cycle, respecting a liquid reserve buffer. The decision is attested in the blob
+  // below (no extra on-chain write). Execution moves real funds, so it's gated behind an explicit
+  // opt-in (AUTOSTAKE_EXECUTE=true) — the agent decides autonomously, but a human enables the money
+  // movement. Best-effort: never breaks the cycle.
+  let staking: ReasoningBlob["staking"];
+  try {
+    const custodianPk = loadPrivateKey(config.custodianKeyPath).publicKey.toHex();
+    const idle = await readIdleCspr(custodianPk);
+    const sd = evaluateStakingRule(idle);
+    const g = guardStaking(sd, idle);
+    const action = g.ok ? sd.action : "hold";
+    staking = { idleCspr: idle, action, amountCspr: action === "stake" ? sd.amountCspr : 0, executed: null, reasoningSteps: g.ok ? sd.reasoningSteps : [...sd.reasoningSteps, `GUARD: ${g.reason}`] };
+    log(cycle, "staking.decision", staking);
+    console.log(`  💰 staking: ${action}${action === "stake" ? ` ${sd.amountCspr} CSPR` : ""} (idle ${idle})`);
+    if (action === "stake" && (process.env.AUTOSTAKE_EXECUTE ?? "").toLowerCase() === "true" && !config.dryRun) {
+      const dh = await delegate(loadPrivateKey(config.custodianKeyPath), sd.amountCspr);
+      staking.executed = dh;
+      console.log(`  ⛓  delegated autonomously: ${dh}`);
+    }
+  } catch (e) {
+    log(cycle, "staking.error", { message: (e as Error).message });
+  }
+
   // 4. ATTEST — hash + sign + record reasoning on-chain.
   const blob: ReasoningBlob = {
     cycle,
@@ -176,6 +202,9 @@ async function runCycle(cycle: number): Promise<void> {
     // on-chain with the decision — a verifier fetches the receipt and checks it against the
     // provider's fresh attestation report.
     attestedInference,
+    // The autonomous staking decision is signed into the cycle's blob, so yield management is
+    // attested on-chain alongside the RWA decision — not a side channel.
+    staking,
     guard: { detections, violations, forcedEscalate },
     // Recorded IN the signed blob so the attribution is attested on-chain with the
     // decision itself, not kept in a mutable side-channel.

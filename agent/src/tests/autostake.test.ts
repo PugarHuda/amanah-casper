@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { guardStaking } from "../autostake.js";
+import { guardStaking, evaluateStakingRule } from "../autostake.js";
 
 // Defaults (no env set): reserve buffer 250, min delegation 500, per-decision cap 5000.
 const stake = (amountCspr: number) => ({ action: "stake" as const, amountCspr, confidence: 0.8, reasoningSteps: [] });
@@ -31,4 +31,27 @@ test("a delegation over the per-decision cap is rejected", () => {
 
 test("hold always passes the guard", () => {
   assert.deepEqual(guardStaking({ action: "hold", amountCspr: 0, confidence: 0.9, reasoningSteps: [] }, 100), { ok: true });
+});
+
+test("evaluateStakingRule holds when idle minus buffer is below the minimum", () => {
+  // idle 734, buffer 250 → 484 stakeable < 500 min → hold (the real live case).
+  const d = evaluateStakingRule(734);
+  assert.equal(d.action, "hold");
+  assert.equal(d.amountCspr, 0);
+});
+
+test("evaluateStakingRule stakes the buffer-respecting amount, capped", () => {
+  // idle 2000, buffer 250 → 1750 stakeable, under the 5000 cap.
+  const d = evaluateStakingRule(2000);
+  assert.equal(d.action, "stake");
+  assert.equal(d.amountCspr, 1750);
+  // And the amount it picks must itself pass the guard.
+  assert.equal(guardStaking(d, 2000).ok, true);
+});
+
+test("evaluateStakingRule respects the per-decision cap", () => {
+  // idle 100000, buffer 250 → 99750 stakeable, capped at 5000.
+  const d = evaluateStakingRule(100_000);
+  assert.equal(d.action, "stake");
+  assert.equal(d.amountCspr, 5000);
 });

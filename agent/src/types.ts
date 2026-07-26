@@ -68,6 +68,9 @@ export interface ReasoningBlob {
    *  the enclave attestation is anchored here — proof of WHICH model produced this reasoning,
    *  not just that we signed it. null when TEE inference isn't configured. */
   attestedInference?: unknown;
+  /** Autonomous native-staking evaluation for this cycle: idle CSPR, the stake/hold decision,
+   *  and whether it executed — so yield management is attested alongside the RWA decision. */
+  staking?: { idleCspr: number; action: "stake" | "hold"; amountCspr: number; executed?: string | null; reasoningSteps: string[] };
   model: string;
   at: string;
 }

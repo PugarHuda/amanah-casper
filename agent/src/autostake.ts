@@ -61,6 +61,28 @@ Return ONLY JSON: {"action":"stake"|"hold","amountCspr":<integer>,"confidence":<
 
 /** Deterministic guard: the model's decision must respect the buffer, the minimum, and the cap.
  *  A failing "stake" is forced to hold — the model can't talk its way past the numeric limits. */
+/** Deterministic staking evaluation for the main loop — no LLM call on the hot path. Applies
+ *  the same reserve-buffer / minimum / cap policy the model is asked to follow, so a cycle can
+ *  cheaply decide stake-vs-hold every time and attest it. The standalone autostake.ts keeps the
+ *  LLM-reasoned variant. Stakes the largest whole amount that respects the buffer, up to the cap. */
+export function evaluateStakingRule(
+  idle: number,
+  buffer = RESERVE_BUFFER_CSPR,
+  min = MIN_DELEGATION,
+  max = MAX_STAKE_CSPR,
+): StakeDecision {
+  const stakeable = Math.min(max, Math.floor(idle - buffer));
+  if (stakeable >= min) {
+    return { action: "stake", amountCspr: stakeable, confidence: 0.8, reasoningSteps: [
+      `Idle ${idle} CSPR, reserve buffer ${buffer} → ${stakeable} stakeable (≥ ${min} minimum).`,
+      `Delegating ${stakeable} CSPR for native staking yield; principal recoverable, buffer kept liquid.`,
+    ] };
+  }
+  return { action: "hold", amountCspr: 0, confidence: 0.9, reasoningSteps: [
+    `Idle ${idle} CSPR minus ${buffer} buffer = ${Math.max(0, Math.floor(idle - buffer))}, below the ${min} CSPR minimum delegation — holding for liquidity.`,
+  ] };
+}
+
 export function guardStaking(d: StakeDecision, idle: number): { ok: boolean; reason?: string } {
   if (d.action !== "stake") return { ok: true };
   if (d.amountCspr < MIN_DELEGATION) return { ok: false, reason: `below minimum delegation (${d.amountCspr} < ${MIN_DELEGATION})` };
