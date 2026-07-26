@@ -15,12 +15,13 @@ Record 1080p, screen + mic. Speak calmly; pause a half-beat after each proof.
 > on-chain — and lets you verify the whole system yourself.** This is Amanah's entire treasury,
 > checked live against the Casper chain **right now**: ten claims, ten green."
 
-### 0:12–0:30 · Break the proof  ·  [SCREEN: scroll to the ZK proof-of-reserves card; it shows verified]
+### 0:12–0:30 · Break the proof  ·  [SCREEN: scroll to card "1 · Zero-knowledge proof-of-solvency"; the green badge reads "verified in N ms · covers principal"]
 > "This is a zero-knowledge proof that the treasury is solvent — reserves cover what it owes —
 > **without revealing any amount.** And your browser just re-ran it."
-[SCREEN: click the **tamper / "overstate by $1"** button → it flips to RED / FAIL]
-> "Watch — I inflate the reserves by one dollar, and the proof **fails instantly.** You don't
-> trust our math. You break it yourself."
+[SCREEN: click the button labelled **"⚡ claim $1,000 more than we hold"** → the badge flips to red **"proof rejected"**]
+> "Watch — I make it claim we hold more than we actually do, and the proof **fails instantly.**
+> You don't trust our math. You break it yourself."
+[SCREEN: optional — click "↺ restore the real total" to reset before moving on]
 
 ### 0:30–0:48 · A control that refuses  ·  [SCREEN: scroll up to card 0, paste the hash below]
 Paste: `ba368de335840645486c7692cf1fdee8b0ca3f7f61514091515a32052ac2d7b7`
