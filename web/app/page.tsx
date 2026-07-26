@@ -84,7 +84,33 @@ export default function Landing() {
           ))}
         </div>
 
-        <div style={{ textAlign: "center", marginTop: 44, fontSize: 11, fontWeight: 600, letterSpacing: "2.4px", color: "var(--faint2)" }}>
+        {/* Why unique — in a crowded field, most agents do ONE of these. Amanah is the whole
+            trust stack, and every layer is verifiable on-chain. Each links to its live proof. */}
+        <div style={{ marginTop: 52, textAlign: "center", fontSize: 11, fontWeight: 600, letterSpacing: "2.4px", color: "var(--faint2)" }}>
+          ONE AGENT, THE WHOLE TRUST STACK
+        </div>
+        <p style={{ margin: "12px auto 0", maxWidth: 620, textAlign: "center", fontSize: 14.5, color: "var(--body)", lineHeight: 1.6 }}>
+          Each layer below is, on its own, another team&apos;s entire project. Amanah has all of them —
+          and every one is verifiable on-chain, right now.
+        </p>
+        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
+          {[
+            { href: "/agent", t: "Proof-of-reasoning", d: "Every decision Ed25519-signed and verified inside the contract before it acts — not a log you trust." },
+            { href: "/verify", t: "ZK solvency + ZK KYC", d: "Reserves ≥ liabilities and KYC proven in zero-knowledge, re-runnable in your browser. Tamper and watch it break." },
+            { href: "/govern", t: "Independent auditor quorum", d: "A K-of-N quorum of separate keys must approve on-chain — the vault refuses unapproved moves." },
+            { href: "/verify", t: "Multi-model consensus", d: "The decision is polled across different model families; a split escalates. No lone model moves funds." },
+            { href: "/dashboard", t: "Real native staking yield", d: "The CSPR reserve is delegated to a validator, earning real Casper rewards — quantified, live, recoverable." },
+            { href: "/compliance", t: "Compliance over a period", d: "An exception report and operating-effectiveness evidence a regulator asks for, generated from the chain." },
+          ].map((c) => (
+            <Link key={c.t + c.href} href={c.href} style={{ textDecoration: "none", display: "block", padding: "16px 18px", border: "1px solid var(--border2)", borderRadius: 14, background: "var(--surface-subtle)" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ink)" }}>{c.t}</div>
+              <div style={{ marginTop: 5, fontSize: 13, color: "var(--body)", lineHeight: 1.5 }}>{c.d}</div>
+              <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 600, color: "var(--blue, #2f6fdb)" }}>Verify it →</div>
+            </Link>
+          ))}
+        </div>
+
+        <div style={{ textAlign: "center", marginTop: 52, fontSize: 11, fontWeight: 600, letterSpacing: "2.4px", color: "var(--faint2)" }}>
           BUILT ON THE CASPER TRUST LAYER
         </div>
         <div style={{ marginTop: 28, display: "flex", alignItems: "center", justifyContent: "center", gap: 62, flexWrap: "wrap", color: "#1d1a15" }}>
