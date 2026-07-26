@@ -47,3 +47,5 @@ scripts/video/out/
 .env.quorumv3
 .env.vaultv8
 .env.stake
+web/narration/
+web/rec/

@@ -154,7 +154,6 @@ const SLIDES: Slide[] = [
       <div style={{ marginTop: 24, width: "100%", maxWidth: 760, borderRadius: 16, overflow: "hidden", border: "1px solid var(--border2)", background: "#000" }}>
         <video controls playsInline preload="metadata" style={{ width: "100%", display: "block" }}>
           <source src="/walkthrough.mp4" type="video/mp4" />
-          <source src="/walkthrough.webm" type="video/webm" />
         </video>
       </div>
       <div style={{ marginTop: 18, display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
