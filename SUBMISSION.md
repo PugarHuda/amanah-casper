@@ -10,6 +10,33 @@ Every decision is Ed25519-signed and verified *inside the contract* before it mo
 principal is locked, spending is custodian-gated, an independent quorum must approve, and the
 CSPR reserve earns real native staking yield. Proof, not a diary.
 
+## Quick summary
+Amanah is an autonomous, compliant RWA-treasury agent on Casper. An LLM manages a live
+tokenized treasury (gold, US T-bonds, oil, CSPR); **every decision is Ed25519-signed and
+verified inside the contract before it moves a token**, a **K-of-N independent auditor quorum**
+must approve each move, KYC + reserves are **zero-knowledge**, and the CSPR reserve earns **real
+native staking yield**. The differentiator: **you can re-verify the entire system yourself, in
+one click** — 10 headline claims checked live against the chain, plus ZK proofs you can tamper
+with and watch break. *Proof, not a diary.* 14 Odra contracts, 137 tests, all live on testnet.
+
+## Playbook — verify it yourself in 3 minutes (don't trust us)
+1. **[/verify](https://amanah-casper-rwa.vercel.app/verify)** — the top shows *"10 of 10 claims
+   verified live, on-chain, right now."* Click any **proof ↗** — it lands on the real tx on cspr.live.
+2. Scroll to the **zero-knowledge proof-of-solvency** (verified in your browser). Click
+   **"claim $1,000 more than we hold"** → the proof flips to **rejected**. You just broke it yourself.
+3. In **card 0**, click *"try a refusal"* (or paste any deploy hash) → it resolves to
+   **refused · NotApproved** — a control doing its job, on-chain.
+4. **[/dashboard](https://amanah-casper-rwa.vercel.app/dashboard)** — the CSPR reserve is delegated
+   to a validator, earning **real native staking rewards** (live accruing number + the delegation tx).
+5. **[/agent](https://amanah-casper-rwa.vercel.app/agent)** — every decision: a **consensus panel of
+   3 model families** → attested on-chain → graded by an **independent auditor** before funds move.
+6. **[/compliance](https://amanah-casper-rwa.vercel.app/compliance)** — the regulator's exception
+   report + **operating-effectiveness-over-a-period** (SOC-2 Type II), generated from the chain.
+7. **[/govern](https://amanah-casper-rwa.vercel.app/govern)** — click **Connect wallet**; the real
+   CSPR.click modal opens. Connect and cast a **real on-chain auditor vote**.
+8. **[/deck](https://amanah-casper-rwa.vercel.app/deck)** — the pitch deck + a 2-minute **narrated
+   walkthrough** of everything above.
+
 ## Elevator pitch
 Tokenized real-world assets are moving on-chain at scale, and that capital needs
 management a fiduciary can defend to a regulator: capital preserved, mandate + KYC
